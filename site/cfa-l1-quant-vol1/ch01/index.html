@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interest Rates, Present Value, and Future Value</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 1, title: 'Interest Rates, Present Value, and Future Value', minutes: 10, language: 'en' };
+
+/* ---------- chapter drawing helpers ---------- */
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const $$ = v => '$' + v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pill = (p, str, color, x, y, t0) => {
+  const w = uiW(str, 30) + 56, g = G(p, { x, y, o: 0 });
+  mk('rect', { x: -w / 2, y: -31, width: w, height: 62, rx: 31, fill: 'none', stroke: color, 'stroke-width': 3 }, g);
+  T(g, str, { y: 10, size: 30, fill: color, weight: 600, anchor: 'middle' });
+  show(g, t0);
+  return g;
+};
+const timeline = (p, x0, x1, y, t0) => draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), t0, .7);
+
+/* ---------- data (defined above BEATS) ---------- */
+const FVS = [0, 1, 2, 3, 4, 5].map(n => 1000 * 1.05 ** n);
+const FREQ = [['Annual', 1], ['Semi-annual', 2], ['Quarterly', 4], ['Monthly', 12], ['Daily', 365]];
+const EARS = FREQ.map(([, m]) => ((1 + .06 / m) ** m - 1) * 100).concat([(Math.exp(.06) - 1) * 100]);
+const PREMIUMS = [['Real risk-free rate', COL.whole, 'the reward for waiting'], ['Inflation premium', COL.task, 'protects buying power'],
+  ['Default risk premium', COL.bad, 'borrower may not pay'], ['Liquidity premium', COL.rat, 'hard to sell quickly'], ['Maturity premium', COL.real, 'longer lending, more risk']];
+
+/* ---------- beats: [id, title, run(m, D), { ask }?] ---------- */
+const BEATS = [
+  ['intro', 'Time value of money', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Quantitative Methods, Chapter 1', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Interest Rates, Present', { x: 800, y: 400, size: 76, weight: 600, anchor: 'middle' });
+    T(g, 'and Future Value', { x: 800, y: 490, size: 76, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'a dollar today is worth more than a dollar later', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['rate', 'What an interest rate is', (m) => {
+    const p = panel(0);
+    mline(p, ['$100'], 380, 400, m('chip1'), COL.task, 70);
+    text(p, 'today', 380, 470, m('chip1', .3), { size: 28, fill: COL.dim, anchor: 'middle' });
+    draw(path(p, 'M520 380H1010', { stroke: COL.good, 'stroke-width': 5 }, { d: 0 }), m('arrow'), .9);
+    draw(path(p, 'M980 352L1014 380L980 408', { stroke: COL.good, 'stroke-width': 5 }, { d: 0 }), m('arrow', .7), .4);
+    text(p, '+ $5  =  5% interest', 765, 335, m('arrow', .5), { size: 34, fill: COL.good, anchor: 'middle', weight: 600 });
+    mline(p, ['$105'], 1200, 400, m('arrow', .9), COL.task, 70);
+    text(p, 'in one year', 1200, 470, m('arrow', 1.2), { size: 28, fill: COL.dim, anchor: 'middle' });
+    show(pill(p, 'required rate of return', COL.whole, 380, 660, 0), m('l1'));
+    show(pill(p, 'discount rate', COL.bad, 800, 660, 0), m('l2'));
+    show(pill(p, 'opportunity cost', COL.nat, 1180, 660, 0), m('l3'));
+  }],
+
+  ['premiums', 'Layers of an interest rate', (m) => {
+    const p = panel(0), x0 = 420, w = 280, h = 92, base = 810;
+    text(p, 'Required interest rate  =  real risk-free rate  +  premiums', 800, 150, m('a'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    PREMIUMS.forEach(([name, c, note], i) => {
+      const g = G(p, { y: -40, o: 0 }), y = base - h * (i + 1);
+      mk('rect', { x: x0, y: y + 3, width: w, height: h - 6, rx: 8, fill: c, 'fill-opacity': .88 }, g);
+      T(g, name, { x: x0 + w + 40, y: y + h / 2 - 2, size: 32, fill: c, weight: 600 });
+      T(g, note, { x: x0 + w + 40, y: y + h / 2 + 34, size: 24, fill: COL.dim });
+      tw(g, { o: 1, y: 0 }, m('l' + (i + 1)), .6, out);
+    });
+    const br = path(p, `M${x0 - 24} ${base - 5}V${base - h * 5 + 5}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 });
+    draw(br, m('sum'), .7);
+    text(p, 'required rate', x0 - 44, base - h * 2.5 + 8, m('sum', .3), { size: 28, fill: COL.chalk, anchor: 'end', weight: 600 });
+  }],
+
+  ['fv', 'Future value', (m) => {
+    const p = panel(0), base = 740, k = .4, bx = n => 330 + n * 150;
+    timeline(p, 240, 1420, base, .1);
+    mline(p, ['FV = PV(1 + ', 'r', ')', E('N')], 800, 120, m('formula'), COL.chalk, 60);
+    const leg = (s, c, y) => { const g = G(p, { o: 0 }); mk('rect', { x: 250, y: y - 20, width: 24, height: 24, rx: 5, fill: c }, g); T(g, s, { x: 290, y, size: 26, fill: COL.dim }); return g; };
+    show(leg('Principal', COL.task, 215), m('bars')); const li = leg('Interest', COL.good, 255); show(li, m('bars', 1));
+    const labels = [];
+    FVS.forEach((v, n) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: bx(n) - 45, y: base - 1000 * k, width: 90, height: 1000 * k, fill: COL.task, 'fill-opacity': .88, rx: 4 }, g);
+      if (n) mk('rect', { x: bx(n) - 45, y: base - v * k, width: 90, height: (v - 1000) * k, fill: COL.good, rx: 4 }, g);
+      T(g, n ? 'Year ' + n : 'Today', { x: bx(n), y: base + 40, size: 26, fill: COL.dim, anchor: 'middle' });
+      labels.push(T(g, $$(v), { x: bx(n), y: base - v * k - 16, size: 26, fill: COL.chalk, weight: 600, anchor: 'middle' }));
+      tw(g, { o: 1, y: 0 }, m('bars', .3 + n * .55), .6, out);
+    });
+    pulse(li, m('interest'), 1.25); pulse(labels[5], m('year5'), 1.3);
+    const sy = base - 1250 * k;
+    draw(path(p, `M${bx(5) - 60} ${sy}H1180`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), m('simple'), .6);
+    text(p, 'Simple interest: $1,250.00', 1180, sy + 8, m('simple', .3), { size: 26, fill: COL.dim });
+    text(p, 'Compounding: $1,276.28', 1180, sy + 52, m('simple', 1.2), { size: 26, fill: COL.chalk, weight: 600 });
+    text(p, '+ $26.28 interest on interest', 1180, sy + 96, m('simple', 2.2), { size: 28, fill: COL.good, weight: 700 });
+  }],
+
+  ['q1', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-fv', prompt: ['You invest $1,000 at 10% a year, compounded annually. What is it worth after 2 years?'],
+    build: blanks([{ parts: ['FV = $', { box: '1210' }], why: '1,000 × 1.10 = 1,100 after year 1, and 1,100 × 1.10 = 1,210 after year 2.', hint: 'Multiply by 1.10 once for each year, not by 1.20.' }]),
+  }], done) }],
+
+  ['compounding', 'Compounding frequency', (m) => {
+    const p = panel(0), base = 720, k = 1400, bx = i => 300 + i * 200, floor = 5.9;
+    text(p, 'Stated annual rate: 6%', 800, 120, m('head'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    mline(p, ['EAR = (1 + ', F('r', 'm'), ')', E('m'), ' − 1'], 800, 235, m('formula'), COL.chalk, 60);
+    timeline(p, 200, 1440, base, .1);
+    const names = FREQ.map(([n]) => n).concat(['Continuous']);
+    EARS.forEach((v, i) => {
+      const g = G(p, { y: 30, o: 0 }), hh = (v - floor) * k, last = i === 5;
+      mk('rect', { x: bx(i) - 50, y: base - hh, width: 100, height: hh, fill: last ? COL.good : COL.whole, 'fill-opacity': .88, rx: 4 }, g);
+      T(g, names[i], { x: bx(i), y: base + 38, size: 24, fill: COL.dim, anchor: 'middle' });
+      T(g, v.toFixed(3) + '%', { x: bx(i), y: base - hh - 14, size: 26, fill: COL.chalk, weight: 600, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, last ? m('cont') : m('bars', .2 + i * .8), .6, out);
+    });
+    text(p, 'The scale starts at 5.9% so the small differences are visible.', 800, 800, m('note'), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['q2', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-ear', prompt: ['A bond pays a stated rate of 10%, compounded semi-annually. What is the effective annual rate, in percent?'],
+    build: blanks([{ parts: ['EAR = ', { box: '10.25' }, ' %'], why: 'Each half-year earns 5%: 1.05² = 1.1025, so the effective annual rate is 10.25%.', hint: 'Use 10% ÷ 2 = 5% per period, for 2 periods.' }]),
+  }], done) }],
+
+  ['pv', 'Present value', (m) => {
+    const p = panel(0), xs = [400, 800, 1200], y = 480;
+    timeline(p, 250, 1350, y, .1);
+    ['Today', 'Year 1', 'Year 2'].forEach((s, i) => { path(p, `M${xs[i]} ${y - 10}V${y + 10}`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, s, xs[i], y + 52, .3, { size: 28, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'discount rate: 10%', 800, 170, m('fv'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    mline(p, ['$1,210'], xs[2], y - 70, m('fv'), COL.task, 60);
+    [['M1160 340Q1000 245 840 340', '÷ 1.10', 1000, 'back1', 800, '$1,100'], ['M760 340Q600 245 440 340', '÷ 1.10', 600, 'back2', 400, '$1,000']].forEach(([d, s, lx, k, cx, v]) => {
+      draw(path(p, d, { stroke: COL.bad, 'stroke-width': 4 }, { d: 0 }), m(k), .7);
+      text(p, s, lx, 268, m(k, .3), { size: 32, fill: COL.bad, anchor: 'middle', weight: 600 });
+      mline(p, [v], cx, y - 70, m(k, .7), COL.task, 60);
+    });
+    mline(p, ['PV = FV(1 + ', 'r', ')', E('−N')], 800, 700, m('formula'), COL.chalk, 60);
+    text(p, 'A higher rate, or a longer wait, means a smaller present value.', 800, 790, m('note'), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['q3', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-pv', prompt: ['You will receive $1,331 in 3 years. The discount rate is 10%. What is it worth today?'],
+    build: blanks([{ parts: ['PV = $', { box: '1000' }], why: '1,331 ÷ 1.10 = 1,210, ÷ 1.10 = 1,100, ÷ 1.10 = 1,000.', hint: 'Divide by 1.10 three times (or by 1.331).' }]),
+  }], done) }],
+
+  ['annuity', 'Ordinary annuity', (m) => {
+    const p = panel(0), xs = [400, 700, 1000, 1300], y = 360, pv = [1000 / 1.1, 1000 / 1.21, 1000 / 1.331];
+    timeline(p, 300, 1400, y, .1);
+    ['Today', 'Year 1', 'Year 2', 'Year 3'].forEach((s, i) => { path(p, `M${xs[i]} ${y - 10}V${y + 10}`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, s, xs[i], y + 46, .3, { size: 26, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'End-of-year payments of $1,000, discount rate 10%', 800, 130, m('pay'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [1, 2, 3].forEach(i => {
+      mline(p, ['$1,000'], xs[i], y - 70, m('pay', 1.2 + i * .9), COL.task, 46);
+      const k = 'd' + i;
+      draw(path(p, `M${xs[i]} ${y + 80}V${y + 140}`, { stroke: COL.bad, 'stroke-width': 4 }, { d: 0 }), m(k), .5);
+      draw(path(p, `M${xs[i] - 14} ${y + 126}L${xs[i]} ${y + 142}L${xs[i] + 14} ${y + 126}`, { stroke: COL.bad, 'stroke-width': 4 }, { d: 0 }), m(k, .4), .3);
+      text(p, `÷ 1.10${['', '²', '³'][i - 1] ?? ''}`.replace('1.10²', '1.10²').replace('1.10³', '1.10³'), xs[i] + 22, y + 118, m(k, .2), { size: 24, fill: COL.bad });
+      mline(p, [$$(pv[i - 1])], xs[i], y + 210, m(k, .6), COL.task, 46);
+    });
+    draw(path(p, `M${xs[1] - 110} 640H${xs[3] + 110}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('sum'), .6);
+    text(p, 'Present value of the annuity', 800, 700, m('sum', .4), { size: 30, fill: COL.dim, anchor: 'middle' });
+    mline(p, ['$2,486.85'], 800, 780, m('sum', .7), COL.good, 72);
+  }],
+
+  ['perp', 'Perpetuity', (m) => {
+    const p = panel(0), x0 = 300, w = 1000, y = 400, h = 130, A = 100, r = .05, lim = A / r;
+    text(p, 'A payment of $100 every year, forever. Discount rate: 5%', 800, 150, m('intro'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const frame = path(p, `M${x0} ${y}H${x0 + w}V${y + h}H${x0}Z`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 });
+    draw(frame, m('intro', 1), .8);
+    const fill = mk('rect', { x: x0, y, width: 0, height: h, fill: COL.good, 'fill-opacity': .85 }, p);
+    const lab = T(p, '', { x: 800, y: 620, size: 40, fill: COL.chalk, weight: 600, anchor: 'middle' });
+    text(p, '$0', x0, y + h + 40, m('tank'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, '$2,000', x0 + w, y + h + 40, m('tank'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    prog(q => {
+      const n = Math.round(q * 100), v = lim * (1 - (1 + r) ** -n);
+      fill.setAttribute('width', w * v / lim);
+      lab.textContent = n ? `After ${n} payment${n > 1 ? 's' : ''}:  ${$$(v)}` : '';
+    }, m('tank', 1), 9, out);
+    mline(p, ['PV = ', F('A', 'r'), ' = ', F('100', '0.05'), ' = $2,000'], 800, 780, m('formula'), COL.chalk, 60);
+  }],
+
+  ['q4', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-perp', prompt: ['A perpetuity pays $50 every year. The discount rate is 5%. What is its present value?'],
+    build: blanks([{ parts: ['PV = $', { box: '1000' }], why: 'PV = A ÷ r = 50 ÷ 0.05 = 1,000.', hint: 'Divide the payment by the rate as a decimal, 0.05.' }]),
+  }], done) }],
+
+  ['solve', 'Solving for the rate', (m) => {
+    const p = panel(0), cx = 760;
+    mline(p, ['FV = PV(1 + ', 'r', ')', E('N')], cx, 190, m('l1'), COL.dim, 52);
+    mline(p, ['1,440 = 1,000(1 + ', 'r', ')', E('2')], cx, 300, m('l2'), COL.chalk, 56);
+    mline(p, ['1.44 = (1 + ', 'r', ')', E('2')], cx, 410, m('l3'), COL.chalk, 56);
+    mline(p, ['1.2 = 1 + ', 'r'], cx, 520, m('l4'), COL.chalk, 56);
+    mline(p, ['r = 0.2 = 20%'], cx, 630, m('l5'), COL.good, 64);
+    [['÷ 1,000', 410, 'l3'], ['square root', 520, 'l4'], ['− 1', 630, 'l5']].forEach(([s, y, k]) => text(p, s, 1180, y - 10, m(k, .2), { size: 30, fill: COL.bad, weight: 600 }));
+    mline(p, ['r = (', F('FV', 'PV'), ')', E('1/N'), ' − 1'], 800, 800, m('rule'), COL.task, 54);
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['An interest rate is a required return, a discount rate and an opportunity cost.', 'w1'],
+     ['Future value grows by (1 + r) each period: interest earns interest.', 'w2'],
+     ['More frequent compounding raises the effective annual rate.', 'w3'],
+     ['Present value discounts. A perpetuity is worth A ÷ r.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 120, o: 0 });
+      mk('circle', { cx: 140, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 140, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 200, size: 32, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+
+  ['final1', 'Chapter practice 1', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+    id: 'p-ear', prompt: ['A 12% stated annual rate is compounded monthly. Compared with 12%, the effective annual rate is:'],
+    build: choice([['Greater than 12%'], ['Exactly 12%'], ['Less than 12%']], 0, 'Interest earned in earlier months earns interest itself, so the effective rate is about 12.68%.',
+      [null, 'That is only true with annual compounding.', 'Compounding more often can only add interest, never remove it.']),
+  }, {
+    id: 'p-annuity', prompt: ['An ordinary annuity pays $100 at the end of each of the next 2 years. The discount rate is 10%. Its present value is (round to cents):'],
+    build: blanks([{ parts: ['PV = $', { box: '173.55' }], why: '100 ÷ 1.10 = 90.91 and 100 ÷ 1.21 = 82.64; together 173.55.', hint: 'Discount each payment separately, then add.' }]),
+  }, {
+    id: 'p-perp', prompt: ['A perpetuity has a present value of $2,000 at a 4% discount rate. What is its annual payment?'],
+    build: blanks([{ parts: ['A = $', { box: '80' }], why: 'A = PV × r = 2,000 × 0.04 = 80.', hint: 'Rearrange PV = A ÷ r.' }]),
+  }], done, 'Chapter practice') }],
+
+  ['final2', 'Chapter practice 2', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+    id: 'p-rate', prompt: ['$1,000 grows to $1,440 in 2 years with annual compounding. What is the annual rate, in percent?'],
+    build: blanks([{ parts: ['r = ', { box: '20' }, ' %'], why: '1,440 ÷ 1,000 = 1.44, and the square root is 1.2, so r = 20%.', hint: 'Take the 1/N power of FV ÷ PV, then subtract 1.' }]),
+  }, {
+    id: 'p-disc', prompt: ['The discount rate rises while a future cash flow stays the same. Its present value:'],
+    build: choice([['Rises'], ['Falls'], ['Stays the same']], 1, 'A higher rate divides the cash flow by a bigger number, so it is worth less today.',
+      ['Discounting more heavily cannot raise the value.', null, 'The rate is in the denominator, so it matters.']),
+  }], done, 'Chapter practice') }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
