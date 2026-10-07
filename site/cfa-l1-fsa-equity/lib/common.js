@@ -48,3 +48,12 @@ const introBeat = (kicker, l1, l2, sub) => ['intro', l1 + ' ' + l2, (m, D) => {
   tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
 }];
 const FINISH = ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }];
+/* greedy word wrap into lines of at most n characters */
+const lines = (str, n) => str.split(' ').reduce((ls, w) => { if (ls.length && (ls[ls.length - 1] + ' ' + w).length <= n) ls[ls.length - 1] += ' ' + w; else ls.push(w); return ls; }, []);
+/* a titled card with wrapped body lines; returns nothing, everything appears at t0 */
+const infoCard = (p, x, y, w, h, color, head, body, t0, { hs = 30, bs = 24, n = 20, hy = 70 } = {}) => {
+  show(box(p, x, y, w, h, color, t0, .1), 0);
+  lines(head, Math.floor(w / (hs * .56))).forEach((l, i) => text(p, l, x + w / 2, y + hy + i * (hs + 6), t0, { size: hs, fill: color, anchor: 'middle', weight: 700 }));
+  let yy = y + hy + (lines(head, Math.floor(w / (hs * .56))).length) * (hs + 6) + 24;
+  body.forEach(([s, c], k) => lines(s, n).forEach((l, i) => { text(p, l, x + w / 2, yy, t0 + .4 + k * .5, { size: bs, fill: c || COL.chalk, anchor: 'middle' }); yy += bs + 8; }));
+};

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introduction to Financial Statement Modeling</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 4, title: 'Introduction to Financial Statement Modeling', minutes: 9, language: 'en', next: '../ch05/' };
+
+/* floating-bar waterfall: items [name, sub, from, to, colour, markName, offset] */
+const waterfall = (p, m, items, { base, k, x0, step, w = 120 }) => items.forEach(([name, sub, from, to, c, mk_, off, label], i) => {
+  const g = G(p, { y: 30, o: 0 }), top = Math.max(from, to), cx = x0 + i * step;
+  mk('rect', { x: cx - w / 2, y: base - top * k, width: w, height: Math.abs(to - from) * k, rx: 4, fill: c, 'fill-opacity': .88 }, g);
+  T(g, name, { x: cx, y: base + 40, size: 24, fill: COL.dim, anchor: 'middle' });
+  if (sub) T(g, sub, { x: cx, y: base + 72, size: 21, fill: COL.dim, anchor: 'middle' });
+  T(g, label, { x: cx, y: base - top * k - 14, size: 28, weight: 700, anchor: 'middle' });
+  tw(g, { o: 1, y: 0 }, m(mk_, off), .6, out);
+});
+
+const BIASES = [['Overconfidence', 'too sure of your own accuracy', 'record and review forecasts; build scenarios', COL.bad],
+  ['Illusion of control', 'more data and complexity always help', 'model only the few variables that matter', COL.task],
+  ['Conservatism', 'clinging to old views', 'independent review; test guidance as a scenario', COL.int],
+  ['Representativeness', 'fitting new facts to old categories', 'start from the industry base rate', COL.irr],
+  ['Confirmation', 'seeking only supporting evidence', 'study competitors, substitutes, dissenters', COL.real]];
+
+const BEATS = [
+  introBeat('Financial Statement Analysis, Chapter 4', 'Introduction to', 'Financial Statement Modeling', 'a forecast built from the past, checked against yourself'),
+
+  ['model', 'A sales-based model', (m) => {
+    const p = panel(0), base = 700, k = .4, o = { base, k, x0: 190, step: 175, w: 115 };
+    axisLine(p, 90, 1500, base);
+    waterfall(p, m, [
+      ['Revenue', '+8%', 0, 1080, COL.whole, 'rev', 0, '1,080'],
+      ['Cost of sales', '60% of revenue', 432, 1080, COL.bad, 'cogs', 0, '−648'],
+      ['Gross profit', '', 0, 432, COL.irr, 'cogs', 1, '432'],
+      ['SG&A', '25% of revenue', 162, 432, COL.bad, 'sga', 0, '−270'],
+      ['EBIT', '', 0, 162, COL.task, 'sga', 1, '162'],
+      ['Interest', '', 132, 162, COL.bad, 'int', 0, '−30'],
+      ['Tax', '30%', 92.4, 132, COL.bad, 'int', 1.2, '−39.6'],
+      ['Net income', '', 0, 92.4, COL.good, 'int', 2.4, '92.4'],
+    ], o);
+    show(box(p, 1060, 130, 420, 130, COL.good, m('eps'), .1), 0);
+    text(p, 'EPS = 92.4 ÷ 100 shares', 1270, 185, m('eps'), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, '= 0.92', 1270, 235, m('eps', .4), { size: 38, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, '£ millions, illustrative', 130, 150, .2, { size: 26, fill: COL.dim });
+    text(p, 'Change an assumption and every line moves', 800, 860, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['revenue', 'Volume times price', (m) => {
+    const p = panel(0), base = 720, k = .17, w = 110;
+    axisLine(p, 120, 1480, base);
+    text(p, 'Revenue = volume × price, by product', 800, 130, .2, { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    leg(p, 'Base revenue', COL.whole, 400, 195, .5); leg(p, 'Volume effect', COL.good, 640, 195, .5); leg(p, 'Price effect', COL.task, 880, 195, .5);
+    const grp = (cx, name, before, vol, price, mk_, off, tops) => {
+      text(p, name, cx + 75, 275, m(mk_, off), { size: 30, anchor: 'middle', weight: 700 });
+      bar(p, cx, base, k, [[before, COL.whole]], m(mk_, off), { w, label: 'before', top: tops[0] });
+      bar(p, cx + 150, base, k, [[before, COL.whole], [vol, COL.good], [price, COL.task]], m(mk_, off + .8), { w, label: 'after', top: tops[1] });
+    };
+    grp(280, 'Product A: 100 × £10', 1000, 100, 33, 'a', 0, ['1,000', '1,133']);
+    text(p, 'volume +10%, price +3%', 355, 800, m('a', 1.5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    grp(700, 'Product B', 1000, 0, 50, 'b', 0, ['1,000', '1,050']);
+    text(p, 'volume flat, price +5%', 775, 800, m('b', 1.5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    grp(1120, 'Total', 2000, 100, 83, 'tot', 0, ['2,000', '2,183']);
+  }],
+
+  ['cashflow', 'From EBIT to free cash flow', (m) => {
+    const p = panel(0), base = 700, k = 2.8;
+    axisLine(p, 90, 1500, base);
+    waterfall(p, m, [
+      ['EBIT', '', 0, 162, COL.task, 'ebit', 0, '162'],
+      ['Tax at 30%', '', 113.4, 162, COL.bad, 'tax', 0, '−48.6'],
+      ['+ Depreciation', 'non-cash', 113.4, 163.4, COL.good, 'da', 0, '+50'],
+      ['− Capex', '', 93.4, 163.4, COL.bad, 'capex', 0, '−70'],
+      ['− Δ Working cap.', '', 73.4, 93.4, COL.bad, 'capex', 1.8, '−20'],
+      ['FCFF', 'free cash flow', 0, 73.4, COL.whole, 'fcff', 0, '73.4'],
+    ], { base, k, x0: 220, step: 230, w: 130 });
+    text(p, '£ millions, illustrative', 130, 150, .2, { size: 26, fill: COL.dim });
+    text(p, 'the cash a valuation model discounts', 800, 850, m('fcff', 1.5), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['scenarios', 'One forecast is one guess', (m) => {
+    const p = panel(0), base = 720, k = 1.5;
+    text(p, 'Free cash flow to the firm, 2024E (€ millions): a case study', 800, 130, .2, { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    axisLine(p, 250, 1350, base);
+    bar(p, 450, base, k, [[300, COL.whole]], m('base'), { label: 'Base case', top: '300', w: 150 });
+    bar(p, 800, base, k, [[129, COL.bad]], m('alt'), { label: 'Scenario 1', top: '129', w: 150 });
+    bar(p, 1150, base, k, [[105, COL.nat]], m('alt', 2), { label: 'Scenario 2', top: '105', w: 150 });
+    text(p, 'Sales growth, margin and working capital changed', 800, 825, m('alt', 1), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'the range is far wider than one number', 800, 875, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['biases', 'Five behavioral biases', (m) => {
+    const p = panel(0);
+    BIASES.forEach(([n, d, r, c], i) => {
+      const x = 100 + i * 295, t0 = m('b' + (i + 1));
+      show(box(p, x, 160, 270, 540, c, t0, .1), 0);
+      lines(n, 12).forEach((l, j) => text(p, l, x + 135, 225 + j * 36, t0, { size: 24, fill: c, anchor: 'middle', weight: 700 }));
+      let y = 340; lines(d, 21).forEach(l => { text(p, l, x + 135, y, t0 + .4, { size: 23, anchor: 'middle' }); y += 32; });
+      y += 40; text(p, 'Remedy', x + 135, y, t0 + 1, { size: 24, fill: COL.good, anchor: 'middle', weight: 700 }); y += 40;
+      lines(r, 21).forEach(l => { text(p, l, x + 135, y, t0 + 1.2, { size: 23, fill: COL.good, anchor: 'middle' }); y += 32; });
+    });
+  }],
+
+  ['forces', 'Competitive position', (m) => {
+    const p = panel(0), W = 340, H = 100, C = [800, 450];
+    const nd = (cx, cy, s, c, t0, big) => { const w = big ? 400 : W, h = big ? 130 : H; show(box(p, cx - w / 2, cy - h / 2, w, h, c, t0, .12), 0);
+      lines(s, big ? 20 : 22).forEach((l, i, a) => text(p, l, cx, cy + 10 - (a.length - 1) * 15 + i * 32, t0, { size: 26, anchor: 'middle', weight: 700, fill: c })); };
+    nd(C[0], C[1], 'Rivalry among existing competitors', COL.task, m('center'), true);
+    nd(800, 215, 'Threat of new entrants', COL.whole, m('four'));
+    nd(800, 685, 'Threat of substitutes', COL.irr, m('four', 1));
+    nd(260, 450, 'Bargaining power of suppliers', COL.nat, m('four', 2));
+    nd(1340, 450, 'Bargaining power of buyers', COL.real, m('four', 3));
+    arrowDown(p, 800, 270, 380, COL.dim, m('four', .5)); draw(path(p, 'M800 630V520', { stroke: COL.dim, 'stroke-width': 4 }, { d: 0 }), m('four', 1.5), .5); draw(path(p, 'M788 534L800 520L812 534', { stroke: COL.dim, 'stroke-width': 4 }, { d: 0 }), m('four', 1.8), .3);
+    arrowRight(p, 435, 595, 450, COL.dim, m('four', 2.5)); draw(path(p, 'M1165 450H1005', { stroke: COL.dim, 'stroke-width': 4 }, { d: 0 }), m('four', 3.5), .5); draw(path(p, 'M1019 438L1005 450L1019 462', { stroke: COL.dim, 'stroke-width': 4 }, { d: 0 }), m('four', 3.8), .3);
+    text(p, 'Weak forces: pricing power, protected margins', 800, 805, m('strong'), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'Strong forces: prices fall, costs rise, margins squeezed', 800, 855, m('weak'), { size: 30, fill: COL.bad, anchor: 'middle', weight: 700 });
+  }],
+
+  ['inflation', 'Pass-through of inflation', (m) => {
+    const p = panel(0), base = 700, k = 2.8, w = 100;
+    axisLine(p, 120, 1480, base);
+    leg(p, 'Price', COL.whole, 620, 150, .3); leg(p, 'Unit cost', COL.bad, 800, 150, .3);
+    const grp = (cx, name, price, cost, mk_, off, mcol) => {
+      bar(p, cx - 65, base, k, [[price, COL.whole]], m(mk_, off), { w, top: String(price) });
+      bar(p, cx + 65, base, k, [[cost, COL.bad]], m(mk_, off), { w, top: String(cost) });
+      text(p, name, cx, base + 44, m(mk_, off), { size: 26, fill: COL.dim, anchor: 'middle' });
+      text(p, 'margin ' + (price - cost), cx, base + 90, m(mk_, off + .8), { size: 32, fill: mcol, anchor: 'middle', weight: 700 });
+    };
+    grp(330, 'Today', 100, 60, 'base', 0, COL.chalk);
+    grp(800, 'Costs +10%: strong brand', 110, 66, 'strong', 0, COL.good);
+    grp(1270, 'Costs +10%: weak position', 104, 66, 'weak', 0, COL.bad);
+    text(p, 'passes on 10%', 800, 270, m('strong', .8), { size: 26, fill: COL.good, anchor: 'middle' });
+    text(p, 'passes on 4%', 1270, 270, m('weak', .8), { size: 26, fill: COL.bad, anchor: 'middle' });
+    text(p, 'Forecast sales inflation and cost inflation separately', 800, 850, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['horizon', 'Forecast horizon', (m) => {
+    const p = panel(0), X = t => 200 + t * 100, trend = t => 560 - t * 18, wave = t => trend(t) - 62 * Math.sin(t * .95 + .6);
+    ['Investment horizon', 'Industry cyclicality', 'Company events', 'Employer rules'].forEach((s, i) => show(pill(p, s, COL.whole, 330 + i * 313, 150, 0, 24), m('factors', i * .8)));
+    const pts = Array.from({ length: 49 }, (_, i) => i / 4);
+    draw(path(p, pts.map((t, i) => (i ? 'L' : 'M') + X(t) + ' ' + wave(t)).join(''), { stroke: COL.whole, 'stroke-width': 5 }, { d: 0 }), m('cycle'), 2.5);
+    draw(path(p, `M${X(0)} ${trend(0)}L${X(12)} ${trend(12)}`, { stroke: COL.good, 'stroke-width': 4, 'stroke-dasharray': '12 9' }, { d: 0 }), m('cycle', 2), 1.5);
+    leg(p, 'Revenue', COL.whole, 1000, 270, m('cycle', 2.5)); leg(p, 'Normalized (mid-cycle) level', COL.good, 1000, 315, m('cycle', 3.5));
+    axisLine(p, X(0), X(12), 700);
+    const br = (a, b, y, c, label, t0) => { draw(path(p, `M${X(a)} ${y - 14}V${y}H${X(b)}V${y - 14}`, { stroke: c, 'stroke-width': 4 }, { d: 0 }), t0, .8); text(p, label, (X(a) + X(b)) / 2, y + 44, t0 + .3, { size: 28, fill: c, anchor: 'middle', weight: 700 }); };
+    br(0, 6, 730, COL.whole, 'Explicit forecast period', m('cycle', 4));
+    br(6, 12, 730, COL.task, 'Terminal value: long-run growth or exit multiple', m('tv'));
+    text(p, 'Normalized earnings stop a peak or trough from lasting forever', 800, 860, m('note'), { size: 28, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['A sales-based model flows from revenue drivers to margins, earnings and free cash flow.', 'w1'],
+    ['Build scenarios: one forecast is one guess.', 'w2'],
+    ['Know your biases: overconfidence, illusion of control, conservatism, representativeness, confirmation.', 'w3'],
+    ['Competition and inflation shape prices and costs; extend the horizon to normalized earnings.', 'w4']], 27); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
