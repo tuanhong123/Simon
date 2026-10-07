@@ -46,7 +46,7 @@ const BEATS = [
     cardRow(p, m, [['Customers', ['who they are, and which groups matter most'], COL.whole, 'cust'], ['Sales channels', ['how the company reaches them'], COL.good, 'chan'],
       ['Pricing and revenue', ['how much it charges, and how it earns'], COL.task, 'price'], ['Resources and partners', ['suppliers and partners that deliver the product'], COL.real, 'res']], { x0: 90, step: 370, w: 340, y: 150, h: 300, hs: 32, bs: 26, n: 24 });
     text(p, 'Sources', 800, 560, m('src'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
-    ['Regulatory filings', 'Investor presentations', 'Company visits and websites', 'Industry data and analysts'].forEach((s, i) => show(pill(p, s, COL.good, [250, 560, 960, 1340][i], 650, 0, 24), m('src', .5 + i * .8)));
+    ['Regulatory filings', 'Investor presentations', 'Company visits and websites', 'Industry data and analysts'].forEach((s, i) => show(pill(p, s, COL.good, [230, 540, 940, 1360][i], 650, 0, 24), m('src', .5 + i * .8)));
   }],
 
   ['revenue', 'Bottom-up and top-down revenue', (m) => {
