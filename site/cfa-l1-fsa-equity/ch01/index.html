@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analysis of Income Taxes</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 1, title: 'Analysis of Income Taxes', minutes: 6, language: 'en' };
+
+/* ---------- chapter drawing helpers ---------- */
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const $$ = v => '£' + Math.round(v).toLocaleString('en-US');
+const box = (p, x, y, w, h, color, t0, fillOp = 0) => {
+  const g = G(p, { o: 0 });
+  mk('rect', { x, y, width: w, height: h, rx: 18, fill: color, 'fill-opacity': fillOp, stroke: color, 'stroke-width': 3 }, g);
+  show(g, t0); return g;
+};
+const arrowDown = (p, x, y0, y1, color, t0) => {
+  draw(path(p, `M${x} ${y0}V${y1}`, { stroke: color, 'stroke-width': 4 }, { d: 0 }), t0, .5);
+  draw(path(p, `M${x - 12} ${y1 - 14}L${x} ${y1}L${x + 12} ${y1 - 14}`, { stroke: color, 'stroke-width': 4 }, { d: 0 }), t0 + .3, .3);
+};
+const pill = (p, str, color, x, y, t0, size = 28) => {
+  const w = uiW(str, size) + 56, g = G(p, { x, y, o: 0 });
+  mk('rect', { x: -w / 2, y: -size, width: w, height: size * 2, rx: size, fill: 'none', stroke: color, 'stroke-width': 3 }, g);
+  T(g, str, { y: size * .35, size, fill: color, weight: 600, anchor: 'middle' });
+  show(g, t0); return g;
+};
+
+/* ---------- data (defined above BEATS) ---------- */
+const COST = 20000, BOOK_DEP = COST / 10, TAX_DEP = COST / 7, RATE = .30;
+const carrying = n => COST - BOOK_DEP * n;
+const taxBase = n => Math.max(0, COST - TAX_DEP * n);
+const PBT = [4700, 15280, 26700];                        // accounting profit, years 1–3
+const TI = [3843, 14423, 25843];                         // taxable income
+const PAYABLE = [1153, 4327, 7753];                      // 30% × taxable income
+const DEF_CHG = 257;                                     // change in deferred tax liability each year
+const EXPENSE = PAYABLE.map(v => v + DEF_CHG);           // 1,410 / 4,584 / 8,010 = 30% × PBT
+const ABC = [0, 1, 2, 3].map(n => { const a = 100, b = 100 * 1.15 ** n, tax = .4 * a + .1 * b; return { a, b, tax, etr: tax / (a + b) * 100 }; });
+const RECON = [['Statutory rate', 21, null], ['Lower foreign rates', -2.0, COL.good], ['Tax credits', -1.5, COL.good],
+  ['Non-deductible expenses', .8, COL.bad], ['Prior-year adjustments', -.3, COL.good], ['Effective rate', 18, null]];
+
+/* ---------- beats: [id, title, run(m, D), { ask }?] ---------- */
+const BEATS = [
+  ['intro', 'Two sets of books', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Financial Statement Analysis, Chapter 1', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Analysis of', { x: 800, y: 400, size: 76, weight: 600, anchor: 'middle' });
+    T(g, 'Income Taxes', { x: 800, y: 490, size: 76, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'two rulebooks, two profits', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['ledgers', 'Accounting profit vs taxable income', (m) => {
+    const p = panel(0);
+    text(p, 'One company, two rulebooks', 800, 130, .2, { size: 38, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const side = (x, color, head, l1, l2a, l2b, t0) => {
+      show(box(p, x, 200, 600, 420, color, t0), 0);
+      text(p, head, x + 300, 260, t0, { size: 34, fill: color, anchor: 'middle', weight: 700 });
+      text(p, l1, x + 300, 360, t0 + .3, { size: 40, anchor: 'middle', weight: 600 });
+      arrowDown(p, x + 300, 385, 450, color, t0 + .6);
+      text(p, l2a, x + 300, 510, t0 + 1, { size: 40, fill: color, anchor: 'middle', weight: 700 });
+      text(p, l2b, x + 300, 560, t0 + 1.2, { size: 26, fill: COL.dim, anchor: 'middle' });
+    };
+    side(130, COL.whole, 'Accounting standards', 'Accounting profit', 'Income tax expense', 'on the income statement', m('acc'));
+    side(870, COL.task, 'Tax law', 'Taxable income', 'Income tax payable', 'owed to the tax authority', m('tax'));
+    text(p, '≠', 800, 420, m('gap'), { size: 90, fill: COL.bad, anchor: 'middle', weight: 700 });
+    show(pill(p, 'the gap becomes a deferred tax asset or liability', COL.bad, 800, 730, 0), m('gap', .8));
+  }],
+
+  ['gap', 'Temporary and permanent differences', (m) => {
+    const p = panel(0), X = n => 200 + n * 120, Y = v => 700 - v * .027, ns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    text(p, 'Equipment bought for £20,000', 800, 100, .2, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, `M${X(0)} ${Y(0)}H${X(10) + 40}`, { stroke: COL.chalk, 'stroke-width': 3 });
+    ns.forEach(n => { text(p, String(n), X(n), 742, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'Year', X(10) + 40, 780, .3, { size: 24, fill: COL.dim, anchor: 'end' });
+    text(p, '£20,000', X(0) - 20, Y(20000) + 8, .3, { size: 24, fill: COL.dim, anchor: 'end' });
+    const gp = G(p, { o: 0 });
+    mk('path', { d: ns.map((n, i) => (i ? 'L' : 'M') + X(n) + ' ' + Y(carrying(n))).join('') + [10, 7, 0].map(n => 'L' + X(n) + ' ' + Y(taxBase(n))).join('') + 'Z', fill: COL.bad, 'fill-opacity': .32 }, gp);
+    show(gp, m('open'));
+    draw(path(p, `M${X(0)} ${Y(COST)}L${X(10)} ${Y(0)}`, { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('book'), 1.6);
+    draw(path(p, `M${X(0)} ${Y(COST)}L${X(7)} ${Y(0)}H${X(10)}`, { stroke: COL.task, 'stroke-width': 6 }, { d: 0 }), m('taxl'), 1.6);
+    const leg = (s, c, y, t0) => { const g = G(p, { o: 0 }); mk('rect', { x: 880, y: y - 20, width: 40, height: 8, rx: 4, fill: c }, g); T(g, s, { x: 940, y, size: 26, fill: c, weight: 600 }); show(g, t0); };
+    leg('Carrying amount: 10-year straight line', COL.whole, 190, m('book'));
+    leg('Tax base: 7-year schedule', COL.task, 236, m('taxl'));
+    const br = path(p, `M${X(7)} ${Y(6000)}V${Y(0) - 4}`, { stroke: COL.bad, 'stroke-width': 4 }, { d: 0 });
+    draw(br, m('open', 2.2), .6);
+    text(p, 'peak gap £6,000', X(7) + 20, Y(6000) - 14, m('open', 2.6), { size: 28, fill: COL.bad, weight: 700 });
+    text(p, 'temporary: the gap closes', X(8.6), Y(9500), m('close'), { size: 28, fill: COL.good, anchor: 'middle', weight: 700 });
+    show(pill(p, 'permanent: never closes, so no deferred tax', COL.nat, 800, 840, 0, 26), m('perm'));
+  }],
+
+  ['reston', 'Tax payable plus deferred tax', (m) => {
+    const p = panel(0), base = 770, k = .052, cx = [960, 1180, 1400], bw = 130;
+    text(p, 'Tax rate 30%', 120, 130, .2, { size: 32, fill: COL.dim, weight: 600 });
+    const row = (label, val, y, c, t0, size = 34, w = 600) => { text(p, label, 120, y, t0, { size, fill: c, weight: w }); text(p, val, 700, y, t0, { size, fill: c, anchor: 'end', weight: 700 }); };
+    row('Accounting profit', '£4,700', 230, COL.chalk, m('y1'));
+    row('Taxable income', '£3,843', 295, COL.task, m('y1', 2.4));
+    row('Tax payable: 30% × 3,843', '£1,153', 410, COL.task, m('pay'), 30);
+    row('Δ Deferred tax liability', '+ £257', 480, COL.whole, m('def'));
+    draw(path(p, 'M120 520H700', { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('exp'), .5);
+    row('Income tax expense', '£1,410', 575, COL.chalk, m('exp', .3), 38, 700);
+    text(p, '= 30% × 4,700', 700, 625, m('exp', 1.4), { size: 26, fill: COL.dim, anchor: 'end' });
+    const bar = (i, t0) => {
+      const g = G(p, { y: 30, o: 0 }), hp = PAYABLE[i] * k, hd = DEF_CHG * k;
+      mk('rect', { x: cx[i] - bw / 2, y: base - hp, width: bw, height: hp, fill: COL.task, 'fill-opacity': .88, rx: 4 }, g);
+      mk('rect', { x: cx[i] - bw / 2, y: base - hp - hd, width: bw, height: hd, fill: COL.whole, rx: 4 }, g);
+      T(g, 'Year ' + (i + 1), { x: cx[i], y: base + 42, size: 26, fill: COL.dim, anchor: 'middle' });
+      T(g, '£' + EXPENSE[i].toLocaleString('en-US'), { x: cx[i], y: base - hp - hd - 16, size: 28, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, t0, .6, out); return g;
+    };
+    path(p, `M${cx[0] - 100} ${base}H${cx[2] + 100}`, { stroke: COL.chalk, 'stroke-width': 3 });
+    const leg = (s, c, y, t0) => { const g = G(p, { o: 0 }); mk('rect', { x: 820, y: y - 20, width: 24, height: 24, rx: 5, fill: c }, g); T(g, s, { x: 860, y, size: 26, fill: COL.dim }); show(g, t0); };
+    leg('Tax payable', COL.task, 190, m('pay')); leg('Deferred tax', COL.whole, 230, m('def'));
+    bar(0, m('pay'));
+    bar(1, m('all')); bar(2, m('all', 1));
+    text(p, 'Deferred tax liability balance:  £257  →  £514  →  £771', 1080, 862, m('all', 2.4), { size: 26, fill: COL.whole, anchor: 'middle', weight: 600 });
+  }],
+
+  ['rules', 'Carrying amount vs tax base', (m) => {
+    const p = panel(0), c1 = 860, c2 = 1260, cw = 380;
+    text(p, 'Carrying > tax base', c1, 220, .3, { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'Carrying < tax base', c2, 220, .3, { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const cells = [], rowOf = (label, y, a, b, t0) => {
+      text(p, label, 380, y + 12, t0, { size: 44, anchor: 'middle', weight: 700 });
+      [[c1, a], [c2, b]].forEach(([cx, v]) => {
+        const col = v === 'DTL' ? COL.bad : COL.good, g = G(p, { o: 0 });
+        mk('rect', { x: cx - cw / 2, y: y - 60, width: cw, height: 120, rx: 18, fill: col, 'fill-opacity': .16, stroke: col, 'stroke-width': 3 }, g);
+        T(g, v === 'DTL' ? 'Deferred tax liability' : 'Deferred tax asset', { x: cx, y: y + 12, size: 32, fill: col, weight: 700, anchor: 'middle' });
+        show(g, t0 + (cx === c1 ? 0 : .5)); cells.push(g);
+      });
+    };
+    rowOf('Asset', 330, 'DTL', 'DTA', m('asset'));
+    rowOf('Liability', 510, 'DTA', 'DTL', m('liab'));
+    text(p, 'Deferred tax liability: more tax to pay later', 800, 680, m('why'), { size: 30, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'Deferred tax asset: tax paid early, less to pay later', 800, 730, m('why', 1.6), { size: 30, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'Reston equipment: carrying amount > tax base  →  liability ✓', 800, 820, m('ex'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+    pulse(cells[0], m('ex'), 1.1);
+  }],
+
+  ['change', 'Rate changes and valuation allowance', (m) => {
+    const p = panel(0), base = 690, k = .7;
+    text(p, 'Tax rate cut: 35% → 21%', 400, 150, m('cut'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'on a £1,000 temporary difference', 400, 190, m('cut'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    [[250, 350, '35%'], [550, 210, '21%']].forEach(([x, v, r], i) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: x - 70, y: base - v * k, width: 140, height: v * k, fill: COL.bad, 'fill-opacity': .88, rx: 4 }, g);
+      T(g, '£' + v, { x, y: base - v * k - 16, size: 30, weight: 700, anchor: 'middle' });
+      T(g, r, { x, y: base + 42, size: 28, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('cut', .8 + i * 1.2), .6, out);
+    });
+    text(p, 'liability value shrinks', 400, 770, m('cut', 3), { size: 26, fill: COL.bad, anchor: 'middle' });
+    text(p, 'Valuation allowance (US GAAP)', 1130, 150, m('va'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'illustrative figures', 1130, 190, m('va'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    const kk = 3.2, gx = 1130 - 90;
+    const g1 = G(p, { y: 30, o: 0 });
+    mk('rect', { x: gx, y: base - 100 * kk, width: 180, height: 100 * kk, fill: COL.good, 'fill-opacity': .88, rx: 4 }, g1);
+    T(g1, 'Gross DTA 100', { x: 1130, y: base - 100 * kk - 16, size: 28, weight: 700, anchor: 'middle' });
+    tw(g1, { o: 1, y: 0 }, m('va', .6), .6, out);
+    const g2 = G(p, { o: 0 });
+    mk('rect', { x: gx, y: base - 100 * kk, width: 180, height: 40 * kk, fill: COL.bad, 'fill-opacity': .75, rx: 4 }, g2);
+    T(g2, 'allowance 40', { x: 1130, y: base - 100 * kk + 40 * kk / 2 + 9, size: 26, weight: 700, anchor: 'middle', fill: COL.board });
+    show(g2, m('va', 4.2));
+    text(p, 'Net DTA 60', 1130, base + 42, m('va', 5.4), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'Allowance changes move reported tax expense and earnings', 800, 850, m('judg'), { size: 28, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['analyst', 'Treating deferred tax liabilities', (m) => {
+    const p = panel(0);
+    text(p, 'A deferred tax liability: debt, equity, or neither?', 800, 150, .2, { size: 38, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [[130, COL.bad, 'Treat as debt', ['Expected to reverse', 'Cash tax will be paid'], 'debt'],
+     [590, COL.good, 'Treat as equity', ['Never expected to reverse', 'e.g. continuing losses,', 'a change in tax law'], 'eq'],
+     [1050, COL.dim, 'Exclude from both', ['Amount and timing', 'of payment are', 'uncertain'], 'none']].forEach(([x, c, head, lines, mk_]) => {
+      const t0 = m(mk_);
+      show(box(p, x, 250, 420, 400, c, t0), 0);
+      text(p, head, x + 210, 330, t0, { size: 36, fill: c, anchor: 'middle', weight: 700 });
+      lines.forEach((s, i) => text(p, s, x + 210, 430 + i * 50, t0 + .5 + i * .3, { size: 28, anchor: 'middle' }));
+    });
+  }],
+
+  ['rates', 'Three tax rates', (m) => {
+    const p = panel(0), k = 16, x0 = 820;
+    const row = (y, name, def, c, t0) => { text(p, name, 120, y, t0, { size: 40, fill: c, weight: 700 }); text(p, def, 120, y + 42, t0 + .3, { size: 26, fill: COL.dim }); };
+    row(270, 'Statutory rate', 'legal rate in the home country', COL.whole, m('stat'));
+    row(430, 'Effective rate', 'income tax expense ÷ pre-tax income', COL.chalk, m('eff'));
+    row(590, 'Cash tax rate', 'tax paid in cash ÷ pre-tax income', COL.task, m('cash'));
+    text(p, 'Reston, year 1', x0, 160, m('ex'), { size: 28, fill: COL.dim, weight: 600 });
+    [[270, 30, '30.0%', COL.whole, 0], [430, 30, '30.0%', COL.chalk, 1.6], [590, 24.53, '24.5%', COL.task, 3.6]].forEach(([y, v, lab, c, dt]) => {
+      const g = G(p, { x: -20, o: 0 });
+      mk('rect', { x: x0, y: y - 34, width: v * k, height: 56, rx: 6, fill: c, 'fill-opacity': .88 }, g);
+      T(g, lab, { x: x0 + v * k + 16, y: y + 8, size: 32, weight: 700 });
+      tw(g, { o: 1, x: 0 }, m('ex', dt), .6, out);
+    });
+    text(p, 'Effective rate: forecast earnings      Cash rate: forecast cash flow', 800, 800, m('use'), { size: 30, fill: COL.good, anchor: 'middle', weight: 600 });
+  }],
+
+  ['blend', 'A blended effective rate', (m) => {
+    const p = panel(0), base = 690, k = 1.5, cx = [360, 640, 920, 1200], bw = 150;
+    text(p, 'ABC: Country A taxed at 40%,  Country B taxed at 10%', 800, 130, m('setup'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, `M${cx[0] - 110} ${base}H${cx[3] + 110}`, { stroke: COL.chalk, 'stroke-width': 3 });
+    const leg = (s, c, y, t0) => { const g = G(p, { o: 0 }); mk('rect', { x: 1340, y: y - 20, width: 24, height: 24, rx: 5, fill: c }, g); T(g, s, { x: 1376, y, size: 24, fill: COL.dim }); show(g, t0); };
+    leg('Profit A', COL.nat, 300, m('setup')); leg('Profit B', COL.whole, 340, m('setup'));
+    ABC.forEach((d, i) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: cx[i] - bw / 2, y: base - d.a * k, width: bw, height: d.a * k, fill: COL.nat, 'fill-opacity': .88, rx: 4 }, g);
+      mk('rect', { x: cx[i] - bw / 2, y: base - (d.a + d.b) * k, width: bw, height: d.b * k, fill: COL.whole, 'fill-opacity': .88, rx: 4 }, g);
+      T(g, 'Year ' + i, { x: cx[i], y: base + 42, size: 26, fill: COL.dim, anchor: 'middle' });
+      T(g, 'tax ' + d.tax.toFixed(1), { x: cx[i], y: base + 82, size: 24, fill: COL.dim, anchor: 'middle' });
+      T(g, d.etr.toFixed(1) + '%', { x: cx[i], y: base - (d.a + d.b) * k - 20, size: 34, fill: COL.good, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, i ? m('grow', .2 + (i - 1) * 1.6) : m('setup', 1.4), .6, out);
+    });
+    text(p, 'Country B profit grows 15% a year; A stays at 100', 800, 820, m('grow'), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Effective rate = weighted average, not the simple average', 800, 870, m('note'), { size: 28, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['recon', 'Rate reconciliation', (m) => {
+    const p = panel(0), base = 690, k = 20, bw = 130, X = i => 280 + i * 215;
+    text(p, 'Statutory rate → effective rate', 800, 130, .2, { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'illustrative figures', 1480, 130, .2, { size: 24, fill: COL.dim, anchor: 'end' });
+    path(p, `M${X(0) - 100} ${base}H${X(5) + 100}`, { stroke: COL.chalk, 'stroke-width': 3 });
+    let level = 0;
+    RECON.forEach(([name, v, c], i) => {
+      const total = c === null, from = total ? 0 : level, to = total ? v : level + v;
+      if (!total) level = to; else level = v;
+      const top = Math.max(from, to), g = G(p, { y: 30, o: 0 }), col = c || (i ? COL.task : COL.whole);
+      mk('rect', { x: X(i) - bw / 2, y: base - top * k, width: bw, height: Math.abs(to - from) * k, fill: col, 'fill-opacity': .88, rx: 4 }, g);
+      T(g, total ? v.toFixed(1) + '%' : (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1), { x: X(i), y: base - top * k - 16, size: 32, weight: 700, anchor: 'middle' });
+      name.split(' ').reduce((ls, w) => (ls.length && (ls[ls.length - 1] + ' ' + w).length < 15 ? (ls[ls.length - 1] += ' ' + w, ls) : (ls.push(w), ls)), []).forEach((s, j) =>
+        T(g, s, { x: X(i), y: base + 40 + j * 28, size: 24, fill: COL.dim, anchor: 'middle' }));
+      tw(g, { o: 1, y: 0 }, i === 0 ? m('start') : i === 5 ? m('end') : m('items', (i - 1) * 1.7), .6, out);
+    });
+    text(p, 'Which items repeat, and which are one-time?', 800, 860, m('read'), { size: 30, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Accounting profit drives tax expense; taxable income drives tax payable.', 'w1'],
+     ['Temporary differences reverse and create deferred tax; permanent ones do not.', 'w2'],
+     ['Income tax expense = income tax payable + change in deferred tax.', 'w3'],
+     ['Compare statutory, effective and cash tax rates; read the rate reconciliation.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 120, o: 0 });
+      mk('circle', { cx: 120, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 120, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 180, size: 30, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

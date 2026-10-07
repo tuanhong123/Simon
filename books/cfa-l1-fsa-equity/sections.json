@@ -1,0 +1,92 @@
+[
+{
+"folder": "00_front",
+"title": "Front matter",
+"start": 1,
+"end": 14
+},
+{
+"folder": "ch01",
+"title": "Analysis of Income Taxes",
+"start": 15,
+"end": 50,
+"unit": "Financial Statement Analysis"
+},
+{
+"folder": "ch02",
+"title": "Financial Reporting Quality",
+"start": 51,
+"end": 120,
+"unit": "Financial Statement Analysis"
+},
+{
+"folder": "ch03",
+"title": "Financial Analysis Techniques",
+"start": 121,
+"end": 186,
+"unit": "Financial Statement Analysis"
+},
+{
+"folder": "ch04",
+"title": "Introduction to Financial Statement Modeling",
+"start": 187,
+"end": 244,
+"unit": "Financial Statement Analysis"
+},
+{
+"folder": "ch05",
+"title": "Market Organization and Structure",
+"start": 245,
+"end": 324,
+"unit": "Equity Investments"
+},
+{
+"folder": "ch06",
+"title": "Security Market Indexes",
+"start": 325,
+"end": 366,
+"unit": "Equity Investments"
+},
+{
+"folder": "ch07",
+"title": "Market Efficiency",
+"start": 367,
+"end": 402,
+"unit": "Equity Investments"
+},
+{
+"folder": "ch08",
+"title": "Overview of Equity Securities",
+"start": 403,
+"end": 440,
+"unit": "Equity Investments"
+},
+{
+"folder": "ch09",
+"title": "Company Analysis: Past and Present",
+"start": 441,
+"end": 488,
+"unit": "Equity Investments"
+},
+{
+"folder": "ch10",
+"title": "Industry and Competitive Analysis",
+"start": 489,
+"end": 528,
+"unit": "Equity Investments"
+},
+{
+"folder": "ch11",
+"title": "Company Analysis: Forecasting",
+"start": 529,
+"end": 578,
+"unit": "Equity Investments"
+},
+{
+"folder": "ch12",
+"title": "Equity Valuation: Concepts and Basic Tools",
+"start": 579,
+"end": 632,
+"unit": "Equity Investments"
+}
+]
