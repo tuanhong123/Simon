@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Analysis for Corporate Issuers</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 16, title: 'Credit Analysis for Corporate Issuers', minutes: 9, language: 'en' };
+
+const item = (p, x, y, w, name, sub, c, t, h = 100) => { const g = card1(p, x, y, w, h, c); T(g, name, { x: -w / 2 + 28, y: -4, size: 34, fill: c, weight: 700 }); T(g, sub, { x: -w / 2 + 28, y: 34, size: 25, fill: COL.dim }); show(g, t); return g; };
+
+const BEATS = [
+  ['intro', 'Corporate credit analysis', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 16', { x: 800, y: 290, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Credit Analysis for', 'Corporate Issuers'].forEach((s, i) => T(g, s, { x: 800, y: 400 + i * 100, size: 84, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'business, ratios and the ranking of debt', 800, 650, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['qual', 'Business model and tenor', (m) => {
+    const p = panel(0), x0 = 520, y = 330;
+    show(pill(p, 'stable cash flows · low business risk · little competition → more capacity for debt', COL.good, 800, 110, 0, 28), m('bm'));
+    text(p, 'BRWA: shifting from combustion to electric vehicles over a decade', 800, 190, m('ex'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${x0} ${y}H1400`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('ex'), .8);
+    [['150-day commercial paper', 0, 40, COL.good, 'cp', 'little exposure: watch liquidity'], ['5-year notes', 1, 160, COL.task, 'five', 'growing competition and execution risk'], ['15-year notes', 2, 330, COL.bad, 'fifteen', 'later payments depend on the strategy']].forEach(([n, i, w, c, k, s]) => {
+      const yy = 420 + i * 110, g = G(p, { o: 0 }); T(g, n, { x: x0 - 20, y: yy + 10, size: 30, fill: c, weight: 700, anchor: 'end' });
+      const r = mk('rect', { x: x0, y: yy - 28, width: 0, height: 56, rx: 6, fill: c, 'fill-opacity': .88 }, g); T(g, s, { x: x0 + w * 1.5 + 20, y: yy + 10, size: 26, fill: COL.dim });
+      show(g, m(k)); tw(r, { a_width: w * 1.5 }, m(k, .3), .8);
+    });
+    text(p, 'exposure to the business-model risk', 1400, 380, m('cp'), { size: 24, fill: COL.faint, anchor: 'end' });
+    show(pill(p, 'governance: IG few covenants · HY restrictions on dividends and extra debt', COL.rat, 800, 800, 0, 28), m('gov'));
+  }],
+
+  ['collateral', 'Collateral', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 420, 280, 640, 280, COL.good, 'Tangible (hard) collateral', ['property, plant, equipment', 'inventory, cash, marketable securities', 'lenders prefer this'], 40), m('tan'));
+    show(infoCard(p, 1180, 280, 640, 280, COL.bad, 'Intangible (soft) collateral', ['patents, intellectual property', 'goodwill'], 40), m('tan', 3));
+    show(pill(p, 'collateral matters most when the probability of default is high', COL.rat, 800, 520, 0, 32), m('value'));
+    const g = card1(p, 800, 700, 1200, 190, COL.task); T(g, 'Cruise line, 2020: operations suspended', { y: -45, size: 30, fill: COL.dim, anchor: 'middle' }); T(g, '$3.3 billion of secured notes, backed by 28 of its ships', { y: 15, size: 40, fill: COL.task, weight: 700, anchor: 'middle' }); T(g, 'pledged assets: cheaper, more available financing', { y: 65, size: 28, fill: COL.good, anchor: 'middle' });
+    show(g, m('ex'));
+  }],
+
+  ['quant', 'Quantitative factors', (m) => {
+    const p = panel(0);
+    show(pill(p, 'top-down: from the economy  ·  bottom-up: from revenue drivers', COL.dim, 800, 120, 0, 30), m('a'));
+    [[420, 300, COL.good, 'Profitability', 'strong, stable operating earnings', 'prof'], [1180, 300, COL.bad, 'Leverage', 'debt vs earnings, cash flow or assets', 'lev'], [420, 540, COL.whole, 'Coverage', 'earnings or cash flow vs interest', 'cov'], [1180, 540, COL.task, 'Liquidity', 'cash and credit lines available now', 'liq']]
+      .forEach(([x, y, c, t, s, k]) => show(infoCard(p, x, y, 640, 200, c, t, [s], 42), m(k)));
+    text(p, 'solvent but illiquid: can still default', 800, 740, m('liq', 3), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['ratios', 'Financial ratios', (m) => {
+    const p = panel(0), rows = [['EBIT margin', 'EBIT ÷ revenue', '8%', '12%', 'm', 'higher = better'], ['EBIT ÷ interest', 'coverage', '3.0×', '4.0×', 'c', 'higher = better'], ['Debt ÷ EBITDA', 'leverage', '3.5×', '2.5×', 'l', 'higher = riskier'], ['RCF ÷ net debt', 'cash-flow leverage', '15%', '22.5%', 'r', 'higher = better']];
+    text(p, 'Company X', 1120, 200, m('ex', -.5), { size: 32, fill: COL.bad, anchor: 'middle', weight: 700 }); text(p, 'Company Y', 1400, 200, m('ex', -.5), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'illustrative values', 1500, 150, m('m'), { size: 22, fill: COL.faint, anchor: 'end' });
+    rows.forEach(([n, s, x, y, k, note], i) => {
+      const yy = 300 + i * 120, g = G(p, { o: 0 }); T(g, n, { x: 120, y: yy, size: 38, fill: COL.chalk, weight: 700 }); T(g, s + ' · ' + note, { x: 120, y: yy + 38, size: 26, fill: COL.dim });
+      show(g, m(k));
+      text(p, x, 1120, yy + 12, m('ex', .3 + i * .3), { size: 44, fill: COL.bad, anchor: 'middle', weight: 700 }); text(p, y, 1400, yy + 12, m('ex', .3 + i * .3), { size: 44, fill: COL.good, anchor: 'middle', weight: 700 });
+    });
+    show(pill(p, 'Y is the lower credit risk on every measure', COL.rat, 800, 830, 0, 34), m('ex', 3));
+  }],
+
+  ['seniority', 'Seniority and priority of claims', (m) => {
+    const p = panel(0), x0 = 200;
+    [['First lien · second lien', 'secured: claim on specific assets', COL.good, 'sec', 0, 'lower LGD'], ['Senior unsecured', 'most common corporate bond', COL.whole, 'uns', 1, ''], ['Subordinated · junior sub.', 'often little or no recovery', COL.bad, 'sub', 2, 'higher LGD']].forEach(([n, s, c, k, i, tag]) => {
+      const y = 200 + i * 150; item(p, 640, y, 880, n, s, c, m(k), 110);
+      if (tag) text(p, tag, 1130, y + 12, m(k, .5), { size: 32, fill: c, weight: 700 });
+    });
+    draw(path(p, 'M1330 160V540', { stroke: COL.chalk, 'stroke-width': 4 }, { d: 0 }), m('sec'), 1); draw(path(p, 'M1300 510L1330 545L1360 510', { stroke: COL.chalk, 'stroke-width': 4 }, { d: 0 }), m('sec', 1), .4);
+    text(p, 'paid first', 1400, 190, m('sec'), { size: 28, fill: COL.good, weight: 700 }); text(p, 'paid last', 1400, 560, m('sub'), { size: 28, fill: COL.bad, weight: 700 });
+    show(pill(p, 'collateral shortfall becomes an unsecured claim', COL.rat, 640, 620, 0, 28), m('gap'));
+    show(pill(p, 'same rank = pari passu, whatever the maturity', COL.whole, 640, 700, 0, 28), m('pari'));
+    text(p, '2019 recoveries: senior secured bonds ≈ 46% · senior unsecured ≈ 31%', 800, 810, m('rec'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['issue', 'Issuer vs issue ratings', (m) => {
+    const p = panel(0);
+    const a = card1(p, 800, 220, 700, 150, COL.whole); T(a, 'Issuer rating: BB', { y: 5, size: 56, fill: COL.whole, weight: 700, anchor: 'middle' }); T(a, 'overall creditworthiness · senior unsecured', { y: 52, size: 26, fill: COL.dim, anchor: 'middle' }); show(a, m('iss'));
+    [[330, 'Senior secured', 'BB+', COL.good, '+1 notch'], [800, 'Senior unsecured', 'BB', COL.whole, 'same as issuer'], [1270, 'Subordinated', 'B', COL.bad, '−2 notches']].forEach(([x, n, r, c, s], i) => {
+      const g = card1(p, x, 560, 400, 230, c); T(g, 'issue rating', { y: -75, size: 24, fill: COL.dim, anchor: 'middle' }); T(g, n, { y: -30, size: 32, fill: c, weight: 600, anchor: 'middle' }); T(g, r, { y: 50, size: 72, fill: c, weight: 700, anchor: 'middle' }); T(g, s, { y: 95, size: 26, fill: COL.dim, anchor: 'middle' });
+      show(g, m(i === 1 ? 'isu' : 'not', i === 0 ? 0 : i === 2 ? 3 : 0)); draw(path(p, `M800 295L${x} 445`, { stroke: COL.dim, 'stroke-width': 3 }, { d: 0 }), m(i === 1 ? 'isu' : 'not'), .6);
+    });
+    text(p, 'illustrative notching', 1500, 790, m('ex'), { size: 22, fill: COL.faint, anchor: 'end' });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Business model and industry shape capacity for debt.', 'w1'], ['Profitability, leverage, coverage, liquidity drive default risk.', 'w2'],
+     ['Seniority and collateral drive loss given default.', 'w3'], ['Issue ratings are notched from the issuer rating.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 33, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
