@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Term Structure of Interest Rates: Spot, Par, and Forward Curves</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 9, title: 'The Term Structure of Interest Rates: Spot, Par, and Forward Curves', minutes: 9, language: 'en' };
+
+const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });
+const SP = Array.from({ length: 10 }, (_, i) => 2.0 + 2.2 * (1 - Math.exp(-i / 3.5)));
+const DF = SP.map((s, i) => 1 / (1 + s / 100) ** (i + 1));
+const PAR = SP.map((s, i) => (1 - DF[i]) / DF.slice(0, i + 1).reduce((a, b) => a + b, 0) * 100);
+const FWD = SP.map((s, i) => i ? ((1 + s / 100) ** (i + 1) / (1 + SP[i - 1] / 100) ** i - 1) * 100 : s);
+const Z3 = [2, 3, 4], D3 = Z3.map((z, i) => 1 / (1 + z / 100) ** (i + 1)), PV3 = [5 * D3[0], 5 * D3[1], 105 * D3[2]];
+
+const BEATS = [
+  ['intro', 'Term structure of rates', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 9', { x: 800, y: 270, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['The Term Structure of', 'Interest Rates: Spot, Par,', 'and Forward Curves'].forEach((s, i) => T(g, s, { x: 800, y: 370 + i * 92, size: 70, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'one rate for every maturity', 800, 700, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['spot', 'Spot rates and the spot curve', (m) => {
+    const p = panel(0), X = t => 400 + t / 30 * 900, Y = v => 740 - (v - 1.5) * 130;
+    show(pill(p, 'default-risk-free zero-coupon yields = spot rates', COL.whole, 800, 120, 0, 32), m('ideal'));
+    show(pill(p, 'no reinvestment risk · same currency, credit, liquidity', COL.good, 800, 195, 0, 26), m('ideal', 4));
+    axes2(p, 340, 740, 1340, 290, null, 'spot rate');
+    [1, 10, 20, 30].forEach(t => { path(p, `M${X(t)} 732V748`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, t === 30 ? '30 years' : String(t), X(t), 782, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    const curve = f => { const pts = []; for (let t = 1; t <= 30; t += .5) pts.push([X(t), Y(f(t))]); return polyline(pts); };
+    draw(path(p, curve(t => 2 + 2.2 * (1 - Math.exp(-t / 6))), { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('shape'), 2);
+    text(p, 'normal: upward, flattening', X(15), 356, m('shape', .8), { size: 28, fill: COL.whole, weight: 700, anchor: 'middle' });
+    draw(path(p, curve(t => 4.3 - 1.8 * (1 - Math.exp(-t / 6))), { stroke: COL.bad, 'stroke-width': 6, 'stroke-dasharray': '14 10' }, { d: 0 }), m('inv'), 2);
+    text(p, 'inverted: short rates above long rates', X(17), 665, m('inv', .8), { size: 28, fill: COL.bad, weight: 700, anchor: 'middle' });
+    text(p, 'illustrative shapes', 1340, 260, m('shape'), { size: 22, fill: COL.faint, anchor: 'end' });
+    show(pill(p, 'in practice: recent government coupon bonds + interpolation', COL.rat, 800, 850, 0, 28), m('prac'));
+  }],
+
+  ['price', 'Pricing with spot rates', (m) => {
+    const p = panel(0), xs = [620, 920, 1220];
+    [['year', 190, COL.dim], ['cash flow', 280, COL.task], ['spot rate', 370, COL.whole], ['present value', 470, COL.good]].forEach(([s, y, c], i) => text(p, s, 120, y + 10, m('ex', .3 + i * .2), { size: 28, fill: c, weight: 600 }));
+    text(p, '3-year bond · 5% annual coupon', 800, 110, .3, { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    xs.forEach((x, i) => {
+      text(p, String(i + 1), x, 200, m('ex', .3 + i * .3), { size: 32, fill: COL.dim, anchor: 'middle' });
+      text(p, i === 2 ? '105' : '5', x, 290, m('ex', 1 + i * .4), { size: 40, fill: COL.task, anchor: 'middle', weight: 700 });
+      text(p, Z3[i].toFixed(2) + '%', x, 380, m('each', .2), { size: 36, fill: COL.whole, anchor: 'middle', weight: 600 });
+      text(p, PV3[i].toFixed(3), x, 480, m('p' + (i + 1)), { size: 44, fill: COL.good, anchor: 'middle', weight: 700 });
+    });
+    draw(path(p, 'M520 530H1320', { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('sum'), .6);
+    const tot = T(p, 'Price = 0.00', { x: 800, y: 630, size: 64, fill: COL.good, weight: 700, anchor: 'middle', o: 0 }); show(tot, m('sum'));
+    const total = PV3.reduce((a, b) => a + b, 0); prog(q => { tot.textContent = 'Price = ' + (total * q).toFixed(2); }, m('sum', .3), 1.3);
+    text(p, 'one rate that gives the same price: YTM = 3.935%', 800, 750, m('ytm', 1), { size: 38, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['par', 'Par rates', (m) => {
+    const p = panel(0), X = i => 500 + i * 300, Y = v => 780 - (v - 1.9) * 215;
+    show(pill(p, 'par rate: the yield that prices a bond at par', COL.task, 800, 110, 0, 34), m('def'));
+    text(p, 'par rate = (1 − DF_N) ÷ (DF_1 + … + DF_N)', 800, 200, m('how'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    axes2(p, 380, 780, 1300, 300, null, 'rate (%)');
+    [0, 1, 2].forEach(i => { path(p, `M${X(i)} 772V788`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, (i + 1) + (i ? ' years' : ' year'), X(i), 826, m('how'), { size: 26, fill: COL.dim, anchor: 'middle' }); });
+    const par3 = [0, 1, 2].map(i => (1 - D3[i]) / D3.slice(0, i + 1).reduce((a, b) => a + b, 0) * 100);
+    const series = (vals, c, name, t, below) => {
+      draw(path(p, polyline(vals.map((v, i) => [X(i), Y(v)])), { stroke: c, 'stroke-width': 6 }, { d: 0 }), t, 1.2);
+      vals.forEach((v, i) => { const g = G(p, { x: X(i), y: Y(v), o: 0 }); mk('circle', { r: 11, fill: c }, g); if (!(below && i === 0)) T(g, v.toFixed(2) + '%', { x: 0, y: below ? 46 : -22, size: 28, fill: c, weight: 700, anchor: 'middle' }); show(g, t + .4 + i * .4); });
+      text(p, name, 1340, Y(vals[2]) + (below ? 50 : -20), t + 1, { size: 30, fill: c, anchor: 'start', weight: 700 });
+    };
+    series(Z3, COL.whole, 'spot', m('ex'), false); series(par3, COL.task, 'par', m('ex', 3.5), true);
+    text(p, 'upward curve: par rates sit below spot rates', 800, 880, m('note'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['forward', 'Forward rates', (m) => {
+    const p = panel(0), base = 690, k = 2200, A = 1.04 ** 3, B = 1.03 ** 2;
+    text(p, 'implied by spot rates: same result, two paths', 800, 110, m('def'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, '(1 + z3)^3 = (1 + z2)^2 × (1 + f)', 800, 190, m('eq'), { size: 42, fill: COL.task, anchor: 'middle', weight: 600 });
+    path(p, `M180 ${base}H800`, { stroke: COL.chalk, 'stroke-width': 3 });
+    const ga = G(p, { y: 30, o: 0 }); mk('rect', { x: 320 - 90, y: base - (A - 1) * k, width: 180, height: (A - 1) * k, fill: COL.task, 'fill-opacity': .88, rx: 5 }, ga);
+    T(ga, '1.1249', { x: 320, y: base - (A - 1) * k - 16, size: 34, fill: COL.chalk, weight: 700, anchor: 'middle' });
+    const gb1 = G(p, { y: 30, o: 0 }), gb2 = G(p, { y: 30, o: 0 });
+    mk('rect', { x: 620 - 90, y: base - (B - 1) * k, width: 180, height: (B - 1) * k, fill: COL.whole, 'fill-opacity': .88, rx: 5 }, gb1);
+    mk('rect', { x: 620 - 90, y: base - (A - 1) * k, width: 180, height: (A - B) * k, fill: COL.good, 'fill-opacity': .9, rx: 5 }, gb2);
+    T(gb1, '1.0609', { x: 620, y: base - (B - 1) * k / 2 + 10, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); T(gb2, '1.1249', { x: 620, y: base - (A - 1) * k - 16, size: 34, fill: COL.chalk, weight: 700, anchor: 'middle' });
+    text(p, 'buy a 3-year bond', 320, base + 50, m('def', 1), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 }); text(p, '1.04³', 320, base + 90, m('ex', .6), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, '2-year bond, then roll over', 620, base + 50, m('def', 1.6), { size: 26, fill: COL.whole, anchor: 'middle', weight: 600 }); text(p, '1.03² × (1 + f)', 620, base + 90, m('ex', 1), { size: 28, fill: COL.dim, anchor: 'middle' });
+    show(ga, m('def', 1)); show(gb1, m('def', 1.6)); show(gb2, m('eq', 1)); tw(ga, { o: 1, y: 0 }, m('def', 1), .6, out); tw(gb1, { o: 1, y: 0 }, m('def', 1.6), .6, out); tw(gb2, { o: 1, y: 0 }, m('eq', 1), .6, out);
+    text(p, 'forward rate f', 730, base - (B - 1) * k - (A - B) * k / 2 + 10, m('ex', 1.5), { size: 30, fill: COL.good, anchor: 'start', weight: 700 });
+    text(p, '2y1y forward = 1.04³ ÷ 1.03² − 1 = 6.03%', 1520, 400, m('ex', 2), { size: 30, fill: COL.good, anchor: 'end', weight: 700 });
+    text(p, '1y1y forward = 1.03² ÷ 1.02 − 1 = 4.01%', 1520, 470, m('also'), { size: 30, fill: COL.good, anchor: 'end', weight: 700 });
+    show(pill(p, 'marginal return from one more period', COL.rat, 1180, 600, 0, 28), m('use'));
+  }],
+
+  ['curves', 'Spot, par and forward curves', (m) => {
+    const p = panel(0), X = n => 300 + (n - 1) * 110, Y = v => 760 - (v - 1.5) * 140;
+    axes2(p, 240, 760, 1440, 250, null, 'rate (%)');
+    [1, 2, 4, 6, 8, 10].forEach(n => { path(p, `M${X(n)} 752V768`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, n === 10 ? '10 years' : String(n), X(n), 806, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    const line = (vals, c, name, t, dy) => { draw(path(p, polyline(vals.map((v, i) => [X(i + 1), Y(v)])), { stroke: c, 'stroke-width': 6 }, { d: 0 }), t, 1.6); text(p, name, X(10) + 24, Y(vals[9]) + dy, t + 1, { size: 30, fill: c, anchor: 'start', weight: 700 }); };
+    line(SP, COL.whole, 'spot', m('spot'), 10); line(PAR, COL.task, 'par', m('par'), 40); line(FWD, COL.good, 'forward', m('fwd'), 10);
+    show(pill(p, 'upward curve: forward > spot > par', COL.rat, 800, 130, 0, 36), m('spot', .5));
+    show(pill(p, 'downward curve: forward < spot < par', COL.bad, 800, 210, 0, 36), m('inv'));
+    text(p, 'illustrative curves', 1440, 280, m('spot'), { size: 22, fill: COL.faint, anchor: 'end' });
+    text(p, 'a rising spot curve means each extra year pays more than the average so far', 800, 870, m('why'), { size: 30, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Spot rates: zero-coupon yields; discount each cash flow at its own.', 'w1'], ['A par rate is the yield that prices a bond at par.', 'w2'],
+     ['Forward rates are implied by spot rates: marginal returns.', 'w3'], ['Upward curve: forward > spot > par. Downward: reverse.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
