@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company Analysis: Past and Present</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 9, title: 'Company Analysis: Past and Present', minutes: 8, language: 'en', next: '../ch10/' };
+
+const cardRow = (p, m, items, { x0 = 100, step = 300, w = 270, y = 250, h = 380, hs = 30, bs = 24, n = 20 } = {}) => items.forEach(([head, body, c, mk_], i) =>
+  infoCard(p, x0 + i * step, y, w, h, c, head, body.map(s => [s]), m(mk_), { hs, bs, n }));
+/* stacked bar with a label beside each segment */
+const stack = (p, cx, base, k, segs, t0, { w = 200, label = '', side = 1, size = 26 } = {}) => {
+  const g = G(p, { y: 30, o: 0 }); let y = base;
+  segs.forEach(([v, c, name]) => { const h = v * k; y -= h; mk('rect', { x: cx - w / 2, y: y + 1, width: w, height: h - 2, rx: 4, fill: c, 'fill-opacity': .88 }, g);
+    if (name) T(g, `${name} ${v}`, { x: side > 0 ? cx + w / 2 + 16 : cx - w / 2 - 16, y: y + h / 2 + 8, size, fill: c, anchor: side > 0 ? 'start' : 'end', weight: 600 }); });
+  if (label) T(g, label, { x: cx, y: base + 42, size: 26, fill: COL.dim, anchor: 'middle' });
+  tw(g, { o: 1, y: 0 }, t0, .6, out); return g;
+};
+
+const BEATS = [
+  introBeat('Equity Investments, Chapter 9', 'Company Analysis:', 'Past and Present', 'business model, revenue, costs and capital'),
+
+  ['report', 'A company research report', (m) => {
+    const p = panel(0), x = 330, w = 940, h = 80;
+    [['Recommendation and target price', COL.good, 'rec', 0], ['Company description and business model', COL.whole, 'desc', 0], ['Competitive position in the industry', COL.nat, 'comp', 0],
+     ['Financial analysis: past, present, forecasts', COL.task, 'fin', 0], ['Valuation', COL.real, 'val', 0], ['Risks', COL.bad, 'risk', 0], ['Environmental, social and governance factors', COL.irr, 'risk', 1.6]].forEach(([s, c, k, off], i) => {
+      const y = 120 + i * 94, g = G(p, { x: -30, o: 0 });
+      mk('rect', { x, y, width: w, height: h, rx: 14, fill: c, 'fill-opacity': .12, stroke: c, 'stroke-width': 3 }, g);
+      T(g, String(i + 1), { x: x + 40, y: y + 52, size: 34, fill: c, weight: 700, anchor: 'middle' }); T(g, s, { x: x + 90, y: y + 52, size: 31, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(k, off), .6, out);
+    });
+    text(p, 'Initial report: all of this in depth  ·  Later reports: updated forecasts and recommendation', 800, 820, m('note'), { size: 27, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['model', 'The business model', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Customers', ['who they are, and which groups matter most'], COL.whole, 'cust'], ['Sales channels', ['how the company reaches them'], COL.good, 'chan'],
+      ['Pricing and revenue', ['how much it charges, and how it earns'], COL.task, 'price'], ['Resources and partners', ['suppliers and partners that deliver the product'], COL.real, 'res']], { x0: 90, step: 370, w: 340, y: 150, h: 300, hs: 32, bs: 26, n: 24 });
+    text(p, 'Sources', 800, 560, m('src'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['Regulatory filings', 'Investor presentations', 'Company visits and websites', 'Industry data and analysts'].forEach((s, i) => show(pill(p, s, COL.good, [250, 560, 960, 1340][i], 650, 0, 24), m('src', .5 + i * .8)));
+  }],
+
+  ['revenue', 'Bottom-up and top-down revenue', (m) => {
+    const p = panel(0), base = 740, k = .04;
+    text(p, 'Bottom-up', 400, 150, m('bu'), { size: 38, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, 'volume × price, product by product', 400, 195, m('bu'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, '100 units × €8 = €800', 400, 330, m('bu', 1), { size: 44, anchor: 'middle', weight: 700 });
+    text(p, 'Top-down', 1150, 150, m('td'), { size: 38, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'market size × market share', 1150, 195, m('td'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    axisLine(p, 850, 1450, base);
+    stack(p, 980, base, k, [[800, COL.task], [7200, COL.faint]], m('td', 1), { w: 140, label: 'Market 8,000' });
+    text(p, 'share 10% = 800', 980, base - 8000 * k - 30, m('td', 1.5), { size: 24, fill: COL.task, anchor: 'middle', weight: 600 });
+    stack(p, 1280, base, k, [[924, COL.task], [7476, COL.faint]], m('grow'), { w: 140, label: 'Market 8,400' });
+    text(p, 'share 11% = 924', 1280, base - 8400 * k - 30, m('grow', .8), { size: 24, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, '+15.5%', 400, 500, m('grow', 1.6), { size: 60, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'market +5%, share 10% → 11%', 400, 550, m('grow', 1.6), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Growth: market, share, price or volume?', 400, 700, m('note'), { size: 28, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['pricing', 'Pricing power', (m) => {
+    const p = panel(0), base = 700, k = 9, o = 80;
+    axisLine(p, 200, 1400, base);
+    const b = (cx, v, c, label, sub, top, mk_, off) => { bar(p, cx, base, 1, [[(v - o) * k, c]], m(mk_, off), { w: 170, label, top }); text(p, sub, cx, base + 82, m(mk_, off + .4), { size: 24, fill: COL.dim, anchor: 'middle' }); };
+    text(p, 'Revenue after a 5% price rise (axis starts at 80)', 800, 140, .2, { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    b(380, 100, COL.dim, 'Before', '', '100', 'base', 0);
+    b(800, 103.95, COL.good, 'Strong pricing power', 'volume −1%: 1.05 × 0.99', '103.95', 'strong', 0);
+    b(1220, 94.5, COL.bad, 'Weak pricing power', 'volume −10%: 1.05 × 0.90', '94.5', 'weak', 0);
+    text(p, 'Industry structure and competitive strategy drive pricing power', 800, 850, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['dol', 'Operating leverage', (m) => {
+    const p = panel(0), base = 720, k = .45;
+    axisLine(p, 150, 800, base);
+    stack(p, 330, base, k, [[400, COL.bad, 'fixed'], [400, COL.nat, 'variable'], [200, COL.good, 'EBIT']], m('setup'), { w: 170, label: 'Sales 1,000', side: -1 });
+    stack(p, 640, base, k, [[400, COL.bad, ''], [440, COL.nat, ''], [260, COL.good, 'EBIT']], m('up'), { w: 170, label: 'Sales 1,100' });
+    text(p, 'Sales +10%', 930, 260, m('up', .6), { size: 40, fill: COL.whole, weight: 700 });
+    text(p, 'EBIT 200 → 260:  +30%', 930, 340, m('dol'), { size: 36, fill: COL.good, weight: 700 });
+    text(p, 'DOL = 30% ÷ 10% = 3', 930, 460, m('dol', 1.2), { size: 40, fill: COL.task, weight: 700 });
+    text(p, 'more fixed costs → more operating leverage', 930, 560, m('note'), { size: 26, fill: COL.dim });
+  }],
+
+  ['dfl', 'Financial leverage', (m) => {
+    const p = panel(0), base = 720, k = 1.8;
+    axisLine(p, 150, 800, base);
+    stack(p, 330, base, k, [[100, COL.bad, 'interest'], [100, COL.good, 'pre-tax']], m('setup'), { w: 170, label: 'EBIT 200', side: -1 });
+    stack(p, 640, base, k, [[100, COL.bad, ''], [160, COL.good, 'pre-tax']], m('up'), { w: 170, label: 'EBIT 260' });
+    text(p, 'EBIT +30%', 930, 260, m('up', .6), { size: 40, fill: COL.whole, weight: 700 });
+    text(p, 'Pre-tax profit 100 → 160:  +60%', 930, 340, m('dfl'), { size: 32, fill: COL.good, weight: 700 });
+    text(p, 'DFL = 60% ÷ 30% = 2', 930, 440, m('dfl', 1.2), { size: 40, fill: COL.task, weight: 700 });
+    text(p, 'Sales +10%  →  net income +60%', 930, 560, m('total'), { size: 32, weight: 700 });
+    text(p, 'total leverage = 3 × 2 = 6', 930, 625, m('total', .8), { size: 36, fill: COL.bad, weight: 700 });
+    text(p, 'it cuts both ways', 930, 680, m('total', 1.8), { size: 26, fill: COL.dim });
+  }],
+
+  ['workingcap', 'Working capital', (m) => {
+    const p = panel(0), x0 = 300, d = 24;
+    const seg = (a, b, y, c, name, val, t0) => { const g = G(p, { o: 0 }); mk('rect', { x: x0 + a * d, y, width: (b - a) * d, height: 70, rx: 6, fill: c, 'fill-opacity': .88 }, g);
+      T(g, val, { x: x0 + (a + b) * d / 2, y: y + 46, size: 32, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, name, { x: x0 + a * d, y: y - 14, size: 26, fill: c, weight: 600 }); show(g, t0); };
+    text(p, 'Days', 200, 330, .2, { size: 24, fill: COL.dim, anchor: 'end' });
+    seg(0, 30, 300, COL.whole, 'Days of inventory', '30', m('days')); seg(30, 32, 300, COL.task, '', '2', m('days', 1.2));
+    text(p, 'Days sales outstanding 2', x0 + 32 * d + 20, 345, m('days', 1.2), { size: 26, fill: COL.task, weight: 600 });
+    seg(0, 28, 440, COL.bad, 'Days of payables', '28', m('days', 2.4));
+    text(p, '4 days', x0 + 30 * d, 570, m('ccc'), { size: 26, fill: COL.good, anchor: 'middle', weight: 700 });
+    draw(path(p, `M${x0 + 28 * d} 600H${x0 + 32 * d}`, { stroke: COL.good, 'stroke-width': 6 }, { d: 0 }), m('ccc'), .6);
+    path(p, `M${x0 + 28 * d} 590V610M${x0 + 32 * d} 590V610`, { stroke: COL.good, 'stroke-width': 5 });
+    text(p, 'Cash conversion cycle = 30 + 2 − 28 = 4 days', 800, 700, m('ccc', .6), { size: 40, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'customers pay at once; suppliers finance the inventory', 800, 770, m('note'), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['capital', 'Sources and uses of capital', (m) => {
+    const p = panel(0), base = 720, k = .5;
+    axisLine(p, 120, 1000, base);
+    text(p, 'Sources', 330, 150, m('src'), { size: 36, fill: COL.good, anchor: 'middle', weight: 700 });
+    stack(p, 330, base, k, [[700, COL.good, 'operations'], [200, COL.bad, 'new debt'], [100, COL.whole, 'new equity']], m('src', .3), { w: 200, label: '1,000', side: -1 });
+    text(p, 'Uses', 780, 150, m('use'), { size: 36, fill: COL.task, anchor: 'middle', weight: 700 });
+    stack(p, 780, base, k, [[500, COL.task, 'capex'], [100, COL.real, 'acquisitions'], [250, COL.nat, 'dividends'], [100, COL.irr, 'buybacks'], [50, COL.dim, 'cash']], m('use', .3), { w: 200, label: '1,000' });
+    text(p, 'Funded by operations,', 1150, 300, m('tell'), { size: 26, fill: COL.good, weight: 700 }); text(p, 'not by borrowing to pay out', 1150, 340, m('tell'), { size: 26, fill: COL.good, weight: 700 });
+    box(p, 1130, 470, 360, 190, COL.bad, m('nd'), .1);
+    text(p, 'Net debt ÷ EBITDA', 1310, 530, m('nd'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 700 });
+    text(p, '600 ÷ 300 = 2.0×', 1310, 595, m('nd', .6), { size: 38, anchor: 'middle', weight: 700 });
+    text(p, 'compare with peers and trend', 1310, 640, m('nd', 1.5), { size: 22, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['A report runs from business model, through financials and forecasts, to valuation and risks.', 'w1'],
+    ['Analyze revenue bottom-up and top-down; judge pricing power.', 'w2'],
+    ['Fixed costs give operating leverage, debt gives financial leverage; together they multiply swings.', 'w3'],
+    ['Check working capital, sources and uses of capital, and net debt to EBITDA.', 'w4']], 28); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
