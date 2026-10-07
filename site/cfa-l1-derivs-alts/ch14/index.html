@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real Estate and Infrastructure</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 14, title: 'Real Estate and Infrastructure', minutes: 9, language: 'en', next: '../ch15/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+const steps5 = (p, items, m, y0 = 850) => items.forEach(([a, b, c, k], i) => {
+  const x = 110 + i * 290, top = y0 - 270 - i * 55, g = G(p, { o: 0, y: 30 });
+  mk('rect', { x, y: top, width: 270, height: y0 - top, rx: 14, fill: c, 'fill-opacity': .14, stroke: c, 'stroke-width': 3 }, g);
+  a.split('\n').forEach((s, j) => T(g, s, { x: x + 20, y: top + 48 + j * 34, size: 30, fill: c, weight: 700 }));
+  b.split('\n').forEach((s, j) => T(g, s, { x: x + 20, y: top + 48 + a.split('\n').length * 34 + 22 + j * 28, size: 22 }));
+  tw(g, { o: 1, y: 0 }, m(k), .6, out);
+});
+
+const BEATS = [
+  ['intro', 'Real estate and infrastructure', introBeat('Alternative Investments', 4, 'Real Estate', 'and Infrastructure', 'tangible assets that produce income')],
+
+  ['sectors', 'Residential and commercial', (m) => {
+    const p = panel(0), x0 = 200, W = 1200;
+    const g = G(p, { o: 0 }); mk('rect', { x: x0, y: 170, width: W * .75, height: 100, fill: C_GAIN, 'fill-opacity': .75 }, g); mk('rect', { x: x0 + W * .75, y: 170, width: W * .25, height: 100, fill: C_PRICE, 'fill-opacity': .75 }, g);
+    T(g, 'residential  >75% of value', { x: x0 + W * .375, y: 232, size: 34, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, 'commercial', { x: x0 + W * .875, y: 232, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); show(g, m('res'));
+    text(p, 'Land and buildings', 800, 120, m('a'), { size: 34, anchor: 'middle', weight: 700 });
+    text(p, 'housing: single-family and multi-family', 200, 350, m('res', 1), { size: 26, fill: C_GAIN });
+    text(p, 'offices · retail · warehouses · rental housing', 800, 350, m('com'), { size: 26, fill: C_PRICE });
+    path(p, 'M110 420H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    ['heterogeneous', 'large initial outlay', 'fragmented local markets', 'opaque price discovery', 'high transaction costs'].forEach((s, i) => pill(p, s, COL.rat, [310, 800, 1290, 540, 1060][i], i < 3 ? 520 : 650, m('feat', .6 + i * 1.2), 28));
+  }],
+
+  ['forms', 'Direct and indirect ownership', (m) => {
+    const p = panel(0);
+    path(p, 'M800 150V800', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Direct ownership', 400, 180, m('dir'), { size: 36, fill: C_UND, anchor: 'middle', weight: 700 });
+    bullets(p, ['control over tenants and spending', 'tax benefits', 'diversification'], 110, 270, 60, [m('dir', .8), m('dir', 2.3), m('dir', 3.5)], { size: 28, fill: C_GAIN });
+    bullets(p, ['complex, needs local knowledge', 'large capital needs', 'concentration and illiquidity'], 110, 540, 60, [m('dis'), m('dis', 2), m('dis', 4)], { size: 28, fill: C_RISK });
+    text(p, 'Indirect: pooled exposure', 1200, 180, m('ind'), { size: 36, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    ['real estate funds', 'limited partnerships', 'joint ventures', 'listed shares and REITs'].forEach((s, i) => pill(p, s, C_PRICE, 1200, 270 + i * 80, m('ind', .8 + i * 1.1), 26));
+    text(p, 'Debt: mortgages, MBS', 1200, 700, m('debt'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['reit', 'REITs', (m) => {
+    const p = panel(0);
+    [230, 300, 370].forEach((y, i) => { lbox(p, 'property', COL.dim, 190, y, 220, 50, m('a', i * .4), 24); harrow(p, 310, 640, y, COL.dim, m('a', .6 + i * .4), .5, 3); });
+    lbox(p, 'REIT', C_PRICE, 800, 300, 280, 100, m('a', 1), 36, .15); text(p, 'rental income', 475, 185, m('a', 2), { size: 22, fill: COL.dim, anchor: 'middle' });
+    harrow(p, 945, 1250, 300, C_GAIN, m('tax'), .7, 5); text(p, 'distributes 90–100%', 1100, 270, m('tax', .5), { size: 24, fill: C_GAIN, anchor: 'middle', weight: 600 }); text(p, 'no corporate tax', 1100, 350, m('tax', 1.2), { size: 24, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    lbox(p, 'investors', COL.chalk, 1380, 300, 230, 90, m('tax'), 30);
+    ['Equity REIT', 'Mortgage REIT', 'Hybrid REIT'].forEach((s, i) => pill(p, s, C_UND, 330 + i * 330, 490, m('types', i * 1.2), 28));
+    text(p, 'FFO: earnings adjusted for depreciation', 800, 590, m('ffo'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, '+ liquid, transparent, managed   − more correlated with equities', 800, 670, m('pro'), { size: 28, anchor: 'middle', weight: 600 });
+    text(p, 'open-end funds: core property · closed-end funds: development and repositioning', 800, 760, m('core'), { size: 26, fill: C_PRICE, anchor: 'middle', weight: 600 });
+  }],
+
+  ['spectrum', 'Risk–return spectrum', (m) => {
+    const p = panel(0);
+    steps5(p, [['Senior debt', 'first mortgages,\ninvestment-grade\nCMBS', C_GAIN, 'sd'], ['Core', 'stable income,\nlong leases,\nsale-leaseback', C_UND, 'core'], ['Core-plus', 'refurbishment,\ntenant\nrepositioning', COL.rat, 'plus'], ['Value-add', 'lease vacancies,\nredevelopment', C_PRICE, 'va'], ['Opportunistic', 'development,\ndistressed assets', C_RISK, 'opp']], m);
+    text(p, 'bond-like →  equity-like', 800, 120, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 700 });
+    text(p, 'higher risk and return →', 1480, 200, m('opp', 1), { size: 26, fill: C_RISK, anchor: 'end', weight: 600 });
+    text(p, 'leverage magnifies gains and losses at every level', 800, 880, m('lev'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['income', 'Income and appreciation', (m) => {
+    const p = panel(0), x0 = 200, W = 1200;
+    text(p, 'Commercial real estate returns', 800, 130, m('a'), { size: 34, anchor: 'middle', weight: 700 });
+    const g = G(p, { o: 0 }); mk('rect', { x: x0, y: 180, width: W * .55, height: 100, fill: C_GAIN, 'fill-opacity': .75 }, g); mk('rect', { x: x0 + W * .55, y: 180, width: W * .45, height: 100, fill: C_PRICE, 'fill-opacity': .75 }, g);
+    T(g, 'income > 50%', { x: x0 + W * .275, y: 242, size: 34, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, 'appreciation', { x: x0 + W * .775, y: 242, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); show(g, m('a', 1));
+    text(p, 'income is the steadier source: like a convertible bond', 800, 360, m('cons'), { size: 28, anchor: 'middle', weight: 600 });
+    text(p, 'rent step-ups give some inflation protection, varying by market and period', 800, 420, m('infl'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    path(p, 'M110 480H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'Covenant: loan to value must stay at 0.75', 130, 550, m('ltv'), { size: 30, fill: C_PRICE, weight: 700 });
+    text(p, 'mortgage £70m ÷ properties £92m = 0.76', 130, 620, m('ltv', 3), { size: 32, fill: C_RISK, weight: 700 });
+    text(p, 'needed value 70 ÷ 0.75 = £93.3m  →  add about £1.3m of collateral', 130, 690, m('ltv', 6), { size: 30, weight: 600 });
+  }],
+
+  ['divers', 'Diversification', (m) => {
+    const p = panel(0), cx = [110, 760, 1040, 1320], rows = [['Private real estate', .51, .49, .46], ['Real estate debt', .40, .48, .38]];
+    ['', 'S&P 500', 'MSCI US REIT', 'MSCI World'].forEach((s, i) => text(p, s, cx[i], 200, m('a'), { size: 26, fill: COL.dim, weight: 700, anchor: i ? 'middle' : 'start' }));
+    path(p, 'M110 225H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    rows.forEach(([n, ...v], i) => { const y = 320 + i * 100, t0 = m('tab', i * 1.5); text(p, n, cx[0], y, t0, { size: 32, weight: 700 }); v.forEach((c, j) => { const g = G(p, { o: 0 }); mk('rect', { x: cx[j + 1] - 110, y: y - 52, width: 220, height: 76, rx: 10, fill: C_RISK, 'fill-opacity': (c - .3) * 1.6 }, g); T(g, c.toFixed(2), { x: cx[j + 1], y: y + 6, size: 40, weight: 700, anchor: 'middle' }); show(g, t0 + .2 + j * .15); }); });
+    text(p, 'Mar 2008 – Jun 2021, Preqin', 110, 530, m('tab', 3), { size: 22, fill: COL.faint });
+    text(p, 'steep downturns (2008): listed REIT correlations rise', 130, 620, m('reit'), { size: 30, fill: C_RISK, weight: 600 });
+    text(p, 'private values appraised ~yearly, REITs trade continuously → private correlations look too low', 130, 700, m('smooth'), { size: 28, fill: C_PRICE, weight: 600 });
+  }],
+
+  ['infra', 'What infrastructure is', (m) => {
+    const p = panel(0);
+    ['availability payments', 'usage-based: tolls, fees', 'take-or-pay minimums'].forEach((s, i) => pill(p, s, C_PRICE, 300 + i * 500, 150, m('cf', .8 + i * 1.5), 26));
+    text(p, 'contractual cash flows, not leases', 800, 90, m('cf'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    lbox(p, 'Infrastructure', COL.chalk, 800, 290, 360, 80, m('a'), 34);
+    lbox(p, 'Economic', C_UND, 440, 450, 280, 70, m('eco'), 30); lbox(p, 'Social', C_GAIN, 1160, 450, 280, 70, m('soc'), 30);
+    seg(p, 700, 330, 500, 415, COL.dim, m('eco', -.2), .5, 3); seg(p, 900, 330, 1100, 415, COL.dim, m('soc', -.2), .5, 3);
+    bullets(p, ['transportation: roads, ports, airports', 'ICT: towers, data centers', 'utilities and energy'], 110, 570, 60, [m('eco', 1), m('eco', 3), m('eco', 5)], { size: 26 });
+    bullets(p, ['schools and hospitals', 'social housing, prisons', 'paid mainly by availability payments'], 830, 570, 60, [m('soc', 1), m('soc', 2.2), m('soc', 3.5)], { size: 26 });
+    text(p, 'mostly government-owned; increasingly public–private partnerships and development finance institutions', 800, 850, m('ppp'), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['stages', 'Stages of development', (m) => {
+    const p = panel(0);
+    [['Build', 'approval, construction: negative cash flow', C_RISK, 'bot'], ['Operate', 'concession: income on agreed terms', C_GAIN, 'bot'], ['Transfer', 'to government, sale or decommission', C_UND, 'bot']].forEach(([a, b, c], i) => { lbox(p, a, c, 290 + i * 510, 190, 380, 70, m('bot', i * 2.2), 32); text(p, b, 290 + i * 510, 260, m('bot', .4 + i * 2.2), { size: 22, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'build–operate–transfer', 800, 120, m('green', 2), { size: 30, fill: COL.dim, anchor: 'middle', weight: 700 });
+    const w = 450, h = 360, y = 380;
+    card3(p, 75, y, w, h, 'Secondary stage', C_GAIN, ['fully operational', 'steady, bond-like cash flow', 'lowest risk and return'], m('sec'), 26);
+    card3(p, 75 + w + 50, y, w, h, 'Brownfield', C_PRICE, ['expand or privatize an', 'existing facility', 'shorter horizon,', 'operating history'], m('brown'), 26);
+    card3(p, 75 + 2 * (w + 50), y, w, h, 'Greenfield', C_RISK, ['build new assets', 'construction and demand risk', 'highest risk and return'], m('green'), 26);
+    text(p, 'risk and return rise from secondary to greenfield →', 800, 820, m('sec', 4), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['forms2', 'Ways to invest in infrastructure', (m) => {
+    const p = panel(0);
+    path(p, 'M800 150V800', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Direct', 400, 180, m('dir'), { size: 36, fill: C_UND, anchor: 'middle', weight: 700 });
+    bullets(p, ['control, full value', 'large capital, concentration, illiquidity', 'consortia, pensions, sovereign funds'], 110, 270, 70, [m('dir', .6), m('dir', 2), m('dir', 4)], { size: 26 });
+    text(p, 'CPP paid ~C$270m for 45% of Iguá', 400, 560, m('dir', 8), { size: 26, fill: C_PRICE, anchor: 'middle', weight: 600 }); text(p, '(Brazilian water and sewage)', 400, 600, m('dir', 8.8), { size: 22, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Indirect', 1200, 180, m('ind'), { size: 36, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    ['infrastructure funds', 'ETFs', 'listed companies', 'MLPs'].forEach((s, i) => pill(p, s, C_PRICE, 1200, 270 + i * 75, m('ind', .6 + i * 1.2), 26));
+    text(p, 'listed: liquid, transparent, but a small segment (~$2.2tn)', 1200, 620, m('ind', 6), { size: 22, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Debt: private or traded, with flexible terms for years of zero cash flow', 1200, 720, m('debt'), { size: 24, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['returns', 'Infrastructure risk and return', (m) => {
+    const p = panel(0);
+    text(p, 'Target equity returns', 110, 150, m('a'), { size: 32, fill: COL.dim, weight: 700 });
+    [['High risk: greenfield, no demand guarantee', '14%+', C_RISK], ['Medium: mostly brownfield', '10–12%', C_PRICE], ['Low: brownfield, contracted revenues', '6–8%', C_GAIN]].forEach(([a, b, c], i) => { text(p, a, 110, 240 + i * 90, m('prof', i * 1.5), { size: 24 }); text(p, b, 640, 240 + i * 90, m('prof', i * 1.5 + .3), { size: 36, fill: c, weight: 700 }); });
+    text(p, 'most funds: medium and low → ~10% a year', 110, 520, m('prof', 6), { size: 26, fill: COL.dim });
+    path(p, 'M800 150V800', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    const cx = [870, 1230, 1400], hdr = ['', 'return', 'SD', 'CV'];
+    text(p, 'Mar 2008 – Jun 2021', 870, 150, m('stats'), { size: 24, fill: COL.dim });
+    ['return', 'SD', 'CV'].forEach((s, i) => text(p, s, [1150, 1290, 1420][i], 200, m('stats'), { size: 24, fill: COL.dim, anchor: 'middle', weight: 700 }));
+    [['Private infrastructure', '8.57%', '7%', '0.82', C_GAIN], ['Real estate', '3.43%', '10%', '2.86', COL.dim], ['Natural resources', '3.29%', '9%', '2.66', COL.dim], ['MSCI US REIT', '7.77%', '26%', '3.38', COL.dim]].forEach(([n, a, b, c, col], i) => { const y = 290 + i * 80, t0 = m('stats', 1 + i * .8); text(p, n, 870, y, t0, { size: 24, fill: col, weight: i ? 500 : 700 }); [a, b, c].forEach((v, j) => text(p, v, [1150, 1290, 1420][j], y, t0 + .2, { size: 26, fill: col, anchor: 'middle', weight: 700 })); });
+    text(p, 'correlation with S&P 500: infrastructure 0.12, MSCI World 0.08', 870, 700, m('corr'), { size: 24, fill: C_UND, weight: 600 });
+    text(p, 'income, diversification, some inflation protection', 870, 750, m('corr', 4), { size: 24, fill: COL.dim });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'Real estate is heterogeneous, local and illiquid, held directly or via funds and REITs.',
+    'Returns run from bond-like to equity-like; income is over half of the total.',
+    'Infrastructure earns contractual cash flows; greenfield, brownfield and secondary stages trade risk for return.',
+    'Both diversify, but listed real estate behaves like equities in a crisis.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
