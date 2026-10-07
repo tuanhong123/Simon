@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview of Equity Securities</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 8, title: 'Overview of Equity Securities', minutes: 7, language: 'en', next: '../ch09/' };
+
+const hbar = (p, x, y, w, h, c, t0, label, name) => {
+  const g = G(p, { x: -20, o: 0 });
+  mk('rect', { x, y, width: w, height: h, rx: 6, fill: c, 'fill-opacity': .88 }, g);
+  T(g, label, { x: x + w + 16, y: y + h / 2 + 11, size: 34, weight: 700 });
+  tw(g, { o: 1, x: 0 }, t0, .6, out); return g;
+};
+
+const BEATS = [
+  introBeat('Equity Investments, Chapter 8', 'Overview of', 'Equity Securities', 'a claim on a company'),
+
+  ['history', 'Long-run real returns', (m) => {
+    const p = panel(0), x0 = 330;
+    text(p, 'Real return per year, world, 1900–2017', 800, 140, .2, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Equities', 5.2, COL.good, 250], ['Bonds', 2.0, COL.whole, 400], ['Bills', 0.8, COL.dim, 550]].forEach(([n, r, c, y], i) => {
+      text(p, n, 290, y + 48, m('bars', i * .8), { size: 36, anchor: 'end', weight: 700, fill: c });
+      hbar(p, x0, y, r * 120, 70, c, m('bars', i * .8), r.toFixed(1) + '%');
+      text(p, '× ' + [377, 10, 2.5][i], 1250, y + 50, m('grow', i * .9), { size: 40, fill: c, weight: 700 });
+    });
+    text(p, 'growth of 1 unit, real', 1250, 190, m('grow'), { size: 22, fill: COL.dim });
+    text(p, 'More risk, and a higher long-run reward', 800, 770, m('note'), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['common', 'Common shares', (m) => {
+    const p = panel(0), base = 740, k = .6;
+    [['Claim on operating performance', 'dividends and growth', COL.whole], ['Vote on decisions', 'board and major matters', COL.task], ['Residual claim', 'net assets after creditors', COL.good]].forEach(([h, d, c], i) => {
+      const x = 130 + i * 470, t0 = m('rights', i * 1.1);
+      show(box(p, x, 130, 430, 150, c, t0, .1), 0); text(p, h, x + 215, 195, t0, { size: 24, fill: c, anchor: 'middle', weight: 700 }); text(p, d, x + 215, 240, t0 + .2, { size: 24, fill: COL.dim, anchor: 'middle' });
+    });
+    axisLine(p, 130, 760, base); axisLine(p, 860, 1490, base);
+    text(p, 'Statutory voting: 100 shares, 3 seats', 445, 360, m('stat'), { size: 28, anchor: 'middle', weight: 700, fill: COL.whole });
+    [250, 445, 640].forEach((x, i) => bar(p, x, base, k, [[100, COL.whole]], m('stat', .5 + i * .5), { w: 100, top: '100', label: 'Seat ' + (i + 1) }));
+    text(p, 'Cumulative voting: 300 votes to allocate', 1175, 360, m('cum'), { size: 28, anchor: 'middle', weight: 700, fill: COL.task });
+    bar(p, 960, base, k, [[300, COL.task]], m('cum', .5), { w: 100, top: '300', label: 'Nominee' });
+    [1175, 1390].forEach((x, i) => bar(p, x, base, k, [[2, COL.faint]], m('cum', 1 + i * .3), { w: 100, top: '0', label: 'Seat ' + (i + 2) }));
+    show(pill(p, 'Callable: issuer may buy back  ·  Putable: holder may sell back', COL.dim, 800, 850, 0, 24), m('call'));
+  }],
+
+  ['preference', 'Preference shares', (m) => {
+    const p = panel(0);
+    text(p, 'Claims in liquidation', 330, 150, .2, { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Creditors', COL.bad], ['Preference shares', COL.task], ['Common shares', COL.good]].forEach(([s, c], i) => {
+      show(box(p, 130, 190 + i * 130, 400, 100, c, .4 + i * .4, .12), 0); text(p, (i + 1) + '   ' + s, 330, 252 + i * 130, .4 + i * .4, { size: 32, fill: c, anchor: 'middle', weight: 700 });
+    });
+    text(p, 'Dividend of 5 is omitted in year 1', 1010, 150, m('cum'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Cumulative', 'year 2: must pay 10 before common gets anything', COL.good, 210, 0], ['Non-cumulative', 'the missed 5 is lost; year 2 pays 5', COL.bad, 330, 1.2]].forEach(([n, d, c, y, off]) => {
+      const t0 = m('cum', 1 + off); show(box(p, 700, y, 620, 100, c, t0, .1), 0);
+      text(p, n, 730, y + 42, t0, { size: 30, fill: c, weight: 700 }); text(p, d, 730, y + 80, t0, { size: 24, fill: COL.dim });
+    });
+    text(p, 'Participating: fixed dividend plus a share of profits above a set level', 1010, 520, m('part'), { size: 28, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'Non-participating: only the fixed amount', 1010, 565, m('part', 1.5), { size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Convertible', 'Callable', 'Putable'].forEach((s, i) => show(pill(p, s, COL.real, 880 + i * 250 - 250, 740, 0, 28), m('more', i * .7)));
+    text(p, 'Usually no vote; fixed dividend', 330, 650, m('more'), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['private', 'Private equity', (m) => {
+    const p = panel(0);
+    show(pill(p, 'Private placements to institutions; no secondary market; illiquid', COL.dim, 800, 170, 0, 28), m('feat'));
+    [['Venture capital', ['funds young, growing companies'], COL.good, 'vc'], ['Leveraged buyout', ['takes over an established company using a lot of debt'], COL.task, 'lbo'], ['PIPE', ['private investment in a public company\'s equity'], COL.real, 'pipe']].forEach(([h, d, c, k], i) =>
+      infoCard(p, 130 + i * 470, 300, 430, 280, c, h, d.map(s => [s]), m(k), { hs: 38, bs: 28, n: 28 }));
+    text(p, 'Goal: time to build value, then take the company public', 800, 740, m('goal'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['receipts', 'Depository receipts', (m) => {
+    const p = panel(0), y = 210;
+    [['Foreign company', 130, COL.whole], ['Depository bank', 620, COL.task], ['Local investors', 1110, COL.good]].forEach(([s, x, c], i) => {
+      show(box(p, x, y, 360, 120, c, m('flow', i * .7), .1), 0); text(p, s, x + 180, y + 72, m('flow', i * .7), { size: 30, fill: c, anchor: 'middle', weight: 700 });
+    });
+    arrowRight(p, 490, 620, y + 60, COL.dim, m('flow', 1)); text(p, 'shares', 555, y + 30, m('flow', 1), { size: 24, fill: COL.dim, anchor: 'middle' });
+    arrowRight(p, 980, 1110, y + 60, COL.dim, m('flow', 1.7)); text(p, 'receipts', 1045, y + 30, m('flow', 1.7), { size: 24, fill: COL.dim, anchor: 'middle' });
+    infoCard(p, 200, 450, 560, 200, COL.whole, 'ADR', [['US dollars, trades on US markets']], m('adr'), { hs: 40, bs: 28, n: 40 });
+    infoCard(p, 840, 450, 560, 200, COL.real, 'GDR', [['like an ADR, with resale restrictions']], m('gdr'), { hs: 40, bs: 28, n: 40 });
+    text(p, 'Foreign shares without foreign exchanges or currencies', 800, 780, m('note'), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['value', 'Return on equity and cost of equity', (m) => {
+    const p = panel(0), base = 690, k = 28;
+    axisLine(p, 150, 700, base); axisLine(p, 900, 1450, base);
+    text(p, 'ROE = net income ÷ average book equity = 120 ÷ 1,000', 400, 140, m('roe'), { size: 28, fill: COL.whole, anchor: 'middle', weight: 600 });
+    bar(p, 270, base, k, [[12, COL.good]], m('roe', .8), { w: 130, top: '12%', label: 'ROE' });
+    bar(p, 530, base, k, [[9, COL.whole]], m('coe'), { w: 130, top: '9%', label: 'Cost of equity' });
+    text(p, 'ROE > cost of equity: value created', 400, 790, m('good'), { size: 28, fill: COL.good, anchor: 'middle', weight: 700 }); text(p, 'price should exceed book value', 400, 830, m('good', .6), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'ROE of only 8%', 1175, 140, m('bad'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+    bar(p, 1020, base, k, [[8, COL.bad]], m('bad', .5), { w: 130, top: '8%', label: 'ROE' });
+    bar(p, 1290, base, k, [[9, COL.whole]], m('bad', 1), { w: 130, top: '9%', label: 'Cost of equity' });
+    text(p, 'ROE < cost of equity: value destroyed', 1175, 790, m('bad', 1.6), { size: 28, fill: COL.bad, anchor: 'middle', weight: 700 }); text(p, 'price may fall below book value', 1175, 830, m('bad', 2.2), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Book value is accounting; intrinsic value is the present value of future cash flows', 800, 885, m('note'), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['Over the long run, equities have earned higher real returns than bonds and bills.', 'w1'],
+    ['Common shares: ownership, votes, residual claim. Preference shares rank ahead with fixed dividends.', 'w2'],
+    ['Private equity and depository receipts widen the ways to hold equity.', 'w3'],
+    ['Return on equity above the cost of equity creates value.', 'w4']], 28); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
