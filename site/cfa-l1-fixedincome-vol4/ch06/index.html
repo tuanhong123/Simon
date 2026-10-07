@@ -13,7 +13,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 6, title: 'Fixed-Income Bond Valuation: Prices and Yields', minutes: 9, language: 'en' };
+const CHAPTER = { number: 6, title: 'Fixed-Income Bond Valuation: Prices and Yields', minutes: 9, language: 'en', next: '../ch07/' };
 
 const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });
 const pv = (r, c = 1.6, n = 10) => { let v = 100 / (1 + r) ** n; for (let k = 1; k <= n; k++) v += c / (1 + r) ** k; return v; };

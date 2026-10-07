@@ -13,7 +13,7 @@ CH = sys.argv[1] if len(sys.argv) > 1 else "ch01"
 SITE = ROOT / f"site/cfa-l1-fixedincome-vol4/{CH}"
 URL = f"http://localhost:8765/cfa-l1-fixedincome-vol4/{CH}/index.html?beat=0&t=0"
 WORK = Path(f"/tmp/claude-0/vid_{CH}"); OUT = ROOT / f"video/cfa-l1-fixedincome-vol4-{CH}.mp4"
-FPS = 24
+FPS = 15
 ANS = {}   # quiz beats are left out of the video
 
 def ff(*a):

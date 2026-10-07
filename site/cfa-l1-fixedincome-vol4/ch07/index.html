@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yield and Yield Spread Measures for Fixed-Rate Bonds</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 7, title: 'Yield and Yield Spread Measures for Fixed-Rate Bonds', minutes: 9, language: 'en' };
+
+const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });
+const MS = [1, 2, 4, 12], EAR = MS.map(m => ((1 + .05 / m) ** m - 1) * 100), ZY = MS.map(m => (((100 / 80) ** (1 / 5)) ** (1 / m) - 1) * m * 100);
+const NAMES = ['annual', 'semiannual', 'quarterly', 'monthly'];
+
+const BEATS = [
+  ['intro', 'Yield measures and spreads', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 7', { x: 800, y: 270, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Yield and Yield Spread', 'Measures for', 'Fixed-Rate Bonds'].forEach((s, i) => T(g, s, { x: 800, y: 370 + i * 92, size: 76, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'compounding conventions, yield variants and spreads', 800, 700, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['period', 'Periodicity and compounding', (m) => {
+    const p = panel(0), base = 720, k = 1100, bx = i => 400 + i * 270;
+    text(p, '3.2% stated = 1.6% × 2  →  periodicity 2', 800, 120, m('a'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'stated annual rate 5%: effective annual rate (EAR)', 800, 200, m('b'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, `M200 ${base}H1400`, { stroke: COL.chalk, 'stroke-width': 3 });
+    EAR.forEach((v, i) => {
+      const g = G(p, { y: 30, o: 0 }), h = (v - 4.9) * k;
+      mk('rect', { x: bx(i) - 60, y: base - h, width: 120, height: h, fill: i ? COL.whole : COL.task, 'fill-opacity': .88, rx: 5 }, g);
+      T(g, v.toFixed(4) + '%', { x: bx(i), y: base - h - 16, size: 30, fill: COL.chalk, weight: 700, anchor: 'middle' });
+      T(g, NAMES[i], { x: bx(i), y: base + 44, size: 28, fill: COL.dim, anchor: 'middle' }); T(g, 'm = ' + MS[i], { x: bx(i), y: base + 80, size: 24, fill: COL.faint, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('bars', .2 + i * .9), .6, out);
+    });
+    text(p, 'axis starts at 4.9%', 1400, 270, m('bars'), { size: 22, fill: COL.faint, anchor: 'end' });
+    show(pill(p, 'EAR: periodicity of one', COL.good, 1100, 330, 0, 28), m('c'));
+  }],
+
+  ['convert', 'Periodicity conversion', (m) => {
+    const p = panel(0), cv = [3.582, 3.566, 3.556];
+    text(p, '(1 + APRm ÷ m)^m = (1 + APRn ÷ n)^n', 800, 110, m('f'), { size: 44, fill: COL.task, anchor: 'middle', weight: 600 });
+    const a = card1(p, 420, 380, 640, 400, COL.whole), b = card1(p, 1180, 380, 640, 400, COL.good);
+    T(a, '5-year zero-coupon bond, price 80', { y: -140, size: 28, fill: COL.whole, weight: 700, anchor: 'middle' });
+    MS.forEach((mm, i) => T(a, `m = ${mm}:   ${ZY[i].toFixed(3)}%`, { y: -55 + i * 65, size: 38, fill: COL.chalk, weight: 600, anchor: 'middle' }));
+    T(b, '3-year 5% semiannual bond, price 104', { y: -140, size: 28, fill: COL.good, weight: 700, anchor: 'middle' });
+    [2, 4, 12].forEach((mm, i) => T(b, `m = ${mm}:   ${cv[i].toFixed(3)}%`, { y: -35 + i * 65, size: 38, fill: COL.chalk, weight: 600, anchor: 'middle' }));
+    T(b, '(semiannual bond basis → others)', { y: 175, size: 24, fill: COL.dim, anchor: 'middle' });
+    show(a, m('z')); show(b, m('ex'));
+    text(p, 'semiannual bond basis yield = rate per half-year × 2', 800, 690, m('f', 4), { size: 28, fill: COL.dim, anchor: 'middle' });
+    show(pill(p, 'compounding more often  →  lower stated rate', COL.rat, 800, 780, 0, 34), m('rule'));
+  }],
+
+  ['strips', 'Comparing a strip with a coupon bond', (m) => {
+    const p = panel(0), xs = [300, 800, 1300], y = 330;
+    show(pill(p, 'strip: one coupon or principal payment sold as a zero-coupon bond', COL.rat, 800, 130, 0, 28), m('a'));
+    [['20-year Canadian strip', 'price 69.43', COL.task, 'b'], ['annual compounding', 'effective rate 1.841%', COL.whole, 'b'], ['semiannual bond basis', '1.833%', COL.good, 'c']].forEach(([t, s, c, k], i) => {
+      const g = card1(p, xs[i], y, 400, 170, c); T(g, t, { y: -15, size: 32, fill: c, weight: 600, anchor: 'middle' }); T(g, s, { y: 40, size: 36, fill: COL.chalk, weight: 700, anchor: 'middle' });
+      show(g, i === 0 ? m('b') : i === 1 ? m('b', 3.5) : m('c'));
+    });
+    arw(p, 510, y, 590, COL.dim, m('b', 3)); arw(p, 1010, y, 1090, COL.dim, m('c', .3));
+    const bars = [['strip (semiannual basis)', 1.833, COL.good], ['new 20-year coupon bond', 1.880, COL.whole]];
+    bars.forEach(([s, v, c], i) => {
+      const yy = 580 + i * 90, g = G(p, { o: 0 }); T(g, s, { x: 700, y: yy + 10, size: 28, fill: c, weight: 600, anchor: 'end' });
+      const r = mk('rect', { x: 720, y: yy - 28, width: 0, height: 56, rx: 6, fill: c, 'fill-opacity': .88 }, g); T(g, v.toFixed(3) + '%', { x: 720 + (v - 1.7) * 3500 + 20, y: yy + 10, size: 30, fill: COL.chalk, weight: 700 });
+      show(g, m('d', i * .8)); tw(r, { a_width: (v - 1.7) * 3500 }, m('d', i * .8), .8);
+    });
+    text(p, 'compare only on the same periodicity · axis starts at 1.7%', 800, 800, m('d', 2), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['yields', 'Other yield measures', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 430, 290, 640, 240, COL.good, 'Current yield', ['annual coupon ÷ flat price', '3.2 ÷ 98.7 = 3.242%'], 40), m('cy'));
+    show(infoCard(p, 1170, 290, 640, 240, COL.whole, 'Street convention', ['cash flows on their scheduled dates', 'ignores weekends and holidays'], 40), m('street'));
+    show(infoCard(p, 800, 570, 760, 240, COL.task, 'Simple yield', ['(coupons + straight-line gain or loss)', '÷ flat price'], 40), m('simple'));
+    text(p, 'current yield ignores interest on interest and the pull to par', 800, 790, m('crude'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+  }],
+
+  ['options', 'Yield to worst', (m) => {
+    const p = panel(0), x0 = 480, k = 1500;
+    [['Yield to first call', 5.15, COL.good, 'ytc', 270], ['Yield to maturity', 5.37, COL.whole, 'ytw', 380]].forEach(([s, v, c, mk_, y], i) => {
+      const g = G(p, { o: 0 }); T(g, s, { x: x0 - 20, y: y + 10, size: 30, fill: c, weight: 600, anchor: 'end' });
+      const r = mk('rect', { x: x0, y: y - 30, width: 0, height: 60, rx: 6, fill: c, 'fill-opacity': .88 }, g); T(g, v.toFixed(2) + '%', { x: x0 + (v - 5) * k + 20, y: y + 10, size: 32, fill: COL.chalk, weight: 700 });
+      show(g, m(mk_, i ? 1.5 : 0)); tw(r, { a_width: (v - 5) * k }, m(mk_, i ? 1.5 : .2), .9);
+    });
+    text(p, 'axis starts at 5.0% · VIVU callable bond', 1450, 190, m('ytc'), { size: 22, fill: COL.faint, anchor: 'end' });
+    show(pill(p, 'yield to worst = lowest of all yields to call and the YTM = 5.15%', COL.task, 800, 520, 0, 32), m('ytw', 5));
+    text(p, 'option value = option-free price − callable price', 800, 650, m('oas'), { size: 34, fill: COL.rat, anchor: 'middle', weight: 600 });
+    text(p, 'option-adjusted price = flat price + option value  →  option-adjusted yield', 800, 720, m('oas', 4), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'a call option lowers the bond\'s value to the investor', 800, 800, m('oas', 7), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['spreads', 'Benchmark and G-spread', (m) => {
+    const p = panel(0), X = t => 800 + (t - 5) * 300, Y = v => 760 - (v - 1.5) * 150;
+    text(p, 'yield = benchmark + spread', 800, 100, m('top', -1.5), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    const g1 = G(p, { o: 0 }), g2 = G(p, { o: 0 }); mk('rect', { x: 340, y: 150, width: 420, height: 70, fill: COL.whole, 'fill-opacity': .88 }, g1); T(g1, 'benchmark rate', { x: 550, y: 197, size: 32, fill: COL.board, weight: 700, anchor: 'middle' });
+    mk('rect', { x: 760, y: 150, width: 260, height: 70, fill: COL.task, 'fill-opacity': .88 }, g2); T(g2, 'spread', { x: 890, y: 197, size: 32, fill: COL.board, weight: 700, anchor: 'middle' });
+    show(g1, m('top')); show(g2, m('bot'));
+    text(p, 'top-down: macro conditions', 550, 255, m('top', .5), { size: 26, fill: COL.whole, anchor: 'middle', weight: 600 });
+    text(p, 'bottom-up: credit, liquidity, taxes', 1010, 255, m('bot', .5), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+    axes2(p, 400, 760, 1200, 300, 'maturity', 'yield');
+    [[4, 1.9], [6, 2.3]].forEach(([t, v], i) => { const g = G(p, { x: X(t), y: Y(v), o: 0 }); mk('circle', { r: 12, fill: COL.whole }, g); show(g, m('g', .5 + i * .3)); });
+    draw(path(p, `M${X(4)} ${Y(1.9)}L${X(6)} ${Y(2.3)}`, { stroke: COL.whole, 'stroke-width': 4, 'stroke-dasharray': '10 8' }, { d: 0 }), m('g', 1.6), .8);
+    text(p, 'government bonds', X(4) + 90, Y(1.9) + 55, m('g', .5), { size: 24, fill: COL.whole, anchor: 'middle' });
+    const ip = G(p, { x: X(5), y: Y(2.1), o: 0 }); mk('circle', { r: 11, fill: COL.chalk }, ip); show(ip, m('ex', .3));
+    text(p, 'interpolated: 2.10%', X(5) + 24, Y(2.1) + 38, m('ex', .5), { size: 26, fill: COL.chalk });
+    const cb = G(p, { x: X(5), y: Y(3.756), o: 0 }); mk('circle', { r: 14, fill: COL.task }, cb); show(cb, m('ex', 1.2));
+    text(p, 'corporate bond: 3.756%', X(5) + 26, Y(3.756) + 10, m('ex', 1.4), { size: 28, fill: COL.task, weight: 700 });
+    draw(path(p, `M${X(5)} ${Y(3.756) + 20}V${Y(2.1) - 20}`, { stroke: COL.good, 'stroke-width': 5 }, { d: 0 }), m('ex', 2.6), .7);
+    text(p, 'G-spread = 1.656% = 166 bps', X(5) + 30, (Y(3.756) + Y(2.1)) / 2 + 10, m('ex', 3.2), { size: 34, fill: COL.good, anchor: 'start', weight: 700 });
+  }],
+
+  ['zspread', 'I-spread, Z-spread and OAS', (m) => {
+    const p = panel(0), x0 = 520, k = 8;
+    [['G-spread', 76, COL.whole, 'vs a government bond yield', 'i', 0, 270], ['I-spread', 106, COL.task, 'vs the swap rate of the same tenor', 'i', .9, 410], ['Z-spread', 109, COL.good, 'constant spread over every benchmark spot rate', 'z', 0, 550]].forEach(([n, v, c, d, mk_, o, y]) => {
+      const g = G(p, { o: 0 }); T(g, n, { x: x0 - 20, y: y + 10, size: 34, fill: c, weight: 700, anchor: 'end' }); T(g, d, { x: x0, y: y + 70, size: 26, fill: COL.dim });
+      const r = mk('rect', { x: x0, y: y - 32, width: 0, height: 64, rx: 6, fill: c, 'fill-opacity': .88 }, g); const t = T(g, v + ' bps', { x: x0 + v * k + 20, y: y + 10, size: 32, fill: COL.chalk, weight: 700, o: 0 });
+      show(g, m(mk_, o)); tw(r, { a_width: v * k }, m('ex', o), .9); show(t, m('ex', o + .8));
+    });
+    show(pill(p, 'OAS = Z-spread adjusted for the value of an embedded call option', COL.rat, 800, 750, 0, 30), m('oas'));
+    text(p, 'one corporate bond · analysts compare spreads with their history', 800, 850, m('ex', 4), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['More frequent compounding: a lower stated rate, same return.', 'w1'], ['Convert periodicities so yields can be compared.', 'w2'],
+     ['Callable bonds: yield to worst, or option-adjusted yield.', 'w3'], ['Spreads over a benchmark: G, I, Z and option-adjusted.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

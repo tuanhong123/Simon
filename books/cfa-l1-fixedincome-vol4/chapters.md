@@ -5,7 +5,7 @@
 4 | Fixed-Income Markets for Corporate Issuers | Bond Features and Markets | 9 | ready
 5 | Fixed-Income Markets for Government Issuers | Bond Features and Markets | 8 | ready
 6 | Fixed-Income Bond Valuation: Prices and Yields | Valuation, Yields and Curves | 9 | ready
-7 | Yield and Yield Spread Measures for Fixed-Rate Bonds | Valuation, Yields and Curves | | planned
+7 | Yield and Yield Spread Measures for Fixed-Rate Bonds | Valuation, Yields and Curves | 9 | ready
 8 | Yield and Yield Spread Measures for Floating-Rate Instruments | Valuation, Yields and Curves | | planned
 9 | The Term Structure of Interest Rates: Spot, Par, and Forward Curves | Valuation, Yields and Curves | | planned
 10 | Interest Rate Risk and Return | Interest Rate Risk | | planned
