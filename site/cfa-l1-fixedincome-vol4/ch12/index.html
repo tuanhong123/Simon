@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yield-Based Bond Convexity and Portfolio Properties</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 12, title: 'Yield-Based Bond Convexity and Portfolio Properties', minutes: 8, language: 'en' };
+
+const modDur = (y, c, n, d = .05) => (bondPrice(y - d, c, n) - bondPrice(y + d, c, n)) / (2 * (d / 100) * bondPrice(y, c, n));
+const conv = (y, c, n, d = .05) => { const P0 = bondPrice(y, c, n); return (bondPrice(y - d, c, n) + bondPrice(y + d, c, n) - 2 * P0) / ((d / 100) ** 2 * P0); };
+const MD = modDur(3.2, 3.2, 10), CV = conv(3.2, 3.2, 10);
+const est = (dy, withC) => (-MD * dy / 100 + (withC ? .5 * CV * (dy / 100) ** 2 : 0)) * 100;
+const act = dy => (bondPrice(3.2 + dy, 3.2, 10) / 100 - 1) * 100;
+const sg = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2) + '%';
+
+const BEATS = [
+  ['intro', 'Convexity and portfolios', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 12', { x: 800, y: 270, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Yield-Based Bond Convexity', 'and Portfolio Properties'].forEach((s, i) => T(g, s, { x: 800, y: 390 + i * 95, size: 74, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'the curve that duration misses', 800, 670, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['convex', 'The convexity adjustment', (m) => {
+    const p = panel(0), X = y => 300 + (y - 1) * 200, Y = v => 800 - (v - 88) * 24;
+    text(p, '%ΔP ≈ − ModDur × Δy  +  ½ × Convexity × Δy²', 800, 105, m('f'), { size: 42, fill: COL.good, anchor: 'middle', weight: 700 });
+    axes2(p, 240, 800, 1340, 230, null, 'price');
+    [1.2, 3.2, 5.2].forEach(y => { path(p, `M${X(y)} 792V808`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, y.toFixed(1) + '%', X(y), 846, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    const pts = []; for (let y = 1; y <= 5.5; y += .05) pts.push([X(y), Y(bondPrice(y, 3.2, 10))]);
+    draw(path(p, polyline(pts), { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('b'), 1.4); text(p, 'actual price curve', X(4.3), Y(bondPrice(4.3, 3.2, 10)) - 60, m('b', 1), { size: 26, fill: COL.whole, anchor: 'end', weight: 700 });
+    const tg = y => 100 * (1 - MD * (y - 3.2) / 100);
+    draw(path(p, `M${X(1)} ${Y(tg(1))}L${X(5.5)} ${Y(tg(5.5))}`, { stroke: COL.task, 'stroke-width': 4, 'stroke-dasharray': '12 8' }, { d: 0 }), m('a'), 1); text(p, 'duration: straight line', X(1.3), Y(tg(1.3)) + 120, m('a', .5), { size: 26, fill: COL.task, weight: 700 });
+    [[1.2, 'ex'], [5.2, 'up']].forEach(([y, k]) => { const a = G(p, { x: X(y), y: Y(bondPrice(y, 3.2, 10)), o: 0 }), d = G(p, { x: X(y), y: Y(tg(y)), o: 0 }); mk('circle', { r: 10, fill: COL.whole }, a); mk('circle', { r: 10, fill: 'none', stroke: COL.task, 'stroke-width': 4 }, d); show(a, m(k)); show(d, m(k)); });
+    const hdr = [['yield change', 860, 'start'], ['actual', 1190, 'end'], ['duration only', 1360, 'end'], ['+ convexity', 1540, 'end']];
+    hdr.forEach(([s, x, a]) => text(p, s, x, 250, m('ex', -.5), { size: 24, fill: COL.dim, anchor: a, weight: 600 }));
+    [[-2, 'ex'], [2, 'up']].forEach(([dy, k], i) => { const y = 310 + i * 60; text(p, (dy < 0 ? '−' : '+') + '2 points', 860, y, m(k, 1), { size: 30, fill: COL.chalk, weight: 600 }); text(p, sg(act(dy)), 1190, y, m(k, 1.4), { size: 30, fill: COL.whole, anchor: 'end', weight: 700 }); text(p, sg(est(dy, false)), 1360, y, m(k, 2), { size: 30, fill: COL.task, anchor: 'end', weight: 600 }); text(p, sg(est(dy, true)), 1540, y, m(k, 2.6), { size: 30, fill: COL.good, anchor: 'end', weight: 700 }); });
+    show(pill(p, 'convexity > 0: price rises more, falls less than duration says', COL.rat, 640, 730, 0, 26), m('pos'));
+    text(p, '5-year, 3.2% bond: ModDur 4.59 · convexity 24.24', 1560, 425, m('ex', 3.4), { size: 24, fill: COL.dim, anchor: 'end' });
+  }],
+
+  ['calc', 'Approximating convexity', (m) => {
+    const p = panel(0), P0 = 100, Pm = bondPrice(3.15, 3.2, 10), Pp = bondPrice(3.25, 3.2, 10);
+    [[300, 'yield −5 bp', Pm.toFixed(4), COL.good, 'a', 'PV−'], [800, 'original 3.20%', P0.toFixed(4), COL.chalk, 'a', 'PV0'], [1300, 'yield +5 bp', Pp.toFixed(4), COL.bad, 'a', 'PV+']].forEach(([x, t, v, c, k, n], i) => {
+      const g = card1(p, x, 270, 400, 200, c); T(g, n, { y: -55, size: 30, fill: COL.dim, anchor: 'middle', weight: 600 }); T(g, v, { y: 15, size: 56, fill: c, weight: 700, anchor: 'middle' }); T(g, t, { y: 65, size: 26, fill: COL.dim, anchor: 'middle' });
+      show(g, i === 1 ? m('a', 1.5) : i === 0 ? m('a', 2.6) : m('b', .2));
+    });
+    text(p, 'ApproxCon = (PV− + PV+ − 2 × PV0) ÷ (Δy² × PV0)', 800, 520, m('f'), { size: 40, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, '= (100.2296 + 99.7710 − 200) ÷ (0.0005² × 100)', 800, 600, m('f', 3), { size: 34, fill: COL.dim, anchor: 'middle' });
+    const big = T(p, '= 24.24', { x: 800, y: 720, size: 72, fill: COL.good, weight: 700, anchor: 'middle', o: 0 }); show(big, m('res'));
+    text(p, 'annualized convexity of the 5-year, 3.2% bond', 800, 790, m('res', 1), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['features', 'What drives convexity', (m) => {
+    const p = panel(0), base = 700, k = .8;
+    path(p, `M200 ${base}H820`, { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'convexity (3.2% coupon, 3.2% yield)', 510, 150, m('bars'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['5 years', conv(3.2, 3.2, 10)], ['10 years', conv(3.2, 3.2, 20)], ['30 years', conv(3.2, 3.2, 60)]].forEach(([lbl, v], i) => {
+      const g = G(p, { y: 30, o: 0 }), x = 300 + i * 220; mk('rect', { x: x - 60, y: base - v * k, width: 120, height: v * k, fill: COL.whole, 'fill-opacity': .88, rx: 5 }, g);
+      T(g, v.toFixed(0), { x, y: base - v * k - 14, size: 32, fill: COL.chalk, weight: 700, anchor: 'middle' }); T(g, lbl, { x, y: base + 42, size: 26, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('bars', .3 + i * .8), .6, out);
+    });
+    text(p, 'also: lower coupon, lower yield', 510, 780, m('bars', 3.5), { size: 26, fill: COL.dim, anchor: 'middle' });
+    const cx = 1200, cy = 540, tgl = x => cy - .6 * (x - cx);
+    text(p, 'same duration: more dispersed cash flows → more convexity', 1200, 150, m('disp'), { size: 24, fill: COL.dim, anchor: 'middle', weight: 600 });
+    draw(path(p, `M950 ${tgl(950)}L1450 ${tgl(1450)}`, { stroke: COL.task, 'stroke-width': 4, 'stroke-dasharray': '12 8' }, { d: 0 }), m('disp'), .8);
+    const par = (a, c, t) => { const pts = []; for (let x = 960; x <= 1440; x += 10) pts.push([x, tgl(x) - a * (x - cx) ** 2]); draw(path(p, polyline(pts), { stroke: c, 'stroke-width': 6 }, { d: 0 }), t, 1.2); };
+    par(.0012, COL.whole, m('disp', 1.5)); par(.0032, COL.good, m('disp', 3));
+    text(p, 'more convex', 1440, tgl(1440) - .0032 * 240 ** 2 - 14, m('disp', 4), { size: 26, fill: COL.good, anchor: 'end', weight: 700 }); text(p, 'less convex', 1440, tgl(1440) - .0012 * 240 ** 2 + 56, m('disp', 4), { size: 26, fill: COL.whole, anchor: 'end', weight: 700 });
+    text(p, 'tangent', 960, tgl(960) + 32, m('disp', 1), { size: 24, fill: COL.task });
+    show(pill(p, 'more convex: gains more when yields fall, loses less when they rise', COL.rat, 1000, 860, 0, 26), m('val'));
+  }],
+
+  ['money', 'Convexity in currency', (m) => {
+    const p = panel(0);
+    const a = card1(p, 800, 190, 1200, 120, COL.whole); T(a, '£50 million · 10-year 3.50% bond at par · ModDur 8.376 · convexity 81.701', { y: 12, size: 32, fill: COL.whole, weight: 600, anchor: 'middle' }); show(a, m('ex'));
+    text(p, 'yield falls 1 percentage point', 800, 320, m('dur', -.5), { size: 30, fill: COL.dim, anchor: 'middle' });
+    text(p, 'duration effect:  8.376 × 1% = 8.376%', 800, 400, m('dur'), { size: 42, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'convexity adjustment:  ½ × 81.701 × 0.01² = 0.4085%', 800, 490, m('cvx'), { size: 42, fill: COL.rat, anchor: 'middle', weight: 600 });
+    draw(path(p, 'M300 540H1300', { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('tot'), .6);
+    text(p, 'total = 8.78%  ≈  £4.39 million gain', 800, 625, m('tot'), { size: 52, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'of which convexity ≈ £204,000', 800, 710, m('tot', 3), { size: 34, fill: COL.rat, anchor: 'middle', weight: 600 });
+  }],
+
+  ['portfolio', 'Portfolio duration and convexity', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 420, 250, 700, 230, COL.good, 'Cash-flow method', ['time to receipt of all the portfolio\'s cash flows', 'theoretically correct, hard to use'], 36), m('a'));
+    show(infoCard(p, 1180, 250, 700, 230, COL.task, 'Weighted-average method', ['weight each bond\'s duration and convexity', 'common in practice'], 36), m('b'));
+    text(p, 'portfolio: duration 6.169 · convexity 52.921', 120, 610, m('ex'), { size: 30, fill: COL.dim });
+    text(p, 'yields +50 bp:', 120, 670, m('ex', 2), { size: 30, fill: COL.dim });
+    text(p, '−6.169 × 0.005 + ½ × 52.921 × 0.005²', 120, 730, m('ex', 3), { size: 32, fill: COL.chalk, weight: 600 });
+    text(p, '≈ −3.02%', 120, 805, m('ex', 7), { size: 54, fill: COL.bad, weight: 700 });
+    const X = t => 1000 + t * 55, Y = v => 760 - v * 70;
+    path(p, 'M960 770H1520', { stroke: COL.chalk, 'stroke-width': 3 }); path(p, 'M960 770V540', { stroke: COL.chalk, 'stroke-width': 3 });
+    const base = t => 1.5 + 2 * (1 - Math.exp(-t / 3));
+    const crv = (f, c, d, t, dash) => { const pts = []; for (let k = 0; k <= 9; k += .5) pts.push([X(k), Y(f(k))]); draw(path(p, polyline(pts), { stroke: c, 'stroke-width': 5, ...(dash ? { 'stroke-dasharray': '12 8' } : {}) }, { d: 0 }), t, d); };
+    crv(base, COL.whole, 1, m('lim')); crv(t => base(t) + .8, COL.dim, 1, m('lim', 1.2), true); crv(t => base(t) + .8 - .12 * t, COL.bad, 1, m('lim', 2.6));
+    text(p, 'parallel shift (assumed)', X(9) , Y(base(9) + .8) - 14, m('lim', 1.8), { size: 22, fill: COL.dim, anchor: 'end' }); text(p, 'real shift (twist)', X(9), Y(base(9) - .3) + 40, m('lim', 3.2), { size: 22, fill: COL.bad, anchor: 'end' });
+    show(pill(p, 'assumes parallel shifts of the yield curve', COL.bad, 1240, 840, 0, 26), m('lim', .3));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Convexity captures the curvature that duration misses.', 'w1'], ['Add ½ × convexity × Δy² to the duration effect.', 'w2'],
+     ['More convexity: longer, lower coupon, lower yield, dispersed.', 'w3'], ['Portfolio averages assume parallel yield curve shifts.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

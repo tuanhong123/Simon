@@ -13,7 +13,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 11, title: 'Yield-Based Bond Duration Measures and Properties', minutes: 8, language: 'en' };
+const CHAPTER = { number: 11, title: 'Yield-Based Bond Duration Measures and Properties', minutes: 8, language: 'en', next: '../ch12/' };
 
 const modDur = (y, c, n, d = .05) => (bondPrice(y - d, c, n) - bondPrice(y + d, c, n)) / (2 * (d / 100) * bondPrice(y, c, n));
 const MD = modDur(3.2, 3.2, 10);
