@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbitrage, Replication, and the Cost of Carry</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 4, title: 'Arbitrage, Replication, and the Cost of Carry', minutes: 7, language: 'en', next: '../ch05/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+const colHead = (p, x, s, t0, y = 215) => { text(p, s, x, y, t0, { size: 34, fill: COL.chalk, weight: 700 }); };
+
+const BEATS = [
+  ['intro', 'No arbitrage and carry', introBeat('Derivatives', 4, 'Arbitrage, Replication,', 'and the Cost of Carry', 'pinning derivative prices to spot prices')],
+
+  ['law', 'The law of one price', (m) => {
+    const p = panel(0);
+    text(p, 'Two identical bonds, each paying €100 at maturity', 800, 110, m('bonds'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    lbox(p, 'Bond A  €99.00', C_UND, 420, 200, 360, 80, m('bonds', 1), 32); lbox(p, 'Bond B  €99.15', C_PRICE, 1180, 200, 360, 80, m('bonds', 1.6), 32);
+    path(p, 'M800 300V740', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    colHead(p, 130, 't = 0   today', m('t0'), 330); colHead(p, 890, 't = T   maturity', m('tt'), 330);
+    ledger(p, 130, 420, 560, [['Buy bond A', '−€99.00', C_UND], ['Sell bond B short', '+€99.15', C_PRICE], '-', ['Net cash flow', '+€0.15', C_GAIN, true]], [m('t0', .3), m('t0', 1.3), m('t0', 2), m('t0', 2.2)], { dy: 85 });
+    ledger(p, 890, 420, 560, [['Bond A pays', '+€100.00', C_UND], ['Buy back bond B', '−€100.00', C_PRICE], '-', ['Net cash flow', '€0', C_GAIN, true]], [m('tt', .3), m('tt', 1.3), m('tt', 2), m('tt', 2.2)], { dy: 85 });
+    text(p, 'Riskless profit €0.15: buyers and sellers rush in until the prices are equal', 800, 810, m('end'), { size: 30, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['known', 'A known future price', (m) => {
+    const p = panel(0);
+    text(p, 'Spot gold $1,770 · forward sale at $1,792.13 in 3 months · rate 2%', 800, 110, m('ex'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, 'M800 260V740', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    colHead(p, 130, 't = 0', m('t0')); colHead(p, 890, 't = T   (3 months)', m('tt'));
+    ledger(p, 130, 320, 560, [['Borrow at 2%', '+$177,000', C_UND], ['Buy 100 oz of gold', '−$177,000', C_PRICE], ['Agree to sell forward', '$0', COL.dim], '-', ['Net cash flow', '$0', COL.chalk, true]], [m('t0', .3), m('t0', 1.2), m('t0', 2.2), m('t0', 3), m('t0', 3.2)], { dy: 90 });
+    ledger(p, 890, 320, 560, [['Deliver gold, receive', '+$179,213', C_PRICE], ['Repay loan with interest', '−$177,878', C_UND], '-', ['Riskless profit', '+$1,335', C_GAIN, true]], [m('tt', .3), m('tt', 1.3), m('tt', 2), m('tt', 2.2)], { dy: 90 });
+    text(p, '= $13.35 per ounce', 1450, 700, m('pf'), { size: 32, fill: C_GAIN, anchor: 'end', weight: 700 });
+    text(p, 'Spot rises to 1,792.13 ÷ 1.02^¼ = $1,783.28 and the arbitrage disappears', 800, 830, m('fix'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['price', 'The no-arbitrage forward price', (m) => {
+    const p = panel(0), S0 = 100;
+    const ch = chart(p, { x: 110, y: 200, w: 820, h: 500, x0: 0, x1: 2, y0: 98, y1: 118, xl: 'T (years)', yl: 'forward price, spot = 100', ticks: [[0, '0'], [.5, '0.5'], [1, '1'], [1.5, '1.5'], [2, '2']] });
+    mline(p, ['F₀(T) = S₀(1 + ', 'r', ')', E('T')], 1180, 270, m('a'), COL.chalk, 52);
+    curve(ch, p, t => S0 * 1.02 ** t, C_UND, m('r'), 1.2); text(p, 'r = 2%', ch.X(1.7), ch.Y(S0 * 1.02 ** 1.7) + 52, m('r', .8), { size: 26, fill: C_UND, weight: 700 });
+    curve(ch, p, t => S0 * 1.08 ** t, C_PRICE, m('r', 1.5), 1.2); text(p, 'r = 8%', ch.X(1.55), ch.Y(S0 * 1.08 ** 1.55) - 22, m('r', 2.3), { size: 26, fill: C_PRICE, weight: 700 });
+    curve(ch, p, t => S0 * .99 ** t, C_RISK, m('neg'), 1.2, 5, '12 10'); text(p, 'r = −1%', ch.X(1.55), ch.Y(S0 * .99 ** 1.55) - 30, m('neg', .6), { size: 26, fill: C_RISK, weight: 700 });
+    text(p, 'higher rate or longer maturity', 1010, 420, m('r'), { size: 28, fill: COL.dim }); text(p, '→ forward further above spot', 1010, 462, m('r', .5), { size: 28, fill: COL.dim });
+    text(p, 'negative rate → forward below spot', 1010, 560, m('neg'), { size: 28, fill: C_RISK });
+  }],
+
+  ['replicate', 'Replicating a forward', (m) => {
+    const p = panel(0);
+    lbox(p, 'Long forward', C_PRICE, 380, 190, 420, 80, m('a'), 32); text(p, '≡', 800, 205, m('a', 1), { size: 60, anchor: 'middle', weight: 700 });
+    lbox(p, 'Borrow S₀, buy the asset, hold to T', C_UND, 1180, 190, 600, 80, m('a', 1), 30);
+    text(p, 'Gold now $1,783.28 · forward $1,792.13 · rate 2%', 800, 300, m('ex'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, 'M110 360H1490', { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'gold ends at $1,900', 780, 340, m('hi'), { size: 30, fill: COL.chalk, anchor: 'middle', weight: 700 }); text(p, 'gold ends at $1,700', 1260, 340, m('lo'), { size: 30, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    [['Long forward', 'forward', 'ST − F', C_PRICE, 470], ['Borrow, buy, hold', 'repl', 'sell − repay', C_UND, 640]].forEach(([name, k, note, c, y], i) => {
+      text(p, name, 110, y, m('hi', .3 + i * .6), { size: 30, fill: c, weight: 700 });
+      text(p, '+$10,787', 780, y, m('hi', .6 + i * .8), { size: 46, fill: C_GAIN, anchor: 'middle', weight: 700 });
+      text(p, '−$9,213', 1260, y, m('lo', .6 + i * .8), { size: 46, fill: C_RISK, anchor: 'middle', weight: 700 });
+    });
+    text(p, 'Same payoff in every outcome, so the same price', 800, 800, m('pt'), { size: 32, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['riskfree', 'Long asset plus short forward', (m) => {
+    const p = panel(0), y = 470;
+    path(p, `M300 ${y}H1300`, { stroke: COL.chalk, 'stroke-width': 3 });
+    [[300, 't = 0', '−$178,328', 'buy 100 oz at spot', C_RISK], [1300, 't = T', '+$179,213', 'deliver at forward price', C_GAIN]].forEach(([x, a, b, c, col], i) => {
+      path(p, `M${x} ${y - 12}V${y + 12}`, { stroke: COL.chalk, 'stroke-width': 3 });
+      text(p, a, x, y + 52, m(i ? 'cf' : 'a', i ? 1.2 : 0), { size: 28, fill: COL.dim, anchor: 'middle' });
+      text(p, b, x, y - 80, m(i ? 'cf' : 'a', i ? 1.2 : 0), { size: 52, fill: col, anchor: 'middle', weight: 700 });
+      text(p, c, x, y - 36, m(i ? 'cf' : 'a', i ? 1.5 : .3), { size: 26, fill: COL.dim, anchor: 'middle' });
+    });
+    draw(path(p, 'M330 330Q800 170 1270 330', { stroke: C_UND, 'stroke-width': 5 }, { d: 0 }), m('r'), 1.2);
+    text(p, '178,328 × (1 + r)^¼ = 179,213', 800, 205, m('r', .8), { size: 30, fill: C_UND, anchor: 'middle', weight: 600 });
+    text(p, 'r = 2.0%  =  the risk-free rate', 800, 690, m('r', 1.8), { size: 44, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    text(p, 'A hedged position earns the risk-free rate', 800, 790, m('pt'), { size: 32, anchor: 'middle', weight: 600 });
+  }],
+
+  ['carry', 'Cost of carry', (m) => {
+    const p = panel(0), w = 600;
+    path(p, 'M800 150V540', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Costs raise the forward', 400, 190, m('cost'), { size: 36, fill: C_RISK, anchor: 'middle', weight: 700 });
+    text(p, 'Benefits lower the forward', 1200, 190, m('ben'), { size: 36, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    bullets(p, ['risk-free rate (opportunity cost)', 'storage and insurance', 'transport, spoilage'], 110, 290, 70, [m('cost', .4), m('cost', 1.4), m('cost', 2.4)], { size: 30 });
+    bullets(p, ['stock dividends', 'bond coupons', 'convenience yield (commodities)'], 860, 290, 70, [m('ben', .4), m('ben', 1.4), m('ben', 2.4)], { size: 30 });
+    text(p, 'costs > benefits:  F₀(T) > S₀', 400, 610, m('rule'), { size: 34, fill: C_RISK, anchor: 'middle', weight: 700 });
+    text(p, 'costs < benefits:  F₀(T) < S₀', 1200, 610, m('rule', 1.6), { size: 34, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    mline(p, ['F₀(T) = [S₀ − PV(I) + PV(C)](1 + ', 'r', ')', E('T')], 800, 760, m('f'), COL.chalk, 50);
+  }],
+
+  ['equity', 'Equities and indexes', (m) => {
+    const p = panel(0), X = ruler(p, 160, 1100, 400, 49.5, 51.5, [49.5, 50, 50.5, 51, 51.5], v => '€' + v.toFixed(2));
+    text(p, 'Unilever: spot €50, rate 5%, six months', 160, 150, m('a'), { size: 32, fill: COL.dim, weight: 600 });
+    rdot(p, X, 50, 400, C_UND, 'spot €50.00', m('a', 1.2), {});
+    rdot(p, X, 51.23, 400, C_PRICE, 'no dividend €51.23', m('nod'), {});
+    rdot(p, X, 50.631, 400, C_GAIN, 'with dividends €50.63', m('calc'), { ly: -85 });
+    text(p, '50 × 1.05^0.5 = 51.23', 160, 520, m('nod'), { size: 30, fill: C_PRICE, weight: 600 });
+    text(p, 'dividends €0.30 + €0.30:  PV = 0.2964 + 0.2928 = 0.5892', 160, 570, m('div'), { size: 30, fill: C_GAIN, weight: 600 });
+    text(p, '(50 − 0.5892) × 1.05^0.5 = 50.63', 160, 620, m('calc'), { size: 32, fill: C_GAIN, weight: 700 });
+    path(p, 'M110 690H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'Index, 3 months: income is a yield, with continuous compounding', 110, 745, m('idx'), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, '15,200 × e^((0.04 − 0.022) × 0.25) = 15,268.55', 110, 805, m('idx', 1.6), { size: 36, fill: C_PRICE, weight: 700 });
+  }],
+
+  ['fx', 'Currency forwards', (m) => {
+    const p = panel(0);
+    text(p, 'AUD per USD:  spot 1.3335 · AUD rate 0.05% · USD rate 0.20% · six months', 800, 110, m('ex'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, 'M800 250V640', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    colHead(p, 130, 't = 0', m('steps')); colHead(p, 890, 't = T', m('steps', 4));
+    ledger(p, 130, 320, 560, [['Borrow USD at 0.20%', 'USD 1,000', C_UND], ['Convert at 1.3335', 'AUD 1,333.50', C_PRICE], ['Lend AUD at 0.05%', '', COL.dim]], [m('steps', .3), m('steps', 1.5), m('steps', 2.8)], { dy: 90 });
+    ledger(p, 890, 320, 560, [['AUD loan pays', 'AUD 1,333.83', C_PRICE], ['USD loan owed', 'USD 1,001', C_UND], '-', ['Forward = 1,333.83 ÷ 1,001', '1.3325', C_GAIN, true]], [m('steps', 4.4), m('steps', 5.4), m('res'), m('res', .2)], { dy: 90 });
+    text(p, 'F₀ = S₀ · e^((r_f − r_d) T)', 800, 710, m('rule'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'foreign rate below domestic → forward below spot · only the gap matters', 800, 790, m('rule', 1.2), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['commodity', 'Commodities and storage', (m) => {
+    const p = panel(0), X = ruler(p, 160, 1100, 400, 1780, 1800, [1780, 1785, 1790, 1795, 1800], v => '$' + v.toLocaleString('en-US'));
+    text(p, 'Gold at $1,783.28 · rate 2% · storage and insurance $2 per ounce at the end', 160, 150, m('ex'), { size: 30, fill: COL.dim, weight: 600 });
+    rdot(p, X, 1783.28, 400, C_UND, 'spot $1,783.28', m('ex', 1.5), {});
+    rdot(p, X, 1792.13, 400, C_PRICE, 'no storage $1,792.13', m('ex', 2.5), {});
+    rdot(p, X, 1794.13, 400, C_RISK, 'with storage $1,794.13', m('calc', 1.5), { ly: -85 });
+    text(p, 'PV of storage = 2 × 1.02^−0.25 = $1.99', 160, 600, m('calc'), { size: 32, fill: C_RISK, weight: 600 });
+    text(p, '(1,783.28 + 1.99) × 1.02^0.25 = $1,794.13', 160, 660, m('calc', 1), { size: 36, fill: C_RISK, weight: 700 });
+    text(p, 'A forward far below this level may reflect a convenience yield', 160, 780, m('cy'), { size: 30, fill: C_GAIN, weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'Arbitrage is a riskless profit; no arbitrage pins derivative prices to spot prices.',
+    'A forward is replicated by borrowing to buy the asset and holding it.',
+    'Forward price = spot compounded at the risk-free rate.',
+    'Carry costs raise it, dividends and coupons lower it; FX uses the rate gap.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

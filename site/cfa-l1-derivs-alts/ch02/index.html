@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forward Commitment and Contingent Claim Features and Instruments</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 2, title: 'Forward Commitment and Contingent Claim Features and Instruments', minutes: 6, language: 'en', next: '../ch03/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+
+const BEATS = [
+  ['intro', 'Firm commitments and contingent claims', introBeat('Derivatives', 2, 'Forwards, Futures, Swaps,', 'Options and Credit', 'what each contract pays')],
+
+  ['forward', 'Forward payoff', (m) => {
+    const p = panel(0), F = 1792.13;
+    const ch = chart(p, { x: 110, y: 190, w: 820, h: 560, x0: 1740, x1: 1840, y0: -60, y1: 60, xl: 'S_T', yl: 'payoff per ounce ($)', ticks: [[F, 'F₀(T)', C_PRICE]] });
+    text(p, 'long forward (buyer):  S_T − F₀(T)', 330, 215, m('line'), { size: 26, fill: C_GAIN, weight: 600 });
+    text(p, 'short forward (seller):  F₀(T) − S_T', 330, 255, m('line', 1.5), { size: 26, fill: C_RISK, weight: 600 });
+    curve(ch, p, v => v - F, C_GAIN, m('line', .3), 1.2);
+    curve(ch, p, v => F - v, C_RISK, m('line', 1.8), 1.2);
+    // Procam example
+    const g = G(p, { o: 0 }); mk('circle', { cx: ch.X(1780.5), cy: ch.Y(1780.5 - F), r: 11, fill: C_GAIN, stroke: COL.board, 'stroke-width': 3 }, g);
+    path(g, `M${ch.X(1780.5)} ${ch.Y(0)}V${ch.Y(1780.5 - F)}`, { stroke: C_GAIN, 'stroke-width': 3, 'stroke-dasharray': '8 8' });
+    T(g, '−11.63', { x: ch.X(1780.5) - 20, y: ch.Y(1780.5 - F) + 50, size: 28, fill: C_GAIN, weight: 700, anchor: 'middle' });
+    show(g, m('pay'));
+    text(p, 'Procam buys 100 oz of gold', 1010, 300, m('ex'), { size: 30, weight: 700 });
+    text(p, 'forward price   F₀(T) = $1,792.13', 1010, 360, m('ex', .8), { size: 28, fill: C_PRICE, weight: 600 });
+    text(p, 'spot at maturity   S_T = $1,780.50', 1010, 420, m('st'), { size: 28, fill: C_UND, weight: 600 });
+    text(p, 'payoff = 1,780.50 − 1,792.13', 1010, 480, m('pay'), { size: 28, fill: COL.dim });
+    text(p, '= −$11.63 per ounce', 1010, 525, m('pay', .6), { size: 30, fill: C_RISK, weight: 700 });
+    text(p, '× 100 oz  =  −$1,163', 1010, 600, m('tot'), { size: 34, fill: C_RISK, weight: 700 });
+    text(p, 'Procam pays the seller', 1010, 650, m('tot', .5), { size: 26, fill: COL.dim });
+  }],
+
+  ['futures', 'Futures and daily settlement', (m) => {
+    const p = panel(0), days = ['T−6', 'T−5', 'T−4', 'T−3', 'T−2', 'T−1', 'T'];
+    const ch = chart(p, { x: 120, y: 190, w: 960, h: 540, x0: 0, x1: 6, y0: 3800, y1: 5700, yl: 'margin balance ($)', ticks: days.map((s, i) => [i, s]) });
+    text(p, 'marked to market every day', 800, 130, m('mtm'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, `M${ch.x} ${ch.Y(4950)}H${ch.x + ch.w}`, { stroke: COL.dim, 'stroke-width': 2, 'stroke-dasharray': '10 8' });
+    text(p, 'initial margin $4,950', ch.x + ch.w - 4, ch.Y(4950) - 14, m('init'), { size: 24, fill: COL.dim, anchor: 'end' });
+    const mm = path(p, `M${ch.x} ${ch.Y(4500)}H${ch.x + ch.w}`, { stroke: C_RISK, 'stroke-width': 2, 'stroke-dasharray': '10 8' });
+    text(p, 'maintenance margin $4,500', ch.x + 14, ch.Y(4500) + 36, m('init', 1.5), { size: 24, fill: C_RISK });
+    const P = [[0, 4950], [1, 5450], [2, 4362]], Q = [[2, 4950], [3, 4544], [4, 4070]], R = [[4, 4950], [5, 5155], [6, 5255]];
+    const dd = a => a.map(([i, v], k) => (k ? 'L' : 'M') + ch.X(i) + ' ' + ch.Y(v)).join('');
+    const line = (a, t0, dur) => draw(path(p, dd(a), { stroke: C_UND, 'stroke-width': 6 }, { d: 0 }), t0, dur);
+    line(P, m('init', 2), 2.5); line(Q, m('d4', 4.5), 2); line(R, m('d2', 3), 2);
+    const call = (i, from, to, lab, k, t0) => {
+      varrow(p, ch.X(i), ch.Y(from), ch.Y(to), C_GAIN, t0, .8, 5);
+      text(p, lab, ch.X(i) + 22, (ch.Y(from) + ch.Y(to)) / 2 + 8, t0 + .5, { size: 28, fill: C_GAIN, weight: 700 });
+    };
+    call(2, 4362, 4950, '+$588', 'd4', m('d4', 3.4)); call(4, 4070, 4950, '+$880', 'd2', m('d2', 1.8));
+    [[2, 4362], [4, 4070]].forEach(([i, v], k) => { const g = G(p, { o: 0 }); mk('circle', { cx: ch.X(i), cy: ch.Y(v), r: 10, fill: C_RISK }, g); show(g, k ? m('d2', 1) : m('d4', 3)); });
+    text(p, 'Margin calls', 1180, 330, m('tot'), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, '$588 + $880 = $1,468 paid', 1180, 385, m('tot', .5), { size: 30, fill: C_GAIN, weight: 700 });
+    text(p, 'Margin returned', 1180, 470, m('tot', 2.5), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, '$5,255 − $4,950 = $305', 1180, 525, m('tot', 3), { size: 30, fill: C_UND, weight: 700 });
+    text(p, 'Net loss', 1180, 610, m('tot', 5), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, '$1,468 − $305 = $1,163', 1180, 665, m('tot', 5.5), { size: 34, fill: C_RISK, weight: 700 });
+    text(p, 'same as the forward', 1180, 715, m('tot', 6.5), { size: 26, fill: COL.dim });
+  }],
+
+  ['swaps', 'Interest rate swap', (m) => {
+    const p = panel(0), y = 400;
+    text(p, 'Five-year receive-fixed swap, notional £200 million', 800, 150, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    lbox(p, 'Fyleton', COL.chalk, 270, y, 280, 110, m('ex'), 40); lbox(p, 'Financial\nintermediary', COL.dim, 1330, y, 340, 130, m('ex'), 32);
+    harrow(p, 1160, 440, y - 40, C_PRICE, m('fix'), .8, 6);
+    text(p, 'fixed  2.25% × £200m ÷ 2  =  £2,250,000', 800, y - 78, m('fix', .6), { size: 28, fill: C_PRICE, anchor: 'middle', weight: 600 });
+    harrow(p, 440, 1160, y + 40, C_UND, m('flt'), .8, 6);
+    text(p, 'floating  1.95% × £200m ÷ 2  =  £1,950,000', 800, y + 94, m('flt', .6), { size: 28, fill: C_UND, anchor: 'middle', weight: 600 });
+    path(p, 'M600 600H1000', { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, '2,250,000 − 1,950,000', 800, 580, m('net'), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Fyleton receives £300,000', 800, 660, m('net', .6), { size: 44, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    text(p, 'notional never exchanged  ·  value is zero at the start', 800, 790, m('note'), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['options', 'Call option', (m) => {
+    const p = panel(0), X0 = 30, c0 = 5;
+    const ch = chart(p, { x: 110, y: 190, w: 820, h: 560, x0: 15, x1: 50, y0: -10, y1: 22, xl: 'S_T', yl: 'payoff / profit ($)', ticks: [[X0, 'X = 30'], [35, '35', C_GAIN]] });
+    curve(ch, p, v => Math.max(0, v - X0), COL.dim, m('prem'), 1, 5, '12 10');
+    curve(ch, p, v => Math.max(0, v - X0) - c0, C_GAIN, m('prem', .6), 1.2);
+    text(p, 'payoff', ch.X(47), ch.Y(17) + 40, m('prem', 1), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'profit', ch.X(47), ch.Y(12) + 40, m('prem', 1), { size: 24, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    const dotAt = (v, y, c, t0) => { const g = G(p, { o: 0 }); mk('circle', { cx: ch.X(v), cy: ch.Y(y), r: 10, fill: c, stroke: COL.board, 'stroke-width': 3 }, g); show(g, t0); };
+    dotAt(40, 10, COL.dim, m('s1')); dotAt(40, 5, C_GAIN, m('s1', .3)); dotAt(25, -5, C_RISK, m('s2'));
+    text(p, 'Call: right to buy', 1010, 260, m('a'), { size: 32, weight: 700 });
+    text(p, 'premium  c₀ = $5   strike  X = $30', 1010, 320, m('prem'), { size: 28, fill: C_PRICE, weight: 600 });
+    text(p, 'S_T = 40:  payoff 10, profit 5', 1010, 420, m('s1'), { size: 28, fill: C_GAIN, weight: 600 });
+    text(p, 'exercise', 1010, 460, m('s1', .3), { size: 24, fill: COL.dim });
+    text(p, 'S_T = 25:  payoff 0, profit −5', 1010, 540, m('s2'), { size: 28, fill: C_RISK, weight: 600 });
+    text(p, 'walk away, lose the premium', 1010, 580, m('s2', .3), { size: 24, fill: COL.dim });
+    text(p, 'break-even  =  X + c₀  =  35', 1010, 660, m('be'), { size: 28, fill: C_GAIN, weight: 600 });
+    text(p, 'c_T = max(0, S_T − X)', 1010, 770, m('fm'), { size: 34, weight: 700 });
+  }],
+
+  ['profiles', 'Four option positions', (m) => {
+    const p = panel(0), X0 = 30, pr = 5, W = 560, H = 270;
+    const spots = [[130, 170], [850, 170], [130, 520], [850, 520]];
+    const mkc = (i, title, color, f, t0) => {
+      const [x, y] = spots[i];
+      const ch = chart(p, { x, y, w: W, h: H, x0: 10, x1: 50, y0: -20, y1: 20, xl: 'S_T', ticks: [[X0, 'X']], size: 22 });
+      text(p, title, x, y - 14, t0, { size: 28, fill: color, weight: 700 });
+      curve(ch, p, f, color, t0 + .2, 1.1);
+    };
+    mkc(0, 'Long call', C_GAIN, v => Math.max(0, v - X0) - pr, m('a'));
+    mkc(1, 'Short call', C_RISK, v => -Math.max(0, v - X0) + pr, m('a', 2));
+    mkc(2, 'Long put', C_GAIN, v => Math.max(0, X0 - v) - pr, m('lp'));
+    mkc(3, 'Short put', C_RISK, v => -Math.max(0, X0 - v) + pr, m('sp'));
+    text(p, 'unlimited loss', 1300, 420, m('a', 5), { size: 24, fill: C_RISK, anchor: 'middle' });
+    text(p, 'loss limited: price ≥ 0', 1300, 770, m('sp', 3), { size: 24, fill: C_RISK, anchor: 'middle' });
+    text(p, 'Buyers risk only the premium', 800, 880, m('sum'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['credit', 'Credit default swap', (m) => {
+    const p = panel(0);
+    lbox(p, 'Protection buyer\n(short credit risk)', C_PRICE, 330, 300, 420, 120, m('a'), 30); lbox(p, 'Protection seller\n(long credit risk)', C_UND, 1270, 300, 420, 120, m('a'), 30);
+    harrow(p, 550, 1050, 270, C_PRICE, m('prem'), .8, 5); text(p, 'fixed spread, every period', 800, 250, m('prem', .5), { size: 26, fill: C_PRICE, anchor: 'middle', weight: 600 });
+    harrow(p, 1050, 550, 345, C_RISK, m('ev'), .8, 5); text(p, 'if credit event:  LGD × notional', 800, 390, m('ev', .5), { size: 26, fill: C_RISK, anchor: 'middle', weight: 600 });
+    path(p, 'M200 640H1400', { stroke: COL.chalk, 'stroke-width': 3 });
+    [['t = 0', 300, 'spread 100 bp'], ['t = 1', 800, 'spread widens to 250 bp'], ['t = 2', 1300, 'credit event']].forEach(([a, x, b], i) => {
+      path(p, `M${x} 628V652`, { stroke: COL.chalk, 'stroke-width': 3 });
+      text(p, a, x, 700, m('mig', i ? i * 1.2 - .6 : 0), { size: 26, fill: COL.dim, anchor: 'middle' });
+      text(p, b, x, 745, m('mig', i ? i * 1.2 - .6 : 0), { size: 26, fill: i === 2 ? C_RISK : COL.chalk, anchor: 'middle', weight: 600 });
+    });
+    text(p, 'buyer gains · seller loses', 800, 585, m('mig', 1.8), { size: 28, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    text(p, 'like insurance on a borrower', 800, 830, m('ins'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['compare', 'Linear versus non-linear', (m) => {
+    const p = panel(0), F = 100, c0 = 5;
+    const ch = chart(p, { x: 110, y: 190, w: 800, h: 540, x0: 80, x1: 120, y0: -20, y1: 20, xl: 'S_T', yl: 'profit', ticks: [[F, 'X = F₀(T)']] });
+    curve(ch, p, v => v - F, C_PRICE, m('lin'), 1.2); text(p, 'long forward', ch.X(106), ch.Y(11), m('lin'), { size: 26, fill: C_PRICE, weight: 600, anchor: 'end' });
+    curve(ch, p, v => Math.max(0, v - F) - c0, C_UND, m('non'), 1.2); text(p, 'long call', ch.X(86), ch.Y(-5) - 24, m('non'), { size: 26, fill: C_UND, weight: 600 });
+    const g = G(p, { o: 0 }); mk('circle', { cx: ch.X(95), cy: ch.Y(-5), r: 11, fill: COL.chalk }, g); show(g, m('cross'));
+    text(p, 'S_T − F₀(T) = −c₀', ch.X(95) - 14, ch.Y(-5) + 56, m('cross'), { size: 24, fill: COL.chalk, anchor: 'middle' });
+    text(p, 'Forward', 1010, 260, m('lin'), { size: 32, fill: C_PRICE, weight: 700 });
+    bullets(p, ['linear, symmetric payoff', 'no upfront payment', 'both sides can lose'], 1010, 320, 48, [m('lin', .5), m('lin', 1.5), m('lin', 2.5)], { size: 28 });
+    text(p, 'Call option', 1010, 530, m('non'), { size: 32, fill: C_UND, weight: 700 });
+    bullets(p, ['non-linear, kinked payoff', 'premium paid upfront', 'buyer loses at most the premium'], 1010, 590, 48, [m('non', .5), m('non', 1.5), m('non', 2.5)], { size: 28 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'Forwards, futures and swaps are firm commitments with straight-line payoffs.',
+    'Futures settle daily through margin; swaps exchange net cash flows.',
+    'A call pays max(0, S − X); a put pays max(0, X − S). Buyers risk only the premium.',
+    'Options are non-linear; a credit default swap insures against default.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
