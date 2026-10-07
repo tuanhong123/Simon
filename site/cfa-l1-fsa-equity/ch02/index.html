@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Financial Reporting Quality</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 2, title: 'Financial Reporting Quality', minutes: 7, language: 'en', next: '../ch03/' };
+
+const SPECTRUM = [['GAAP, decision-useful, sustainable, adequate returns', COL.good], ['GAAP, decision-useful, but sustainable?', COL.irr],
+  ['Within GAAP, but biased choices', COL.int], ['Within GAAP, but earnings management', COL.task], ['Non-compliant accounting', COL.nat], ['Fictitious transactions', COL.bad]];
+
+const BEATS = [
+  introBeat('Financial Statement Analysis, Chapter 2', 'Financial', 'Reporting Quality', 'is the report honest, and is the profit repeatable?'),
+
+  ['quality', 'Reporting quality vs earnings quality', (m) => {
+    const p = panel(0), c1 = 760, c2 = 1170, cw = 380;
+    text(p, 'Financial reporting quality: relevant, complete, neutral, error-free', 130, 130, m('frq'), { size: 28, fill: COL.whole, weight: 600 });
+    text(p, 'Earnings quality: sustainable results, adequate return', 130, 180, m('eq'), { size: 28, fill: COL.task, weight: 600 });
+    text(p, 'Low reporting quality', c1, 290, m('grid'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'High reporting quality', c2, 290, m('grid'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'High earnings quality', 330, 440, m('grid'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'Low earnings quality', 330, 640, m('grid'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const cell = (x, y, h, col, l1, l2, t0) => { show(box(p, x - cw / 2, y, cw, h, col, t0, .12), 0); text(p, l1, x, y + h / 2 - 6, t0, { size: 28, fill: col, anchor: 'middle', weight: 700 }); text(p, l2, x, y + h / 2 + 34, t0 + .2, { size: 24, anchor: 'middle', fill: COL.dim }); return null; };
+    cell(c1, 330, 340, COL.bad, 'Assessment blocked', 'valuation is unreliable', m('grid'));
+    cell(c2, 330, 150, COL.good, 'Truth visible', 'company value rises', m('grid', 1.2));
+    cell(c2, 520, 150, COL.int, 'Truth visible', 'company value falls', m('grid', 2.8));
+    text(p, 'Example: Toyota, profit boosted by a weaker yen', 800, 800, m('ex'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'clear reporting, less sustainable earnings', 800, 845, m('ex', .5), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['spectrum', 'A quality spectrum', (m) => {
+    const p = panel(0), x = 200, w = 1000, h = 92;
+    SPECTRUM.forEach(([s, c], i) => {
+      const y = 140 + i * (h + 14), g = G(p, { x: -30, o: 0 });
+      mk('rect', { x, y, width: w, height: h, rx: 16, fill: c, 'fill-opacity': .14, stroke: c, 'stroke-width': 3 }, g);
+      T(g, String(i + 1), { x: x + 44, y: y + h / 2 + 12, size: 36, fill: c, weight: 700, anchor: 'middle' });
+      T(g, s, { x: x + 90, y: y + h / 2 + 10, size: 30, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m('s' + (i + 1)), .6, out);
+    });
+    const a = path(p, 'M1330 160V820', { stroke: COL.dim, 'stroke-width': 4 }, { d: 0 });
+    draw(a, m('s2'), 6);
+    text(p, 'less reliable', 1360, 500, m('s6'), { size: 26, fill: COL.dim });
+  }],
+
+  ['shift', 'Moving profit between periods', (m) => {
+    const p = panel(0), base = 690, k = 3.2, off = 80;
+    text(p, 'Profit per year (same business, same two-year total)', 800, 130, .2, { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    axisLine(p, 140, 1460, base);
+    [[330, 'True profit', 100, 100, 'base'], [800, 'Aggressive', 120, 80, 'agg'], [1270, 'Conservative', 80, 120, 'cons']].forEach(([cx, name, a, b, mk_]) => {
+      bar(p, cx - off, base, k, [[a, COL.whole]], m(mk_), { w: 120, top: String(a) });
+      bar(p, cx + off, base, k, [[b, COL.task]], m(mk_, .5), { w: 120, top: String(b) });
+      text(p, name, cx, base + 50, m(mk_), { size: 30, anchor: 'middle', weight: 700 });
+    });
+    leg(p, 'Year 1', COL.whole, 560, 800, m('base')); leg(p, 'Year 2', COL.task, 700, 800, m('base'));
+    text(p, 'Total is 200 in every case; only the timing changes', 800, 860, m('tot'), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['triangle', 'The fraud triangle', (m) => {
+    const p = panel(0), top = [800, 190], bl = [420, 640], br = [1180, 640];
+    draw(path(p, `M${top[0]} ${top[1]}L${bl[0]} ${bl[1]}L${br[0]} ${br[1]}Z`, { stroke: COL.chalk, 'stroke-width': 4 }, { d: 0 }), .3, 1.5);
+    text(p, 'three conditions', 800, 500, .8, { size: 28, fill: COL.dim, anchor: 'middle' }); text(p, 'come together', 800, 540, .8, { size: 28, fill: COL.dim, anchor: 'middle' });
+    const node = (pt, col, head, lines, dx, dy, anchor, mk_) => {
+      const g = G(p, { x: pt[0], y: pt[1], o: 0 });
+      mk('circle', { r: 20, fill: col }, g); show(g, m(mk_));
+      text(p, head, pt[0] + dx, pt[1] + dy, m(mk_), { size: 38, fill: col, anchor, weight: 700 });
+      lines.forEach((s, i) => text(p, s, pt[0] + dx, pt[1] + dy + 44 + i * 38, m(mk_, .3 + i * .3), { size: 26, anchor, fill: COL.dim }));
+    };
+    node(top, COL.whole, 'Opportunity', ['weak internal controls', 'passive board', 'flexible standards'], 140, 0, 'start', 'opp');
+    node(bl, COL.bad, 'Pressure', ['meet forecasts, earn a bonus', 'protect a career', 'avoid covenant breach'], -30, 70, 'start', 'pres');
+    node(br, COL.task, 'Rationalization', ['a story that makes', 'the choice feel acceptable'], -230, 70, 'start', 'rat');
+  }],
+
+  ['discipline', 'What disciplines reporting', (m) => {
+    const p = panel(0);
+    text(p, 'Three mechanisms', 800, 150, .2, { size: 38, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [[130, COL.whole, 'Regulators', ['Required filings', 'and disclosures', 'MD&A on critical', 'estimates'], 'reg'],
+     [590, COL.task, 'Auditors', ['Unqualified: clean', 'Qualified', 'Adverse', 'Disclaimer'], 'aud'],
+     [1050, COL.good, 'Private contracting', ['Lenders: covenants', 'and monitoring', 'Buyers: due', 'diligence'], 'priv']].forEach(([x, c, head, lines, mk_]) => {
+      show(box(p, x, 230, 420, 440, c, m(mk_)), 0);
+      text(p, head, x + 210, 310, m(mk_), { size: 36, fill: c, anchor: 'middle', weight: 700 });
+      lines.forEach((s, i) => text(p, s, x + 210, 400 + i * 52, m(mk_, .5 + i * .3), { size: 28, anchor: 'middle', fill: i === 0 && mk_ === 'aud' ? COL.good : COL.chalk }));
+    });
+    text(p, 'An audit gives reasonable assurance, not a guarantee', 800, 780, m('aud', 6), { size: 30, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['presentation', 'Non-GAAP earnings', (m) => {
+    const p = panel(0), base = 740, k = 4.6, xs = [320, 620, 920, 1220];
+    text(p, 'Net income, £ millions (illustrative)', 800, 130, .2, { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    axisLine(p, 180, 1400, base);
+    bar(p, xs[0], base, k, [[60, COL.whole]], m('rep'), { label: 'Reported', top: '60' });
+    const fl = (cx, from, v, c, label, top, t0) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: cx - 65, y: base - (from + v) * k, width: 130, height: v * k, rx: 4, fill: c, 'fill-opacity': .88 }, g);
+      T(g, label, { x: cx, y: base + 42, size: 24, fill: COL.dim, anchor: 'middle' });
+      T(g, top, { x: cx, y: base - (from + v) * k - 16, size: 30, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, t0, .6, out);
+    };
+    fl(xs[1], 60, 25, COL.task, '+ Restructuring', '+25', m('add'));
+    fl(xs[2], 85, 15, COL.task, '+ Stock comp', '+15', m('add', 1.8));
+    bar(p, xs[3], base, k, [[100, COL.good]], m('add', 3.6), { label: 'Adjusted', top: '100' });
+    show(pill(p, 'only negatives excluded = aggressive', COL.bad, 800, 840, 0, 26), m('flag'));
+  }],
+
+  ['estimates', 'Estimates move earnings', (m) => {
+    const p = panel(0), base = 700, k = .12;
+    text(p, 'A £10,000 machine: annual depreciation', 420, 150, .2, { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    axisLine(p, 120, 720, base);
+    bar(p, 270, base, k, [[2000, COL.bad]], m('five'), { label: '5-year life', top: '£2,000' });
+    bar(p, 570, base, k, [[1000, COL.good]], m('ten'), { label: '10-year life', top: '£1,000' });
+    text(p, 'profit is £1,000 higher every year', 420, 800, m('eps'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'cash is unchanged', 420, 845, m('eps', .8), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Other levers', 1130, 220, m('more'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['salvage value', 'depreciation method', 'bad debt estimate', 'inventory cost flow', 'deferred tax asset realizability'].forEach((s, i) => show(pill(p, s, COL.whole, 1130, 310 + i * 100, 0, 26), m('more', .5 + i * .8)));
+    text(p, 'Compare with peers and with history', 1130, 840, m('note'), { size: 28, fill: COL.good, anchor: 'middle', weight: 600 });
+  }],
+
+  ['cashflow', 'Operating cash flow', (m) => {
+    const p = panel(0), base = 700, k = 3.4, c1 = 460, c2 = 1060;
+    text(p, 'Operating cash flow', 800, 130, .2, { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    axisLine(p, 180, 1400, base);
+    bar(p, c1, base, k, [[100, COL.whole]], m('base'), { label: 'Period 1', top: '' });
+    const s = bar(p, c1, base - 100 * k, k, [[30, COL.task]], m('stretch'), { top: '130', w: 130 });
+    text(p, 'delayed supplier payments', c1 + 100, base - 115 * k, m('stretch', .5), { size: 24, fill: COL.task });
+    bar(p, c2, base, k, [[70, COL.whole]], m('rev'), { label: 'Period 2', top: '70' });
+    const g = G(p, { o: 0 }); mk('rect', { x: c2 - 65, y: base - 100 * k, width: 130, height: 30 * k, rx: 4, fill: 'none', stroke: COL.bad, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, g); show(g, m('rev', .5));
+    text(p, 'the 30 reverses', c2 + 100, base - 85 * k, m('rev', .5), { size: 26, fill: COL.bad, weight: 600 });
+    show(pill(p, 'also: classification of outflows', COL.dim, 800, 795, 0, 26), m('class'));
+    text(p, 'Compare operating cash flow with net income', 800, 880, m('chk'), { size: 28, fill: COL.good, anchor: 'middle', weight: 600 });
+  }],
+
+  ['signs', 'Warning signs', (m) => {
+    const p = panel(0), base = 700, k = 2, X = i => 250 + i * 190;
+    text(p, 'Index, year 1 = 100', 460, 130, m('rev'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    axisLine(p, 120, 800, base);
+    [[100, 100], [110, 130], [121, 190]].forEach(([r, a], i) => {
+      bar(p, X(i) - 45, base, k, [[r, COL.whole]], m('rev', .4 + i * .9), { w: 80, top: String(r), label: i === 0 ? '' : '' });
+      bar(p, X(i) + 45, base, k, [[a, COL.bad]], m('rev', .8 + i * .9), { w: 80, top: String(a) });
+      text(p, 'Year ' + (i + 1), X(i), base + 42, m('rev', .4 + i * .9), { size: 24, fill: COL.dim, anchor: 'middle' });
+    });
+    leg(p, 'Revenue', COL.whole, 180, 800, m('rev')); leg(p, 'Receivables', COL.bad, 380, 800, m('rev', 1));
+    text(p, 'receivables ÷ revenue: 10% → 12% → 16%', 460, 860, m('dso'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 700 });
+    text(p, 'Also check', 1180, 230, m('more'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['inventory growing faster than sales', 'costs capitalized, not expensed', 'net income ahead of operating cash flow', 'revenue growth far above peers'].forEach((s, i) =>
+      show(pill(p, s, COL.task, 1180, 330 + i * 120, 0, 24), m('more', .5 + i * .9)));
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['Reporting quality is about the report; earnings quality is about the results.', 'w1'],
+    ['Aggressive choices lift today\'s profit by borrowing from tomorrow.', 'w2'],
+    ['Look for pressure, opportunity and rationalization; weigh auditors and regulators.', 'w3'],
+    ['Watch revenue, receivables, estimates, and cash flow against net income.', 'w4']]); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

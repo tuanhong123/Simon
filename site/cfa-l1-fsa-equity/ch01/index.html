@@ -12,7 +12,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 1, title: 'Analysis of Income Taxes', minutes: 6, language: 'en' };
+const CHAPTER = { number: 1, title: 'Analysis of Income Taxes', minutes: 6, language: 'en', next: '../ch02/' };
 
 /* ---------- chapter drawing helpers ---------- */
 const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
