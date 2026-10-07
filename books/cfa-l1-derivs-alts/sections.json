@@ -1,0 +1,127 @@
+[
+ {
+  "folder": "00_front",
+  "title": "Front matter",
+  "start": 1,
+  "end": 10
+ },
+ {
+  "folder": "ch01",
+  "title": "Derivative Instrument and Derivative Market Features",
+  "start": 11,
+  "end": 32,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch02",
+  "title": "Forward Commitment and Contingent Claim Features and Instruments",
+  "start": 33,
+  "end": 62,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch03",
+  "title": "Derivative Benefits, Risks, and Issuer and Investor Uses",
+  "start": 63,
+  "end": 84,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch04",
+  "title": "Arbitrage, Replication, and the Cost of Carry",
+  "start": 85,
+  "end": 106,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch05",
+  "title": "Pricing and Valuation of Forward Contracts",
+  "start": 107,
+  "end": 136,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch06",
+  "title": "Pricing and Valuation of Futures Contracts",
+  "start": 137,
+  "end": 156,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch07",
+  "title": "Pricing and Valuation of Interest Rates and Other Swaps",
+  "start": 157,
+  "end": 178,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch08",
+  "title": "Pricing and Valuation of Options",
+  "start": 179,
+  "end": 204,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch09",
+  "title": "Option Replication Using Put\u2013Call Parity",
+  "start": 205,
+  "end": 226,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch10",
+  "title": "Valuing a Derivative Using a One-Period Binomial Model",
+  "start": 227,
+  "end": 246,
+  "unit": "Derivatives"
+ },
+ {
+  "folder": "ch11",
+  "title": "Alternative Investment Features, Methods, and Structures",
+  "start": 247,
+  "end": 278,
+  "unit": "Alternative Investments"
+ },
+ {
+  "folder": "ch12",
+  "title": "Alternative Investment Performance and Returns",
+  "start": 279,
+  "end": 308,
+  "unit": "Alternative Investments"
+ },
+ {
+  "folder": "ch13",
+  "title": "Investments in Private Capital: Equity and Debt",
+  "start": 309,
+  "end": 336,
+  "unit": "Alternative Investments"
+ },
+ {
+  "folder": "ch14",
+  "title": "Real Estate and Infrastructure",
+  "start": 337,
+  "end": 364,
+  "unit": "Alternative Investments"
+ },
+ {
+  "folder": "ch15",
+  "title": "Natural Resources",
+  "start": 365,
+  "end": 390,
+  "unit": "Alternative Investments"
+ },
+ {
+  "folder": "ch16",
+  "title": "Hedge Funds",
+  "start": 391,
+  "end": 420,
+  "unit": "Alternative Investments"
+ },
+ {
+  "folder": "ch17",
+  "title": "Introduction to Digital Assets",
+  "start": 421,
+  "end": 454,
+  "unit": "Alternative Investments"
+ }
+]
