@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Derivative Instrument and Derivative Market Features</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 1, title: 'Derivative Instrument and Derivative Market Features', minutes: 8, language: 'en', next: '../ch02/' };
+
+/* ---------- data ---------- */
+const UNDER = [['Equities', COL.task, 'stocks, stock indexes', 'equity volatility'], ['Interest rates', COL.whole, 'bonds, reference rates', 'e.g. SOFR, €STR, SONIA'],
+  ['Currencies', COL.good, 'exchange rates', 'hedge trade and FX risk'], ['Commodities', COL.int, 'soft: corn, cattle', 'hard: oil, metals'],
+  ['Credit', COL.bad, 'credit default swaps', 'single names, indexes'], ['Other', COL.real, 'weather, crypto', 'longevity']];
+
+/* ---------- beats: [id, title, run(m, D)] ---------- */
+const BEATS = [
+  ['intro', 'Derivatives', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 1', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Derivative Instrument and', { x: 800, y: 400, size: 76, weight: 600, anchor: 'middle' });
+    T(g, 'Derivative Market Features', { x: 800, y: 490, size: 76, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'what a derivative is, what it is built on, and where it trades', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['spot', 'Spot market vs. derivative', (m) => {
+    const p = panel(0);
+    text(p, 'Spot (cash) market', 100, 130, .2, { size: 32, fill: COL.dim, weight: 700 });
+    cbox(p, 'Buyer', COL.good, 480, 250, .3, { w: 220, h: 90 }); cbox(p, 'Seller', COL.bad, 1120, 250, .3, { w: 220, h: 90 });
+    const a = swapTok(p, 'asset', COL.task, 1120, 330, m('spot')), c = swapTok(p, 'spot price', COL.chalk, 480, 330, m('spot'));
+    tw(a, { x: 480 }, m('spot', 1), 1.2); tw(c, { x: 1120 }, m('spot', 1), 1.2);
+    text(p, 'exchanged now, at today’s price', 800, 395, m('spot', 1.4), { size: 28, fill: COL.task, anchor: 'middle', weight: 600 });
+    path(p, 'M100 420H1500', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Derivative', 100, 490, m('deriv'), { size: 32, fill: COL.real, weight: 700 });
+    const y = 790;
+    draw(path(p, `M300 ${y}H1340`, { stroke: COL.whole, 'stroke-width': 3 }, { d: 0 }), m('deriv'), .8);
+    [[400, 't = 0 (today)'], [1240, 't = T (later)']].forEach(([x, s]) => { show(path(p, `M${x} ${y - 10}V${y + 10}`, { stroke: COL.whole, 'stroke-width': 3 }, { o: 0 }), m('deriv', .3)); text(p, s, x, y + 44, m('deriv', .3), { size: 26, fill: COL.whole, anchor: 'middle' }); });
+    swapTok(p, 'contract', COL.real, 400, 700, m('deriv', 1));
+    text(p, 'agree today', 400, 650, m('deriv', 1.3), { size: 26, fill: COL.real, anchor: 'middle', weight: 600 });
+    flow(p, 520, 745, 1110, 745, COL.whole, m('deriv', 2.6), 'wait', { dash: '10 10', size: 24, ly: 735, lx: 815 });
+    swapTok(p, 'asset', COL.task, 1240, 670, m('deriv', 3.4)); swapTok(p, 'cash', COL.chalk, 1240, 720, m('deriv', 3.6));
+    text(p, 'exchange later', 1240, 620, m('deriv', 3.8), { size: 26, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    const g = G(p, { o: 0 });
+    path(g, 'M650 600L700 560L740 580L790 520L840 555L880 505L930 540', { stroke: COL.task, 'stroke-width': 4 });
+    T(g, 'underlying price', { x: 790, y: 495, size: 24, fill: COL.task, anchor: 'middle', weight: 600 });
+    show(g, m('value'));
+    flow(p, 640, 590, 490, 680, COL.real, m('value', .8), '', { bend: 30 });
+    text(p, 'value derived from the underlying', 800, 655, m('value', 1.2), { size: 26, fill: COL.real, anchor: 'middle', weight: 600 });
+  }],
+
+  ['forward', 'A forward contract', (m) => {
+    const p = panel(0), L = 300, R = 1300, y = 250;
+    cbox(p, 'AMY\nInvestments', COL.bad, L, y, .2, { w: 280, h: 120 }); cbox(p, 'Financial\nintermediary', COL.good, R, y, .2, { w: 280, h: 120 });
+    text(p, 'seller (short)', L, y + 100, m('boxes', .4), { size: 24, fill: COL.bad, anchor: 'middle' });
+    text(p, 'buyer (long)', R, y + 100, m('boxes', .4), { size: 24, fill: COL.good, anchor: 'middle' });
+    const sc = G(p, { o: 0 });
+    mk('rect', { x: 520, y: 175, width: 560, height: 150, rx: 14, fill: COL.board, stroke: COL.real, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, sc);
+    T(sc, 't = 0: forward contract', { x: 800, y: 215, size: 26, fill: COL.real, weight: 700, anchor: 'middle' });
+    T(sc, 'Sell 1,000 Airbus shares', { x: 800, y: 260, size: 28, anchor: 'middle', weight: 600 });
+    T(sc, 'at €30 each, in 6 months', { x: 800, y: 300, size: 28, anchor: 'middle', weight: 600 });
+    show(sc, m('t0'));
+    const nm = text(p, 'no money changes hands today', 800, 390, m('t0', 3.5), { size: 26, fill: COL.dim, anchor: 'middle' });
+    hide(sc, m('tT') - .2, .4); hide(nm, m('tT') - .2, .4);
+    text(p, 't = T (six months later)', 800, 150, m('tT'), { size: 28, fill: COL.whole, anchor: 'middle', weight: 700 });
+    const f1 = flow(p, L + 150, y - 25, R - 150, y - 25, COL.task, m('tT', .4), '1,000 Airbus shares', { size: 26 });
+    const f2 = flow(p, R - 150, y + 30, L + 150, y + 30, COL.good, m('tT', 1.6), '€30,000', { size: 28 });
+    // value comparison bars, € scale: 0.01 px per euro
+    const base = 800, k = .01, bx1 = 560, bx2 = 820;
+    text(p, 'Spot price at T:  S', 480, 430, m('st'), { size: 30, fill: COL.task, weight: 600 });
+    text(p, 'T', 731, 440, m('st'), { size: 20, fill: COL.task, weight: 600 });
+    text(p, ' = €25', 742, 430, m('st'), { size: 30, fill: COL.task, weight: 600 });
+    draw(path(p, `M440 ${base}H1000`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('st', 1), .5);
+    const b1 = G(p, { o: 0, y: 20 });
+    mk('rect', { x: bx1 - 60, y: base - 25000 * k, width: 120, height: 25000 * k, rx: 4, fill: COL.task, 'fill-opacity': .88 }, b1);
+    T(b1, '€25,000', { x: bx1, y: base - 25000 * k - 14, size: 26, weight: 600, anchor: 'middle' });
+    T(b1, 'market value', { x: bx1, y: base + 34, size: 24, fill: COL.dim, anchor: 'middle' });
+    tw(b1, { o: 1, y: 0 }, m('st', 1.5), .6, out);
+    const b2 = G(p, { o: 0, y: 20 });
+    mk('rect', { x: bx2 - 60, y: base - 30000 * k, width: 120, height: 30000 * k, rx: 4, fill: COL.good, 'fill-opacity': .88 }, b2);
+    T(b2, '€30,000', { x: bx2, y: base - 30000 * k - 14, size: 26, weight: 600, anchor: 'middle' });
+    T(b2, 'AMY receives', { x: bx2, y: base + 34, size: 24, fill: COL.dim, anchor: 'middle' });
+    tw(b2, { o: 1, y: 0 }, m('gain'), .6, out);
+    draw(path(p, `M900 ${base - 30000 * k}h20V${base - 25000 * k}h-20`, { stroke: COL.good, 'stroke-width': 3 }, { d: 0 }), m('gain', 1.5), .5);
+    text(p, '+ €5,000', 935, base - 27500 * k + 10, m('gain', 1.8), { size: 30, fill: COL.good, weight: 700 });
+    hide(f1, m('cash'), .4); hide(f2, m('cash'), .4);
+    flow(p, R - 150, y, L + 150, y, COL.good, m('cash', .4), '€5,000 net cash settlement', { size: 28 });
+    pill(p, 'price risk  →  counterparty', COL.task, 1320, 560, m('risk'));
+    pill(p, 'counterparty credit risk', COL.bad, 1320, 660, m('risk', 4));
+  }],
+
+  ['terms', 'Features of a derivative', (m) => {
+    const p = panel(0), x0 = 260, x1 = 1340;
+    const card = G(p, { o: 0 });
+    mk('rect', { x: x0, y: 110, width: x1 - x0, height: 600, rx: 18, fill: COL.board, stroke: COL.real, 'stroke-width': 3 }, card);
+    T(card, 'Forward contract · term sheet', { x: 800, y: 170, size: 34, fill: COL.real, weight: 700, anchor: 'middle' });
+    path(card, `M${x0 + 40} 200H${x1 - 40}`, { stroke: COL.faint, 'stroke-width': 2 });
+    show(card, m('sheet'));
+    [['Underlying', '1,000 Airbus (AIR) shares', COL.task], ['Counterparties', 'AMY Investments · financial intermediary', COL.rat],
+     ['Maturity', 'six months from today', COL.whole], ['Contract size', '1,000 shares × €30 = €30,000', COL.chalk]].forEach(([k, v, c], i) => {
+      const yy = 270 + i * 95;
+      text(p, k, x0 + 50, yy, m('f' + (i + 1)), { size: 30, fill: c, weight: 700 });
+      text(p, v, x0 + 340, yy, m('f' + (i + 1), .3), { size: 30 });
+    });
+    pill(p, 'buyer ≈ long the underlying', COL.good, 560, 790, m('f5'));
+    pill(p, 'seller ≈ short the underlying', COL.bad, 1060, 790, m('f5', 2.2));
+  }],
+
+  ['types', 'Firm commitments and contingent claims', (m) => {
+    const p = panel(0), xl = 420, xr = 1180;
+    path(p, 'M800 120V640', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Firm commitment', xl, 140, m('firm'), { size: 38, fill: COL.whole, weight: 700, anchor: 'middle' });
+    cbox(p, 'A', COL.chalk, xl - 190, 290, m('firm', .3), { w: 110, h: 90 }); cbox(p, 'B', COL.chalk, xl + 190, 290, m('firm', .3), { w: 110, h: 90 });
+    flow(p, xl - 120, 270, xl + 120, 270, COL.whole, m('firm', 1));
+    flow(p, xl + 120, 310, xl - 120, 310, COL.whole, m('firm', 1.3));
+    text(p, 'both must settle', xl, 390, m('firm', 1.8), { size: 28, fill: COL.whole, anchor: 'middle', weight: 600 });
+    ['forwards', 'futures', 'swaps'].forEach((s, i) => pill(p, s, COL.whole, xl - 220 + i * 220, 490, m('firmEx', i * .5), 28));
+    text(p, 'Contingent claim', xr, 140, m('cont'), { size: 38, fill: COL.real, weight: 700, anchor: 'middle' });
+    cbox(p, 'A', COL.chalk, xr - 190, 290, m('cont', .3), { w: 110, h: 90 }); cbox(p, 'B', COL.chalk, xr + 190, 290, m('cont', .3), { w: 110, h: 90 });
+    flow(p, xr - 120, 290, xr + 120, 290, COL.real, m('cont', 1), '', { dash: '12 10' });
+    const q = text(p, '?', xr, 265, m('cont', 1.2), { size: 44, fill: COL.real, anchor: 'middle', weight: 700 });
+    text(p, 'one side chooses whether and when', xr, 390, m('cont', 1.8), { size: 28, fill: COL.real, anchor: 'middle', weight: 600 });
+    pill(p, 'options', COL.real, xr, 490, m('contEx'), 28);
+    path(p, 'M100 600H1500', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'Stand-alone', 330, 680, m('embed'), { size: 30, fill: COL.chalk, weight: 700, anchor: 'middle' });
+    text(p, 'a separate contract, like our forward', 330, 730, m('embed', .3), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Embedded', 1070, 680, m('embed', 2), { size: 30, fill: COL.chalk, weight: 700, anchor: 'middle' });
+    const b = G(p, { o: 0 });
+    mk('rect', { x: 830, y: 710, width: 480, height: 110, rx: 12, fill: 'none', stroke: COL.whole, 'stroke-width': 3 }, b);
+    T(b, 'callable bond', { x: 870, y: 775, size: 28, fill: COL.whole, weight: 600 });
+    mk('rect', { x: 1080, y: 730, width: 210, height: 70, rx: 10, fill: COL.real, 'fill-opacity': .9 }, b);
+    T(b, 'call option', { x: 1185, y: 775, size: 26, fill: COL.board, weight: 700, anchor: 'middle' });
+    show(b, m('embed', 2.6));
+  }],
+
+  ['why', 'Why use derivatives', (m) => {
+    const p = panel(0);
+    title(p, 'What derivatives make possible', m('head'));
+    numbered(p, [['Sell short: benefit from a fall in the underlying', 'u1'], ['Diversify a portfolio', 'u2'],
+      ['Offset the market exposure of a commercial deal', 'u3'], ['Create a large exposure with little cash', 'u4'],
+      ['Lower transaction costs, often more liquidity', 'u5']], m, { y0: 230, gap: 95, size: 32 });
+    const h = pill(p, 'hedging = offsetting an existing or expected exposure', COL.good, 800, 760, m('hedge'), 32);
+    pulse(h, m('hedge', 3.5), 1.08);
+  }],
+
+  ['underlyings', 'Derivative underlyings', (m) => {
+    const p = panel(0);
+    title(p, 'Common underlyings', m('head'));
+    UNDER.forEach(([name, c, l1, l2], i) => {
+      const x = 130 + (i % 3) * 460, y = 190 + Math.floor(i / 3) * 290, g = G(p, { o: 0, y: 20 });
+      mk('rect', { x, y, width: 420, height: 250, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g);
+      T(g, name, { x: x + 30, y: y + 64, size: 36, fill: c, weight: 700 });
+      T(g, l1, { x: x + 30, y: y + 130, size: 28 });
+      T(g, l2, { x: x + 30, y: y + 180, size: 28, fill: COL.dim });
+      tw(g, { o: 1, y: 0 }, m('u' + (i + 1)), .6, out);
+    });
+  }],
+
+  ['scenarios', 'Two scenarios', (m) => {
+    const p = panel(0);
+    path(p, 'M720 120V800', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    // Hightest
+    text(p, 'Hightest Capital', 370, 140, m('hi'), { size: 36, fill: COL.good, weight: 700, anchor: 'middle' });
+    text(p, 'view: health care stocks will', 370, 200, m('hi', .6), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'outperform over six months', 370, 236, m('hi', .6), { size: 26, fill: COL.dim, anchor: 'middle' });
+    const oc = G(p, { o: 0 });
+    mk('rect', { x: 90, y: 300, width: 560, height: 230, rx: 16, fill: COL.board, stroke: COL.real, 'stroke-width': 3 }, oc);
+    T(oc, 'Index call option', { x: 370, y: 350, size: 30, fill: COL.real, weight: 700, anchor: 'middle' });
+    T(oc, 'right to buy the health care', { x: 370, y: 405, size: 28, anchor: 'middle' });
+    T(oc, 'index at spot × 1.05', { x: 370, y: 445, size: 28, anchor: 'middle' });
+    T(oc, 'in six months', { x: 370, y: 485, size: 28, anchor: 'middle' });
+    show(oc, m('hiDeal'));
+    pill(p, 'contingent claim', COL.real, 370, 600, m('hiDeal', 4));
+    // Esterr
+    const E = [1000, 380], I = [1400, 380], Ld = [1000, 690];
+    text(p, 'Esterr Inc.: CAD 250 million floating-rate loan', 1150, 140, m('es'), { size: 30, fill: COL.task, weight: 700, anchor: 'middle' });
+    cbox(p, 'Esterr', COL.task, E[0], E[1], m('es', .3), { w: 210, h: 90 });
+    cbox(p, 'Lender', COL.chalk, Ld[0], Ld[1], m('es', .8), { w: 210, h: 90 });
+    flow(p, E[0], E[1] + 50, Ld[0], Ld[1] - 50, COL.bad, m('es', 1.5), 'MRR + 1.50%', { lx: 1020, ly: 545, anchor: 'start' });
+    const fear = text(p, 'rates may rise ↑', 1150, 220, m('esFear'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+    hide(fear, m('swap'), .4);
+    cbox(p, 'Dealer', COL.rat, I[0], I[1], m('swap'), { w: 210, h: 90 });
+    flow(p, E[0] + 110, E[1] - 20, I[0] - 110, I[1] - 20, COL.bad, m('swap', .8), '2.05% fixed', { bend: 40 });
+    const mrr = flow(p, I[0] - 110, I[1] + 20, E[0] + 110, I[1] + 20, COL.good, m('swap', 2.2), 'MRR', { bend: 40 });
+    pulse(mrr, m('net'), 1.04);
+    const st1 = path(p, 'M1165 451L1235 441', { stroke: COL.chalk, 'stroke-width': 4 }, { d: 0 }), st2 = path(p, 'M1014 537L1086 529', { stroke: COL.chalk, 'stroke-width': 4 }, { d: 0 });
+    draw(st1, m('net', .8), .3); draw(st2, m('net', 1), .3);
+    pill(p, 'net cost: 2.05% + 1.50% = 3.55% fixed', COL.task, 1150, 790, m('net', 2), 28);
+    pill(p, 'firm commitment', COL.whole, 1330, 690, m('net', 6.5), 26);
+  }],
+
+  ['otc', 'Over-the-counter markets', (m) => {
+    const p = panel(0), D = [400, 800, 1200], yD = 430, yU = 220;
+    title(p, 'Over-the-counter (OTC) market', m('net'));
+    D.forEach((x, i) => {
+      [-130, 0, 130].forEach((dx, j) => {
+        draw(path(p, `M${x + dx} ${yU + 34}L${x} ${yD - 50}`, { stroke: COL.dim, 'stroke-width': 2 }, { d: 0 }), m('users', .2 + i * .3), .5);
+        const g = G(p, { x: x + dx, y: yU, s: 0, o: 0 });
+        mk('circle', { r: 34, fill: COL.board, stroke: COL.chalk, 'stroke-width': 3 }, g);
+        T(g, 'user', { y: 8, size: 20, fill: COL.chalk, anchor: 'middle' });
+        pop(g, m('users', i * .3 + j * .1));
+      });
+      cbox(p, 'Dealer', COL.rat, x, yD, m('users', 1), { w: 200, h: 90 });
+    });
+    text(p, 'end users: issuers and investors', 800, 140 + 40, m('users', 1.6), { size: 26, fill: COL.dim, anchor: 'middle' });
+    flow(p, 480, yD + 50, 720, yD + 50, COL.rat, m('dealers'), '', { bend: -60 });
+    flow(p, 880, yD + 50, 1120, yD + 50, COL.rat, m('dealers', .4), '', { bend: -60 });
+    text(p, 'dealers offset risk with each other', 800, 580, m('dealers', 1), { size: 28, fill: COL.rat, anchor: 'middle', weight: 600 });
+    pill(p, 'customized terms', COL.good, 800, 680, m('custom'));
+    ['less transparent', 'more counterparty risk', 'may be less liquid'].forEach((s, i) => pill(p, s, COL.bad, 330 + i * 470, 790, m('cons', i * 1.1), 28));
+  }],
+
+  ['etd', 'Exchange-traded markets', (m) => {
+    const p = panel(0), H = [380, 470], DL = [[380, 250], [170, 650], [590, 650]];
+    title(p, 'Exchange-traded derivatives (ETD)', m('hub'));
+    DL.forEach(([x, y], i) => {
+      draw(path(p, `M${x} ${y}L${H[0]} ${H[1]}`, { stroke: COL.rat, 'stroke-width': 3 }, { d: 0 }), m('hub', .8 + i * .2), .5);
+      cbox(p, 'Dealer', COL.rat, x, y, m('hub', .5 + i * .2), { w: 160, h: 70, size: 26 });
+    });
+    cbox(p, 'Exchange\n/ CCP', COL.rat, H[0], H[1], m('hub', .2), { w: 200, h: 110, size: 28, fillO: .9 });
+    // features on the right
+    const card = G(p, { o: 0 });
+    mk('rect', { x: 760, y: 170, width: 780, height: 220, rx: 14, fill: COL.board, stroke: COL.task, 'stroke-width': 3 }, card);
+    T(card, 'Example: lithium futures (set by the exchange)', { x: 790, y: 215, size: 26, fill: COL.task, weight: 700 });
+    [['Contract size', 'one metric ton'], ['Maturities', 'monthly'], ['Settlement', 'cash, in USD per ton']].forEach(([k, v], i) => {
+      T(card, k, { x: 790, y: 270 + i * 44, size: 26, fill: COL.dim }); T(card, v, { x: 1010, y: 270 + i * 44, size: 26, weight: 600 });
+    });
+    show(card, m('spec'));
+    text(p, 'Market makers: buy at the bid, sell at the offer', 770, 450, m('mm'), { size: 28, weight: 600 });
+    text(p, '→ earn the bid–offer spread', 790, 492, m('mm', 1.2), { size: 26, fill: COL.good });
+    text(p, 'Collateral on deposit → exchange guarantees', 770, 560, m('coll'), { size: 28, weight: 600 });
+    DL.forEach(([x, y], i) => {
+      const c = G(p, { x, y, o: 0 });
+      mk('circle', { r: 13, fill: COL.task }, c);
+      show(c, m('coll', .4)); tw(c, { x: H[0] + (x - H[0]) * .35, y: H[1] + (y - H[1]) * .35 }, m('coll', .6 + i * .15), .9);
+    });
+    text(p, 'Clearing: verify the trade, record who owes what', 770, 630, m('clear'), { size: 28, weight: 600 });
+    text(p, 'Settlement: final payment or delivery', 770, 680, m('clear', 2.6), { size: 28, weight: 600 });
+    pill(p, 'transparent: all trades reported', COL.whole, 1080, 780, m('transp'), 28);
+  }],
+
+  ['compare', 'OTC vs. ETD', (m) => {
+    const p = panel(0), cx = [380, 840, 1260], y0 = 260, gap = 125;
+    title(p, 'OTC vs. exchange-traded', m('head'));
+    text(p, 'OTC', cx[1], 190, m('head', .4), { size: 34, fill: COL.rat, weight: 700, anchor: 'middle' });
+    text(p, 'Exchange-traded', cx[2], 190, m('head', .4), { size: 34, fill: COL.rat, weight: 700, anchor: 'middle' });
+    path(p, 'M160 215H1480', { stroke: COL.faint, 'stroke-width': 2 });
+    [['Terms', 'customized', 'standardized'], ['Transparency', 'private', 'transparent'],
+     ['Counterparty risk', 'higher', 'lower: collateral'], ['Cost and liquidity', 'higher cost, less liquid', 'lower cost, more liquid']].forEach(([k, a, b], i) => {
+      const y = y0 + 40 + i * gap;
+      text(p, k, 180, y, m('r' + (i + 1)), { size: 30, fill: COL.dim, weight: 600 });
+      text(p, a, cx[1], y, m('r' + (i + 1), .3), { size: 30, anchor: 'middle', weight: 600 });
+      text(p, b, cx[2], y, m('r' + (i + 1), 1.3), { size: 30, anchor: 'middle', weight: 600 });
+      path(p, `M160 ${y + 45}H1480`, { stroke: COL.faint, 'stroke-width': 1 });
+    });
+    pill(p, 'trade-off: flexibility', COL.task, 840, 800, m('r4', 3.5));
+  }],
+
+  ['clearing', 'Central clearing', (m) => {
+    const p = panel(0), A = [300, 520], B = [1300, 520];
+    text(p, 'Central clearing (after 2008)', 800, 110, m('intro'), { size: 38, weight: 700, anchor: 'middle' });
+    const step = (s, k) => { const t = text(p, s, 800, 175, m(k), { size: 30, fill: COL.whole, weight: 700, anchor: 'middle' }); return t; };
+    cbox(p, 'Dealer A', COL.rat, A[0], A[1], m('s1'), { w: 220, h: 90 }); cbox(p, 'Dealer B', COL.rat, B[0], B[1], m('s1'), { w: 220, h: 90 });
+    const s1 = step('Step 1: trade on a swap execution facility (SEF)', 's1');
+    cbox(p, 'SEF', COL.whole, 800, 290, m('s1', .5), { w: 180, h: 80 });
+    const direct = G(p);
+    draw(path(direct, `M${A[0] + 110} ${A[1]}H${B[0] - 110}`, { stroke: COL.real, 'stroke-width': 5 }, { d: 0 }), m('s1', 1.2), .8);
+    T(direct, 'swap', { x: 800, y: A[1] - 18, size: 26, fill: COL.real, weight: 600, anchor: 'middle' });
+    draw(path(p, `M${A[0] + 60} ${A[1] - 45}L720 320`, { stroke: COL.whole, 'stroke-width': 2, 'stroke-dasharray': '6 8' }, { d: 0 }), m('s1', 1), .5);
+    draw(path(p, `M${B[0] - 60} ${B[1] - 45}L880 320`, { stroke: COL.whole, 'stroke-width': 2, 'stroke-dasharray': '6 8' }, { d: 0 }), m('s1', 1), .5);
+    hide(s1, m('s2') - .3, .3);
+    const s2 = step('Step 2: trade details go to the central counterparty (CCP)', 's2');
+    const ccp = cbox(p, 'CCP', COL.rat, 800, 760, m('s2', .3), { w: 200, h: 90, fillO: .9 });
+    const td = flow(p, 900, 300, 920, 720, COL.whole, m('s2', 1), 'trade details', { bend: -80, size: 24 });
+    hide(td, m('s3') - .3, .3);
+    hide(s2, m('s3') - .3, .3);
+    text(p, 'Step 3: novation, the CCP faces both dealers', 800, 175, m('s3'), { size: 30, fill: COL.whole, weight: 700, anchor: 'middle' });
+    hide(direct, m('s3', .6), .5);
+    tw(ccp, { y: A[1] }, m('s3', 1), 1, io);
+    draw(path(p, `M${A[0] + 110} ${A[1]}H690`, { stroke: COL.real, 'stroke-width': 5 }, { d: 0 }), m('s3', 2), .6);
+    draw(path(p, `M910 ${A[1]}H${B[0] - 110}`, { stroke: COL.real, 'stroke-width': 5 }, { d: 0 }), m('s3', 2.3), .6);
+    pill(p, 'end users keep OTC flexibility', COL.good, 520, 700, m('good'), 28);
+    pill(p, 'dealers get exchange-style risk control', COL.good, 1080, 790, m('good', 1.6), 28);
+    tw(ccp._r, { c_stroke: COL.bad }, m('risk'), .5);
+    pulse(ccp, m('risk', .2), 1.15);
+    text(p, 'credit risk concentrated in the CCP: systemic risk', 800, 640, m('risk', .8), { size: 30, fill: COL.bad, anchor: 'middle', weight: 700 });
+  }],
+
+  ['venues', 'Where the scenarios trade', (m) => {
+    const p = panel(0);
+    title(p, 'Back to the scenarios', m('back'));
+    cbox(p, 'Hightest\nindex option', COL.good, 330, 330, m('hi'), { w: 300, h: 120 });
+    text(p, 'standard size, strike, maturity', 330, 450, m('hi', 1), { size: 26, fill: COL.dim, anchor: 'middle' });
+    flow(p, 490, 330, 760, 330, COL.chalk, m('hi', 2.5));
+    pill(p, 'exchange-traded', COL.rat, 1000, 330, m('hi', 3));
+    cbox(p, 'Esterr\ninterest rate swap', COL.task, 330, 620, m('es'), { w: 300, h: 120 });
+    text(p, 'tailored to the loan’s dates', 330, 740, m('es', 1), { size: 26, fill: COL.dim, anchor: 'middle' });
+    flow(p, 490, 620, 640, 620, COL.chalk, m('es', 2));
+    pill(p, 'OTC with a dealer', COL.rat, 830, 620, m('es', 2.4));
+    flow(p, 1000, 620, 1090, 620, COL.chalk, m('dealer'));
+    pill(p, 'SEF', COL.whole, 1160, 620, m('dealer', .5));
+    flow(p, 1220, 620, 1320, 620, COL.chalk, m('dealer', 1.6));
+    pill(p, 'CCP', COL.rat, 1390, 620, m('dealer', 2.1));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['A derivative derives its value from an underlying and settles later.', 'w1'],
+      ['Firm commitments must settle; contingent claims let one side choose.', 'w2'],
+      ['OTC: customized. ETD: standardized, transparent, collateralized.', 'w3'],
+      ['CCPs take on dealers’ credit risk, and concentrate it.', 'w4']], m, { y0: 250, gap: 120 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

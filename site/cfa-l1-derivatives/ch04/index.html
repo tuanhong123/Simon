@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arbitrage, Replication, and the Cost of Carry in Pricing Derivatives</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 4, title: 'Arbitrage, Replication, and the Cost of Carry in Pricing Derivatives', minutes: 9, language: 'en', next: '../ch05/' };
+
+/* ---------- data ---------- */
+const ST = ['S', Sb('T')], S0 = ['S', Sb('0')], F0T = ['F', Sb('0'), '(', 'T', ')'];
+const G0 = 1783.28, GF = 1792.13;   // fair spot and forward gold prices, r = 2%, T = 0.25
+const row = (p, label, val, x, y, t0, c = COL.chalk, w = 520) => {
+  text(p, label, x, y, t0, { size: 28 });
+  text(p, val, x + w, y, t0 + .3, { size: 28, fill: c, weight: 700, anchor: 'end' });
+};
+const rule2 = (p, x, y, w, t0) => draw(path(p, `M${x} ${y}H${x + w}`, { stroke: COL.dim, 'stroke-width': 2 }, { d: 0 }), t0, .4);
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Arbitrage and replication', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 4', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Arbitrage, Replication, and', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'the Cost of Carry', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'how no-arbitrage pins down the price of a forward', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['lawone', 'Law of one price', (m) => {
+    const p = panel(0), xa = 560, xb = 1160;
+    title(p, 'The law of one price', m('head'), 100);
+    text(p, 't = 0', xa, 190, m('bonds'), { size: 30, fill: COL.whole, weight: 700, anchor: 'middle' });
+    text(p, 't = T', xb, 190, m('bonds'), { size: 30, fill: COL.whole, weight: 700, anchor: 'middle' });
+    [['Bond A', '€99.00', 280], ['Bond B', '€99.15', 400]].forEach(([n, v, y], i) => {
+      text(p, n, 160, y, m('bonds', .5 + i), { size: 32, fill: COL.task, weight: 700 });
+      text(p, 'price ' + v, xa, y, m('bonds', .8 + i * 1.5), { size: 30, anchor: 'middle' });
+      text(p, 'pays €100', xb, y, m('bonds', .5), { size: 30, anchor: 'middle' });
+    });
+    text(p, 'buy A:  −€99.00', xa, 320, m('t0'), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'short B:  +€99.15', xa, 440, m('t0', 1), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    rule2(p, xa - 160, 490, 320, m('t0', 2));
+    text(p, 'net +€0.15', xa, 540, m('t0', 2.3), { size: 34, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'A pays:  +€100', xb, 320, m('tT'), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'cover B:  −€100', xb, 440, m('tT', 1.5), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    rule2(p, xb - 160, 490, 320, m('tT', 3));
+    text(p, 'net €0', xb, 540, m('tT', 3.3), { size: 34, anchor: 'middle', weight: 700 });
+    pill(p, 'riskless profit: €0.15', COL.good, 800, 650, m('profit'));
+    text(p, 'B ↓   A ↑   until the prices are equal', 800, 760, m('conv'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['pvrule', 'Known future price', (m) => {
+    const p = panel(0), xa = 120, xb = 860;
+    mtext(p, [...S0, ' = (known future price) × (1 + r)', E('−T')], 800, 110, m('head'), COL.chalk, 40);
+    text(p, 'gold: spot $1,770 · forward sale $1,792.13 in 3 months · r = 2%', 800, 180, m('setup'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 't = 0', xa, 270, m('t0'), { size: 30, fill: COL.whole, weight: 700 });
+    row(p, 'borrow', '+$1,770.00', xa, 330, m('t0', .5), COL.good, 600);
+    row(p, 'buy gold', '−$1,770.00', xa, 380, m('t0', 1.2), COL.bad, 600);
+    row(p, 'sell forward at $1,792.13', '$0', xa, 430, m('t0', 2), COL.chalk, 600);
+    rule2(p, xa, 460, 600, m('t0', 3)); row(p, 'net', '$0', xa, 505, m('t0', 3.3), COL.chalk, 600);
+    text(p, 't = T', xb, 270, m('tT'), { size: 30, fill: COL.whole, weight: 700 });
+    row(p, 'deliver gold', '+$1,792.13', xb, 330, m('tT', .5), COL.good, 620);
+    row(p, 'repay 1,770 × 1.02^0.25', '−$1,778.78', xb, 380, m('tT', 3.5), COL.bad, 620);
+    rule2(p, xb, 460, 620, m('profit'));
+    row(p, 'net, per ounce', '+$13.35', xb, 505, m('profit', .3), COL.good, 620);
+    pill(p, 'riskless profit: $13.35 an ounce ($1,334.56 on 100 oz)', COL.good, 800, 610, m('profit', 1));
+    mtext(p, ['$1,770 < $1,792.13 × 1.02', E('−0.25'), ' = $1,783.28'], 800, 730, m('why', 1.5), COL.task, 38);
+    text(p, 'the spot price was too low', 800, 790, m('why'), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['rule', 'Forward = spot grown at r', (m) => {
+    const p = panel(0), c = growChart(p, m('curve'), { w: 640, lo: 85, hi: 125 });
+    c.curve(t => 100 * 1.08 ** t, COL.whole, m('curve', .4), { label: F0T });
+    mline(p, S0, 120, c.Y(100) + 12, m('curve', .3), COL.task, 32, 'end');
+    mline(p, [...F0T, ' = ', ...S0, '(1 + r)', E('T')], 1280, 180, m('curve', 1), COL.chalk, 44);
+    c.curve(t => 100 * 1.16 ** t, COL.good, m('rate'), { dash: '10 8', label: ['higher r'] });
+    text(p, '• higher r → bigger gap', 1060, 320, m('rate'), { size: 28, fill: COL.good, weight: 600 });
+    text(p, '• longer T → bigger gap', 1060, 380, m('time'), { size: 28, fill: COL.whole, weight: 600 });
+    const ext = path(p, `M${c.X(1)} ${c.Y(108)}L${c.X(1.15)} ${c.Y(100 * 1.08 ** 1.15)}`, { stroke: COL.whole, 'stroke-width': 5, 'stroke-dasharray': '6 8' }, { o: 0 });
+    show(ext, m('time', .3));
+    text(p, '• r in practice: the repo rate', 1060, 440, m('repo'), { size: 28, fill: COL.dim, weight: 600 });
+    c.curve(t => 100 * .9 ** t, COL.bad, m('neg'), { dash: '10 8', label: ['r < 0'] });
+    text(p, '• r < 0 → forward below spot', 1060, 500, m('neg'), { size: 28, fill: COL.bad, weight: 600 });
+  }],
+
+  ['replicate', 'Replication', (m) => {
+    const p = panel(0), xa = 110, xb = 850;
+    text(p, 'Gold priced fairly: spot $1,783.28, forward $1,792.13, r = 2%, T = 3 months', 800, 100, m('head', 2), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const box = (x, c, t0, h) => { const g = G(p, { o: 0 }); mk('rect', { x, y: 140, width: 640, height: 400, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g); T(g, h, { x: x + 320, y: 195, size: 32, fill: c, weight: 700, anchor: 'middle' }); show(g, t0); };
+    box(xa, COL.whole, m('fwd'), '1. Long forward');
+    text(p, 't = 0', xa + 30, 260, m('fwd', .5), { size: 26, fill: COL.dim }); text(p, 'agree to buy at $1,792.13', xa + 140, 260, m('fwd', .5), { size: 26 });
+    text(p, 'cash', xa + 30, 305, m('fwd', 1), { size: 26, fill: COL.dim }); text(p, '$0', xa + 140, 305, m('fwd', 1), { size: 26, weight: 700 });
+    text(p, 't = T', xa + 30, 400, m('fwd', 2), { size: 26, fill: COL.dim });
+    mline(p, [...ST, ' − $1,792.13'], xa + 140, 400, m('fwd', 2.2), COL.good, 32, 'start');
+    box(xb, COL.task, m('rep'), '2. Borrow and buy');
+    text(p, 't = 0', xb + 30, 260, m('rep', .5), { size: 26, fill: COL.dim }); text(p, 'borrow $1,783.28, buy gold', xb + 140, 260, m('rep', .5), { size: 26 });
+    text(p, 'cash', xb + 30, 305, m('rep', 2), { size: 26, fill: COL.dim }); text(p, '+1,783.28 − 1,783.28 = $0', xb + 140, 305, m('rep', 2), { size: 26, weight: 700 });
+    text(p, 't = T', xb + 30, 400, m('repT'), { size: 26, fill: COL.dim });
+    mline(p, ['sell at ', ...ST, ', repay 1,783.28 × 1.02', E('0.25')], xb + 140, 400, m('repT', .3), COL.chalk, 28, 'start');
+    mline(p, ['= ', ...ST, ' − $1,792.13'], xb + 140, 460, m('repT', 4), COL.good, 32, 'start');
+    pill(p, 'same cash flows → same price', COL.good, 800, 600, m('same'));
+    text(p, 'On 100 oz:  gold at $1,900 → both +$10,787     gold at $1,700 → both −$9,213', 800, 720, m('sc'), { size: 28, anchor: 'middle', weight: 600 });
+  }],
+
+  ['hedge', 'Long asset + short forward', (m) => {
+    const p = panel(0), ax = payAxes(p, { x0: 140, y0: 150, w: 760, h: 560, xmin: 1700, xmax: 1880, ymin: -100, ymax: 100, yl: 'profit per ounce ($)',
+      ticks: [[G0, S0, COL.task], [GF, ['F', Sb('0')], COL.whole]] }, m('long'));
+    payLine(p, ax, [[1700, 1700 - G0], [1880, 1880 - G0]], COL.task, m('long', .4), 1);
+    text(p, 'long gold', ax.px(1880) + 12, ax.py(1880 - G0) + 10, m('long', 1.2), { size: 26, fill: COL.task, weight: 600 });
+    payLine(p, ax, [[1700, GF - 1700], [1880, GF - 1880]], COL.bad, m('short'), 1);
+    text(p, 'short forward', ax.px(1880) + 12, ax.py(GF - 1880) + 10, m('short', .8), { size: 26, fill: COL.bad, weight: 600 });
+    payLine(p, ax, [[1700, GF - G0], [1880, GF - G0]], COL.good, m('flat'), 1, { w: 8 });
+    mline(p, ['combined: ', ...['F', Sb('0')], ' − ', ...S0, ' = $8.85'], 1060, 260, m('flat', 1), COL.good, 32, 'start');
+    text(p, 'the same whatever gold does', 1060, 310, m('flat', 2), { size: 26, fill: COL.dim });
+    text(p, 'pay $178,328 today', 1060, 420, m('rate'), { size: 28 });
+    text(p, 'receive $179,213 in 3 months', 1060, 470, m('rate', 2.5), { size: 28 });
+    mline(p, ['(179,213 ÷ 178,328)', E('4'), ' − 1 = 2%'], 1060, 540, m('rate', 5), COL.task, 32, 'start');
+    pill(p, 'hedged = risk-free rate', COL.good, 1260, 640, m('rate', 7.5));
+  }],
+
+  ['carry', 'Cost of carry', (m) => {
+    const p = panel(0), c = growChart(p, m('head'), { w: 640, lo: 92, hi: 122 });
+    c.curve(t => 100 * 1.08 ** t, COL.whole, m('head', .5), { label: ['F', Sb('0')] });
+    mline(p, S0, 120, c.Y(100) + 12, m('head', .3), COL.task, 32, 'end');
+    c.curve(t => 100 * 1.15 ** t, COL.bad, m('cost'), { dash: '10 8', label: ['F', E('+'), ' costs'] });
+    c.curve(t => 100 * 1.02 ** t, COL.good, m('ben'), { dash: '10 8', label: ['F', E('−'), ' income'] });
+    mline(p, [...F0T, ' = [', ...S0, ' − PV(I) + PV(C)](1 + r)', E('T')], 1180, 220, m('f1'), COL.chalk, 34);
+    mline(p, [...F0T, ' = ', ...S0, 'e', E('(r + c − i)T')], 1180, 300, m('f2'), COL.chalk, 34);
+    [['costs > benefits', 'forward > spot', COL.bad], ['costs < benefits', 'forward < spot', COL.good], ['costs = benefits', 'forward = spot', COL.dim]].forEach(([a, b, col], i) => {
+      text(p, a, 960, 430 + i * 60, m('tab', i * 1.5), { size: 28, weight: 600 });
+      text(p, b, 1250, 430 + i * 60, m('tab', i * 1.5 + .3), { size: 28, fill: col, weight: 700 });
+    });
+    text(p, 'costs include the risk-free rate', 960, 640, m('tab', 1), { size: 24, fill: COL.dim });
+  }],
+
+  ['dividend', 'Equity forward with dividends', (m) => {
+    const p = panel(0), x0 = 200, x1 = 1200, y = 270;
+    text(p, 'Unilever: spot €50, r = 5%, forward for 6 months', 800, 100, m('head'), { size: 32, weight: 700, anchor: 'middle' });
+    draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.whole, 'stroke-width': 3 }, { d: 0 }), m('head', .5), .6);
+    [[0, '0'], [.5, '3 months'], [1, '6 months']].forEach(([q, s]) => { const x = x0 + q * (x1 - x0); show(path(p, `M${x} ${y - 10}V${y + 10}`, { stroke: COL.whole, 'stroke-width': 3 }, { o: 0 }), m('head', .6)); text(p, s, x, y + 44, m('head', .6), { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    mline(p, ['no dividend:  ', ...F0T, ' = 50 × 1.05', E('0.5'), ' = €51.23'], 800, 380, m('nodiv'), COL.chalk, 36);
+    [.5, 1].forEach((q, i) => { const x = x0 + q * (x1 - x0); flow(p, x, y - 90, x, y - 14, COL.good, m('div', .6 + i * .8), '€0.30', { lx: x + 20, ly: y - 60, anchor: 'start' }); });
+    mline(p, ['PV(I) = 0.30 × 1.05', E('−0.25'), ' + 0.30 × 1.05', E('−0.5'), ' = 0.2964 + 0.2928 = €0.5892'], 800, 480, m('pv'), COL.good, 32);
+    mline(p, [...F0T, ' = (50 − 0.5892) × 1.05', E('0.5'), ' = €50.6310'], 800, 570, m('f'), COL.task, 38);
+    text(p, 'forward − spot:  €1.23  →  about €0.63', 800, 680, m('gap'), { size: 32, weight: 700, anchor: 'middle' });
+  }],
+
+  ['index', 'Index forward', (m) => {
+    const p = panel(0);
+    title(p, 'Stock index: continuous dividend yield', m('head'));
+    text(p, 'NIFTY 50 spot  INR 15,200', 800, 240, m('data'), { size: 32, anchor: 'middle', weight: 600 });
+    text(p, 'r = 4%     dividend yield i = 2.2%     T = 3 months', 800, 300, m('data', 2), { size: 30, fill: COL.dim, anchor: 'middle' });
+    mline(p, [...F0T, ' = ', ...S0, 'e', E('(r − i)T')], 800, 430, m('f'), COL.chalk, 46);
+    mline(p, ['= 15,200 e', E('(0.04 − 0.022)(0.25)')], 800, 520, m('f', 3), COL.chalk, 46);
+    mline(p, ['= INR 15,268.55'], 800, 620, m('ans'), COL.task, 56);
+  }],
+
+  ['fx', 'FX forward', (m) => {
+    const p = panel(0), xu = 330, xa = 1270;
+    text(p, 'Spot AUD/USD = 1.3335  (AUD 1.3335 = USD 1)', 800, 90, m('head'), { size: 30, weight: 700, anchor: 'middle' });
+    text(p, 'USD side', xu, 160, m('rates'), { size: 30, fill: COL.whole, weight: 700, anchor: 'middle' });
+    text(p, 'r = 0.20% (domestic)', xu, 200, m('rates'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'AUD side', xa, 160, m('rates', 2.5), { size: 30, fill: COL.task, weight: 700, anchor: 'middle' });
+    text(p, 'r = 0.05% (foreign)', xa, 200, m('rates', 2.5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 't = 0', 800, 280, m('s1'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, '1. borrow USD 1,000', xu, 290, m('s1'), { size: 28, anchor: 'middle', weight: 600 });
+    flow(p, xu + 160, 330, xa - 160, 330, COL.chalk, m('s2'), '2. convert at 1.3335', { size: 24, ly: 318 });
+    text(p, 'AUD 1,333.50', xa, 340, m('s2', .8), { size: 28, anchor: 'middle', weight: 600 });
+    text(p, '3. lend at 0.05%', xa, 400, m('s3'), { size: 26, fill: COL.task, anchor: 'middle' });
+    path(p, 'M120 450H1480', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 't = 6 months', 800, 500, m('s4'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    mline(p, ['4. receive 1,333.50e', E('0.0005 × 0.5'), ' = AUD 1,333.83'], xa, 550, m('s4'), COL.task, 28);
+    mline(p, ['5. owe 1,000e', E('0.002 × 0.5'), ' = USD 1,001'], xu, 550, m('s5'), COL.whole, 28);
+    mline(p, ['fair forward = 1,333.83 ÷ 1,001 = 1.3325'], 800, 660, m('f'), COL.good, 40);
+    mline(p, ['F', Sb('0,f/d'), '(', 'T', ') = S', Sb('0,f/d'), ' × exp[(r', Sb('f'), ' − r', Sb('d'), ')T]'], 800, 770, m('eq'), COL.chalk, 42);
+  }],
+
+  ['fxrule', 'Forward premium and discount', (m) => {
+    const p = panel(0);
+    title(p, 'The interest rate differential decides', m('head'), 100);
+    mline(p, ['r', Sb('f'), ' > r', Sb('d'), ':  forward > spot  →  price currency: forward discount'], 800, 210, m('pos'), COL.bad, 34);
+    mline(p, ['r', Sb('f'), ' < r', Sb('d'), ':  forward < spot  →  price currency: forward premium'], 800, 290, m('neg'), COL.good, 34);
+    text(p, '(the Australian dollar above: 1.3325 < 1.3335)', 800, 340, m('neg', 3), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Montau: spot KRW/EUR 1,300 · KRW rate 0.75% · EUR rate −0.25% · 75 days', 800, 460, m('mon'), { size: 28, weight: 600, anchor: 'middle' });
+    mline(p, ['F', Sb('0'), ' = 1,300 e', E('(0.0075 + 0.0025)(75/365)'), ' = 1,302.67'], 800, 570, m('ans'), COL.task, 42);
+    pill(p, 'won at a forward discount: more KRW per EUR later', COL.bad, 800, 680, m('ans', 3), 28);
+  }],
+
+  ['commodity', 'Commodities and convenience yield', (m) => {
+    const p = panel(0);
+    title(p, 'Gold with storage: $2 an ounce, paid at T', m('head'), 110);
+    mline(p, ['PV(C) = 2 × 1.02', E('−0.25'), ' = $1.99'], 800, 240, m('pv'), COL.bad, 40);
+    mline(p, [...F0T, ' = (1,783.28 + 1.99) × 1.02', E('0.25'), ' = $1,794.13'], 800, 350, m('f'), COL.task, 40);
+    text(p, 'up from $1,792.13: storage raises the forward price', 800, 410, m('f', 3), { size: 26, fill: COL.dim, anchor: 'middle' });
+    pill(p, 'convenience yield: the value of holding the physical good', COL.good, 800, 540, m('cy'), 28);
+    text(p, 'e.g. very low oil inventories', 800, 610, m('cy', 4), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, '→ forward well below the no-arbitrage price', 800, 700, m('low'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['Arbitrage forces identical cash flows to share one price.', 'w1'],
+      ['Forward = spot grown at r: borrow and buy replicates it.', 'w2'],
+      ['Costs raise the forward; income and convenience yield lower it.', 'w3'],
+      ['For currencies, the interest rate differential sets the forward.', 'w4']], m, { y0: 250, gap: 120 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

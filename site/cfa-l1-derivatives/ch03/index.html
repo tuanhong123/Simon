@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Derivative Benefits, Risks, and Issuer and Investor Uses</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 3, title: 'Derivative Benefits, Risks, and Issuer and Investor Uses', minutes: 9, language: 'en', next: '../ch04/' };
+
+/* ---------- data ---------- */
+const GEN = { x0: 140, y0: 150, w: 780, h: 560, xmin: 0, xmax: 60, ymin: -30, ymax: 30 };
+const ST = ['S', Sb('T')];
+const KRW = 650e6, FWD = 1350, COST = 430000, HEDGED = KRW / FWD;   // 481,481 EUR
+const RATES = [1525, 1400, 1280, 1225];
+const margin = eur => (eur - COST) / eur * 100;
+const sample = (f, a, b, n = 40) => Array.from({ length: n + 1 }, (_, i) => { const s = a + (b - a) * i / n; return [s, f(s)]; });
+const icard = (p, x, y, w, h, c, head, lines, t0, { size = 26, hs = 32 } = {}) => {
+  const g = G(p, { o: 0, y: 20 });
+  mk('rect', { x, y, width: w, height: h, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g);
+  T(g, head, { x: x + 26, y: y + 52, size: hs, fill: c, weight: 700 });
+  lines.forEach((s, i) => T(g, s, { x: x + 26, y: y + 100 + i * size * 1.45, size, fill: i ? COL.dim : COL.chalk }));
+  tw(g, { o: 1, y: 0 }, t0, .6, out);
+  return g;
+};
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Benefits, risks and uses', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 3', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Derivative Benefits, Risks, and', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'Issuer and Investor Uses', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'what derivatives do well, what can go wrong, and who uses them', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['timing', 'Timing gaps', (m) => {
+    const p = panel(0), y = 220, a = 300, b = 1300;
+    draw(path(p, `M200 ${y}H1400`, { stroke: COL.whole, 'stroke-width': 3 }, { d: 0 }), m('line'), .7);
+    [[a, 'decision today'], [b, 'cash transaction later']].forEach(([x, s], i) => {
+      const d = G(p, { x, y, s: 0, o: 0 }); mk('circle', { r: 12, fill: COL.whole }, d); pop(d, m('line', .4 + i * .8));
+      text(p, s, x, y + 50, m('line', .5 + i * .8), { size: 28, fill: COL.whole, anchor: 'middle', weight: 600 });
+    });
+    text(p, 'timing gap', 800, y - 20, m('line', 2), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Issuers', 160, 380, m('i1'), { size: 32, fill: COL.task, weight: 700 });
+    [['buy inputs before orders arrive', 'i1'], ['pay a foreign supplier on arrival', 'i2'], ['lock in future debt costs', 'i3']].forEach(([s, k], i) =>
+      text(p, '• ' + s, 160, 440 + i * 56, m(k, .2), { size: 28 }));
+    text(p, 'Investors', 860, 380, m('v1'), { size: 32, fill: COL.good, weight: 700 });
+    [['a market view, but no cash yet', 'v1'], ['plan to reinvest a future coupon', 'v2']].forEach(([s, k], i) =>
+      text(p, '• ' + s, 860, 440 + i * 56, m(k, .2), { size: 28 }));
+    draw(path(p, `M${a} ${y - 16}C${a + 250} ${y - 150} ${b - 250} ${y - 150} ${b} ${y - 16}`, { stroke: COL.real, 'stroke-width': 5 }, { d: 0 }), m('bridge'), 1);
+    pill(p, 'derivative: price fixed today, trade later', COL.real, 800, 760, m('bridge', .8));
+  }],
+
+  ['montau', 'Hedging an export', (m) => {
+    const p = panel(0), k = 1000;
+    const ax = payAxes(p, { x0: 140, y0: 150, w: 720, h: 560, xmin: 1150, xmax: 1550, ymin: -90, ymax: 90, xl: ['KRW/EUR'], yl: 'gain / loss vs. 481,481 EUR (thousands)', ticks: [[FWD, ['F', Sb('0'), '(', 'T', ') = 1,350'], COL.whole, 112]] }, m('axes'));
+    text(p, 'Montau AG receives', 1090, 200, m('axes', 1), { size: 28, fill: COL.dim });
+    text(p, 'KRW 650,000,000 in 75 days', 1090, 245, m('axes', 2), { size: 30, weight: 700 });
+    text(p, 'costs are in EUR', 1090, 290, m('axes', 4), { size: 28, fill: COL.dim });
+    payLine(p, ax, sample(s => (KRW / s - HEDGED) / k, 1150, 1550), COL.bad, m('exp'), 1.4);
+    text(p, 'export exposure', 1090, 400, m('exp', 1), { size: 30, fill: COL.bad, weight: 700 });
+    text(p, 'weaker KRW → fewer EUR', 1090, 445, m('exp', 2), { size: 26, fill: COL.dim });
+    payLine(p, ax, sample(s => (HEDGED - KRW / s) / k, 1150, 1550), COL.good, m('fwd'), 1.4);
+    text(p, 'FX forward: sell KRW at 1,350', 1090, 530, m('fwd', .6), { size: 30, fill: COL.good, weight: 700 });
+    payLine(p, ax, [[1150, 0], [1550, 0]], COL.whole, m('sum', .5), 1, { w: 9 });
+    pill(p, 'combined: flat, hedged', COL.whole, 1290, 640, m('sum', 1.2));
+  }],
+
+  ['covered', 'Covered call', (m) => {
+    const p = panel(0), ax = payAxes(p, { ...GEN, ticks: [[30, ['S', Sb('0')], COL.task], [33, 'X', COL.whole]] }, m('long'));
+    payLine(p, ax, [[0, -30], [60, 30]], COL.task, m('long', .8), 1.2);
+    text(p, 'long index', ax.px(60) + 12, ax.py(30) + 10, m('long', 1.6), { size: 26, fill: COL.task, weight: 600 });
+    payLine(p, ax, [[0, 3], [33, 3], [60, -24]], COL.bad, m('short'), 1.2);
+    text(p, 'short call', ax.px(60) + 12, ax.py(-24) + 10, m('short', 1), { size: 26, fill: COL.bad, weight: 600 });
+    payLine(p, ax, [[0, -27], [33, 6], [60, 6]], COL.good, m('sum'), 1.4, { w: 7 });
+    text(p, 'covered call', ax.px(60) + 12, ax.py(6) - 6, m('sum', 1), { size: 28, fill: COL.good, weight: 700 });
+    text(p, 'gain + premium', ax.px(3), ax.py(-8), m('sum', 3), { size: 24, fill: COL.good, weight: 600 });
+    text(p, 'upside capped above X', 1110, 220, m('cap'), { size: 28, fill: COL.good, weight: 700 });
+    text(p, 'the buyer takes gains above X;', 1110, 270, m('cap', 1.6), { size: 24, fill: COL.dim });
+    text(p, 'the seller keeps the premium', 1110, 305, m('cap', 1.6), { size: 24, fill: COL.dim });
+  }],
+
+  ['discovery', 'Price discovery', (m) => {
+    const p = panel(0);
+    title(p, 'Price discovery', m('head'));
+    [['Stock index futures before the open', 'd1'], ['Rate futures: expected central bank moves', 'd2'], ['Option prices: implied volatility', 'd3']].forEach(([s, k], i) =>
+      text(p, '• ' + s, 110, 240 + i * 60, m(k), { size: 28 }));
+    // illustrative WTI path, January to June 2020; the -37.63 close on 20 April is the recorded low
+    const x0 = 780, x1 = 1480, yT = 460, yB = 820, vmin = -45, vmax = 70, X = d => x0 + (x1 - x0) * d / 181, Y = v => yB - (v - vmin) / (vmax - vmin) * (yB - yT);
+    const g = G(p, { o: 0 });
+    path(g, `M${x0} ${Y(0)}H${x1}`, { stroke: COL.dim, 'stroke-width': 2 });
+    path(g, `M${x0} ${yB}V${yT}`, { stroke: COL.dim, 'stroke-width': 2 });
+    [60, 0, -40].forEach(v => T(g, (v < 0 ? '−' : '') + '$' + Math.abs(v), { x: x0 - 10, y: Y(v) + 8, size: 20, fill: COL.dim, anchor: 'end' }));
+    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].forEach((s, i) => T(g, s, { x: X(i * 30.3 + 15), y: yB + 30, size: 20, fill: COL.dim, anchor: 'middle' }));
+    T(g, 'oil futures price, 2020 (illustrative path)', { x: x0, y: yT - 24, size: 22, fill: COL.dim });
+    show(g, m('oil'));
+    const pts = [[0, 61], [20, 58], [40, 52], [55, 47], [65, 33], [75, 25], [85, 21], [95, 20], [100, 25], [105, 22], [109, 18], [110, -37.63], [111, 10], [118, 13], [125, 17], [135, 25], [150, 34], [165, 38], [181, 39]];
+    draw(path(p, pts.map(([d, v], i) => `${i ? 'L' : 'M'}${X(d)} ${Y(v)}`).join(''), { stroke: COL.task, 'stroke-width': 4 }, { d: 0 }), m('oil', 1), 3.5);
+    text(p, '−$37.63', X(110) + 16, Y(-37.63) + 8, m('oil', 4.6), { size: 28, fill: COL.bad, weight: 700 });
+    text(p, '20 April 2020', X(110) + 16, Y(-37.63) - 26, m('oil', 4.8), { size: 22, fill: COL.bad });
+    pill(p, 'signal → producers cut supply faster', COL.task, 400, 560, m('signal'), 26);
+  }],
+
+  ['ops', 'Operational advantages', (m) => {
+    const p = panel(0);
+    title(p, 'Operational advantages', m('head'));
+    numbered(p, [['Lower transaction costs: no shipping, insurance or storage', 'o1'], ['More liquidity: less capital needed', 'o2'],
+      ['Small upfront cash: margin or premium', 'o3'], ['Easy short positions', 'o4']], m, { y0: 240, gap: 105 });
+    pill(p, 'market efficiency: mispricing is cheaper to correct', COL.good, 800, 720, m('eff'));
+  }],
+
+  ['outlay', 'Cash outlay', (m) => {
+    const p = panel(0), k = .0055, k2 = .4, x0 = 360;
+    title(p, 'Gold exposure: 100 ounces', m('head'));
+    const bar = (y, v, scale, c, label, val, t0) => {
+      text(p, label, x0 - 24, y + 10, t0, { size: 28, anchor: 'end', fill: COL.dim, weight: 600 });
+      const r = mk('rect', { x: x0, y: y - 26, width: 0, height: 52, rx: 6, fill: c }, p);
+      prog(q => r.setAttribute('width', Math.max(2, v * scale * q)), t0 + .2, 1, out);
+      text(p, val, x0 + v * scale + 18, y + 10, t0 + 1, { size: 30, weight: 700 });
+    };
+    text(p, 'cash needed', x0, 200, m('spot'), { size: 26, fill: COL.task, weight: 700 });
+    bar(260, 177000, k, COL.task, 'spot purchase', '$177,000', m('spot'));
+    bar(350, 4950, k, COL.good, 'futures margin', '$4,950', m('fut'));
+    text(p, 'interest at 5% for 3 months', x0, 500, m('int'), { size: 26, fill: COL.whole, weight: 700 });
+    bar(560, 2212.5, k2, COL.task, 'spot purchase', '$2,212.50', m('int', .4));
+    bar(650, 61.88, k2, COL.good, 'futures margin', '$61.88', m('int2'));
+    text(p, '177,000 × 0.05 ÷ 4 = 2,212.50     4,950 × 0.05 ÷ 4 = 61.88', 800, 770, m('int2', 2), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['leverage', 'Implicit leverage', (m) => {
+    const p = panel(0), cx = [620, 1120];
+    title(p, 'Gold ends at $1,780.50: returns compared', m('head'));
+    text(p, 'Spot', cx[0], 220, m('spot'), { size: 34, fill: COL.task, weight: 700, anchor: 'middle' });
+    text(p, 'Futures', cx[1], 220, m('fut'), { size: 34, fill: COL.good, weight: 700, anchor: 'middle' });
+    text(p, 'on cash outlay', 140, 330, m('spot'), { size: 28, fill: COL.dim, weight: 600 });
+    text(p, 'on borrowing cost', 140, 500, m('borrow'), { size: 28, fill: COL.dim, weight: 600 });
+    const big = (s, x, y, c, t0, sub) => { text(p, s, x, y, t0, { size: 52, fill: c, weight: 700, anchor: 'middle' }); text(p, sub, x, y + 44, t0 + .3, { size: 22, fill: COL.dim, anchor: 'middle' }); };
+    big('+0.593%', cx[0], 330, COL.good, m('spot', .4), '(178,050 − 177,000) ÷ 177,000');
+    big('−23.5%', cx[1], 330, COL.bad, m('fut', .4), '(178,050 − 179,213) ÷ 4,950');
+    big('+47.5%', cx[0], 500, COL.good, m('borrow', 3), '1,050 ÷ 2,212.50');
+    big('−1,879%', cx[1], 500, COL.bad, m('borrow', 5.5), '−1,163 ÷ 61.88');
+    pill(p, 'leverage ≈ 177,000 ÷ 61.88 ≈ 2,860', COL.task, 800, 680, m('ratio'), 30);
+    text(p, 'magnifies gains and losses', 800, 770, m('ratio', 6), { size: 30, fill: COL.bad, weight: 700, anchor: 'middle' });
+  }],
+
+  ['risks', 'Risks', (m) => {
+    const p = panel(0);
+    title(p, 'Risks of derivatives', m('head'));
+    [['Speculation', COL.bad, 'leverage can lead', 'to financial distress'], ['Transparency', COL.real, 'complex exposures,', 'e.g. structured notes'],
+     ['Basis risk', COL.task, 'hedge does not track', 'the exposure exactly'], ['Liquidity risk', COL.whole, 'cash flow timing,', 'e.g. margin calls'],
+     ['Counterparty', COL.rat, 'the other side', 'may not pay'], ['Systemic risk', COL.bad, 'leverage can destabilize', 'markets (2008)']].forEach(([h, c, a, b], i) =>
+      icard(p, 130 + (i % 3) * 460, 180 + Math.floor(i / 3) * 290, 420, 250, c, h, [a, b], m('r' + (i + 1)), { size: 28, hs: 34 }));
+  }],
+
+  ['credit', 'Counterparty credit risk', (m) => {
+    const p = panel(0), cfg = { y0: 170, w: 500, h: 380, xmin: 0, xmax: 60, ymin: -30, ymax: 30, yl: 'profit' };
+    const a = payAxes(p, { ...cfg, x0: 120, ticks: [[30, 'X', COL.whole]] }, m('call'));
+    payLine(p, a, [[0, -5], [30, -5], [60, 25]], COL.good, m('call', .5), 1);
+    text(p, 'purchased call', 370, 140, m('call'), { size: 30, fill: COL.good, weight: 700, anchor: 'middle' });
+    text(p, '✓ buyer faces the seller’s credit risk', 120, 640, m('call', 2), { size: 26, fill: COL.chalk, weight: 600 });
+    text(p, '✗ seller faces none once the premium is paid', 120, 690, m('callS'), { size: 26, fill: COL.dim, weight: 600 });
+    const b = payAxes(p, { ...cfg, x0: 880, ticks: [[30, ['F', Sb('0'), '(', 'T', ')'], COL.whole]] }, m('fwd'));
+    payLine(p, b, [[0, -30], [60, 30]], COL.whole, m('fwd', .5), 1);
+    text(p, 'long forward', 1130, 140, m('fwd'), { size: 30, fill: COL.whole, weight: 700, anchor: 'middle' });
+    text(p, '✓ buyer faces the seller’s credit risk', 880, 640, m('fwd', 2), { size: 26, weight: 600 });
+    text(p, '✓ seller faces the buyer’s credit risk', 880, 690, m('fwd', 2.6), { size: 26, weight: 600 });
+    pill(p, 'daily MTM and collateral shrink this risk', COL.good, 800, 800, m('mtm'), 28);
+  }],
+
+  ['issuer', 'Issuers hedge earnings', (m) => {
+    const p = panel(0), base = 640, k = 16, xs = [330, 640, 950, 1260];
+    title(p, 'Montau AG: profit margin on the machine', m('head'), 100);
+    text(p, 'KRW 650,000,000 ÷ 1,350 = €481,481   ·   cost €430,000', 800, 170, m('rate'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    draw(path(p, `M180 ${base}H1420`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('unh'), .6);
+    const lg = (c, s, x, t0) => { const g = G(p, { o: 0 }); mk('rect', { x, y: 220, width: 24, height: 24, rx: 5, fill: c }, g); T(g, s, { x: x + 36, y: 240, size: 26, fill: COL.dim }); show(g, t0); };
+    lg(COL.task, 'unhedged', 520, m('unh')); lg(COL.whole, 'hedged with the FX forward', 760, m('hed'));
+    RATES.forEach((r, i) => {
+      const un = margin(KRW / r), he = margin(HEDGED), x = xs[i];
+      text(p, r.toLocaleString('en-US') + ' KRW/EUR', x, base + 120, m('unh', .2), { size: 24, fill: COL.dim, anchor: 'middle' });
+      text(p, '€' + Math.round(KRW / r).toLocaleString('en-US'), x - 60, base + 46 + (un < 0 ? 20 : 0), m('unh', .5 + i * .6), { size: 20, fill: COL.task, anchor: 'middle' });
+      const g = G(p, { o: 0, y: 20 });
+      mk('rect', { x: x - 100, y: un >= 0 ? base - un * k : base, width: 80, height: Math.abs(un) * k, rx: 4, fill: un < 0 ? COL.bad : COL.task }, g);
+      T(g, String(Math.round(un)).replace('-', '−') + '%', { x: x - 60, y: un >= 0 ? base - un * k - 12 : base - 12, size: 26, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('unh', .5 + i * .6), .5, out);
+      const h = G(p, { o: 0, y: 20 });
+      mk('rect', { x: x + 20, y: base - he * k, width: 80, height: he * k, rx: 4, fill: COL.whole }, h);
+      T(h, Math.round(he) + '%', { x: x + 60, y: base - he * k - 12, size: 26, weight: 700, anchor: 'middle' });
+      tw(h, { o: 1, y: 0 }, m('hed', .3 + i * .3), .5, out);
+    });
+  }],
+
+  ['accounting', 'Hedge accounting', (m) => {
+    const p = panel(0);
+    text(p, 'Derivatives at fair value → gains and losses through earnings', 800, 120, m('head'), { size: 32, weight: 700, anchor: 'middle' });
+    pill(p, 'hedge accounting: match the derivative with the hedged item', COL.good, 800, 205, m('ha'), 28);
+    [['Cash flow hedge', COL.whole, ['absorbs variable cash flows', 'swap floating debt to fixed', 'FX forward on forecast sales'], 'h1'],
+     ['Fair value hedge', COL.task, ['offsets changes in value', 'swap fixed debt to floating', 'commodity future on inventory'], 'h2'],
+     ['Net investment hedge', COL.real, ['offsets FX risk of a', 'foreign operation’s equity', 'currency swap or forward'], 'h3']].forEach(([h, c, ls, k], i) =>
+      icard(p, 110 + i * 470, 290, 440, 300, c, h, ls, m(k), { size: 26, hs: 32 }));
+    pill(p, 'terms must match closely → customized OTC contracts', COL.rat, 800, 700, m('match'), 28);
+  }],
+
+  ['investor', 'Investor uses', (m) => {
+    const p = panel(0);
+    title(p, 'How investors use derivatives', m('head'));
+    [['Replicate', COL.good, ['a cash position, cheaply', 'Procam: gold futures'], 'u1'], ['Hedge', COL.whole, ['part of a portfolio', 'FX risk of foreign stocks'], 'u2'],
+     ['Modify or add', COL.real, ['Fyleton: swap adds duration', 'Hightest: call adds upside', 'SCSI: covered call'], 'u3']].forEach(([h, c, ls, k], i) =>
+      icard(p, 110 + i * 470, 200, 440, 330, c, h, ls, m(k), { size: 26, hs: 34 }));
+    text(p, 'funds mark derivatives to market daily in NAV', 800, 640, m('nav'), { size: 30, anchor: 'middle', weight: 600 });
+    pill(p, 'less need for hedge accounting → more exchange-traded contracts', COL.rat, 800, 730, m('nav', 4.5), 28);
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['Derivatives bridge timing gaps and create new exposures.', 'w1'],
+      ['They aid price discovery, cut costs and improve efficiency.', 'w2'],
+      ['Risks: leverage, complexity, basis, liquidity, counterparty, systemic.', 'w3'],
+      ['Issuers hedge (OTC, hedge accounting); investors replicate, hedge, modify.', 'w4']], m, { y0: 250, gap: 120, size: 31 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

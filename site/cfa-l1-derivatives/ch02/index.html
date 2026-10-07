@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forward Commitment and Contingent Claim Features and Instruments</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 2, title: 'Forward Commitment and Contingent Claim Features and Instruments', minutes: 10, language: 'en', next: '../ch03/' };
+
+/* ---------- data ---------- */
+const GEN = { x0: 140, y0: 150, w: 780, h: 560, xmin: 0, xmax: 60, ymin: -30, ymax: 30 };   // generic payoff axes: X = F0(T) = 30, premium 5
+const ST = ['S', Sb('T')], F0T = ['F', Sb('0'), '(', 'T', ')'];
+const MARGIN = [   // Procam's futures margin account (gold, 100 oz): [day, futures price, day change, end balance before call, margin call]
+  ['T − 6', 1792.13, 0, 4950, 0], ['T − 5', 1797.13, 500, 5450, 0], ['T − 4', 1786.25, -1088, 4362, 588], ['T − 3', 1782.19, -406, 4544, 0],
+  ['T − 2', 1777.45, -474, 4070, 880], ['T − 1', 1779.50, 205, 5155, 0], ['T', 1780.50, 100, 5255, 0]];
+const $d = v => (v < 0 ? '−$' : '$') + Math.abs(v).toLocaleString('en-US');
+const note = (p, str, x, y, t0, fill = COL.chalk, size = 28, weight = 600) => text(p, str, x, y, t0, { size, fill, weight });
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Instruments', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 2', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Forward Commitment and', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'Contingent Claim Instruments', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'forwards, futures, swaps, options and credit default swaps', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['firm', 'Firm commitments', (m) => {
+    const p = panel(0);
+    title(p, 'Firm commitments: both sides must perform', m('head'));
+    ['contract size', 'underlying', 'future exchange date(s)', 'price agreed today'].forEach((s, i) => pill(p, s, COL.chalk, 260 + i * 360, 220, m('f' + (i + 1)), 26));
+    [['Forward', 'OTC, customized', 'one exchange at T', [1], 'k1'], ['Futures', 'exchange, standardized', 'settled every day', [.2, .35, .5, .65, .8, 1], 'k2'],
+     ['Swap', 'mostly OTC', 'a series of exchanges', [.25, .5, .75, 1], 'k3']].forEach(([name, a, b, marks, k], i) => {
+      const x = 130 + i * 460, g = G(p, { o: 0, y: 20 });
+      mk('rect', { x, y: 330, width: 420, height: 430, rx: 16, fill: COL.board, stroke: COL.whole, 'stroke-width': 3 }, g);
+      T(g, name, { x: x + 210, y: 395, size: 38, fill: COL.whole, weight: 700, anchor: 'middle' });
+      T(g, a, { x: x + 210, y: 450, size: 26, fill: COL.dim, anchor: 'middle' });
+      const y = 620;
+      path(g, `M${x + 40} ${y}H${x + 380}`, { stroke: COL.chalk, 'stroke-width': 3 });
+      T(g, 't = 0', { x: x + 40, y: y + 40, size: 22, fill: COL.dim, anchor: 'middle' });
+      T(g, 'T', { x: x + 380, y: y + 40, size: 22, fill: COL.dim, anchor: 'middle' });
+      T(g, b, { x: x + 210, y: 710, size: 26, weight: 600, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m(k), .6, out);
+      marks.forEach((q, j) => {
+        const xx = x + 40 + q * 340, a = path(p, `M${xx} ${y - 8}V${y - 70}M${xx - 10} ${y - 58}L${xx} ${y - 72}L${xx + 10} ${y - 58}`, { stroke: COL.task, 'stroke-width': 4 }, { d: 0 });
+        draw(a, m(k, .6 + j * .25), .4);
+      });
+    });
+  }],
+
+  ['fwdpay', 'Forward payoff', (m) => {
+    const p = panel(0), ax = payAxes(p, { ...GEN, ticks: [[30, F0T, COL.whole]] }, m('axes'));
+    payLine(p, ax, [[0, -30], [60, 30]], COL.good, m('long'), 1.2);
+    mtext(p, ['long: ', ...ST, ' − ', ...F0T], ax.px(52), ax.py(30) + 10, m('long', 1), COL.good, 30, 'end');
+    note(p, '+ gain', ax.px(44), ax.py(5), m('long', 3), COL.good, 26);
+    note(p, '− loss', ax.px(10), ax.py(-5), m('long', 4.4), COL.bad, 26);
+    payLine(p, ax, [[0, 30], [60, -30]], COL.bad, m('short'), 1.2);
+    mtext(p, ['short: ', ...F0T, ' − ', ...ST], ax.px(56), ax.py(-30) + 10, m('short', 1), COL.bad, 30, 'end');
+    pill(p, 'payoff = profit', COL.chalk, 1250, 330, m('nocash'));
+    note(p, 'nothing paid upfront', 1250 - uiW('nothing paid upfront', 26) / 2, 400, m('nocash', .5), COL.dim, 26, 500);
+    pill(p, 'linear derivatives', COL.whole, 1250, 520, m('linear'));
+  }],
+
+  ['gold', 'Forward example: gold', (m) => {
+    const p = panel(0), L = 290, R = 1310, y = 200;
+    cbox(p, 'Procam\n(buyer)', COL.good, L, y, m('head'), { w: 260, h: 110 });
+    cbox(p, 'Dealer\n(seller)', COL.bad, R, y, m('head'), { w: 260, h: 110 });
+    const c = G(p, { o: 0 });
+    mk('rect', { x: 500, y: 140, width: 600, height: 120, rx: 14, fill: COL.board, stroke: COL.real, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, c);
+    T(c, 'buy 100 oz of gold in 3 months', { x: 800, y: 188, size: 28, anchor: 'middle', weight: 600 });
+    M(c, [...F0T, ' = $1,792.13 per ounce'], { x: 800, y: 236, size: 30, fill: COL.real });
+    show(c, m('head', 1.5));
+    const s0 = mtext(p, ['S', Sb('0'), ' = $1,770'], 560, 370, m('spot'), COL.dim, 34);
+    draw(path(p, 'M470 360H650', { stroke: COL.bad, 'stroke-width': 3 }, { d: 0 }), m('spot', 2), .4);
+    text(p, 'not used in settlement', 560, 420, m('spot', 2.2), { size: 24, fill: COL.dim, anchor: 'middle' });
+    mtext(p, [...ST, ' = $1,780.50'], 1040, 370, m('st'), COL.task, 40);
+    mtext(p, [...ST, ' − ', ...F0T, ' = 1,780.50 − 1,792.13 = −$11.63 per ounce'], 800, 540, m('pay'), COL.chalk, 38);
+    mtext(p, ['× 100 ounces = −$1,163'], 800, 620, m('total'), COL.bad, 42);
+    flow(p, L + 140, 280, R - 140, 280, COL.bad, m('total', 1.5), 'Procam pays $1,163', { size: 28, ly: 330 });
+    void s0;
+  }],
+
+  ['futures', 'Futures and margin', (m) => {
+    const p = panel(0), k = .06, base = 780, tanks = [[330, COL.good, 'Procam (buyer)'], [1270, COL.bad, 'Seller']];
+    text(p, 'Gold futures on an exchange: 100 oz at $1,792.13', 800, 110, m('ex'), { size: 34, weight: 700, anchor: 'middle' });
+    cbox(p, 'Exchange /\nclearinghouse', COL.rat, 800, 300, m('ex', .5), { w: 280, h: 110 });
+    const fills = tanks.map(([x, c, name]) => {
+      cbox(p, name, c, x, 230, m('ex', .3), { w: 260, h: 80, size: 28 });
+      const g = G(p, { o: 0 });
+      mk('rect', { x: x - 70, y: base - 6000 * k, width: 140, height: 6000 * k, rx: 6, fill: 'none', stroke: COL.dim, 'stroke-width': 2 }, g);
+      path(g, `M${x - 90} ${base - 4500 * k}H${x + 90}`, { stroke: COL.bad, 'stroke-width': 3, 'stroke-dasharray': '8 6' });
+      T(g, 'margin account', { x, y: base + 36, size: 22, fill: COL.dim, anchor: 'middle' });
+      show(g, m('im'));
+      const f = mk('rect', { x: x - 68, y: base, width: 136, height: 0, fill: c, 'fill-opacity': .8 }, p);
+      const lab = T(p, '', { x: x + 100, y: base - 4950 * k + 10, size: 28, weight: 600 });
+      return { f, lab, x, g };
+    });
+    const setBal = (t, v0, v1, t0, dur = .8) => prog(q => {
+      const v = v0 + (v1 - v0) * q;
+      t.f.setAttribute('y', base - v * k); t.f.setAttribute('height', v * k);
+      t.lab.textContent = v > 0 ? '$' + Math.round(v).toLocaleString('en-US') : '';
+      put(t.lab, { y: base - v * k + 10 });
+    }, t0, dur);
+    setBal(fills[0], 0, 4950, m('im', 1)); setBal(fills[1], 0, 4950, m('im', 1));
+    text(p, 'initial margin', 800, 480, m('im', 1.4), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'maintenance $4,500', 1270 - 100, base - 4500 * k + 8, m('mm'), { size: 24, fill: COL.bad, weight: 600, anchor: 'end' });
+    mtext(p, ['daily settlement: $1,792.13 → $1,797.13'], 800, 560, m('mtm'), COL.task, 32);
+    mtext(p, ['+$5 × 100 oz = $500'], 800, 610, m('mtm', 2), COL.task, 32);
+    flow(p, 1150, 680, 450, 680, COL.good, m('gain'), '$500', { bend: 0, size: 28, ly: 670 });
+    setBal(fills[0], 4950, 5450, m('gain', .5));
+    setBal(fills[1], 4950, 4450, m('loss'));
+    tw(fills[1].lab, { c_fill: COL.bad }, m('mm'), .4);
+    const call = pill(p, 'margin call: +$500 (variation margin)', COL.task, 1190, 330, m('call'), 26);
+    setBal(fills[1], 4450, 4950, m('call', 1));
+    tw(fills[1].lab, { c_fill: COL.chalk }, m('call', 1.8), .4);
+    void call;
+  }],
+
+  ['margin', 'Margin account to maturity', (m) => {
+    const p = panel(0), k = .08, base = 760, bx = i => 260 + i * 180;
+    title(p, 'Procam’s margin account', m('head'), 90);
+    draw(path(p, `M170 ${base}H1420`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('head'), .6);
+    show(path(p, `M170 ${base - 4500 * k}H1420`, { stroke: COL.bad, 'stroke-width': 2.5, 'stroke-dasharray': '8 8' }, { o: 0 }), m('head', .5));
+    show(path(p, `M170 ${base - 4950 * k}H1420`, { stroke: COL.dim, 'stroke-width': 2, 'stroke-dasharray': '4 8' }, { o: 0 }), m('head', .5));
+    text(p, 'maintenance', 1432, base - 4500 * k + 26, m('head', .7), { size: 20, fill: COL.bad });
+    text(p, '$4,500', 1432, base - 4500 * k + 50, m('head', .7), { size: 20, fill: COL.bad });
+    text(p, 'initial', 1432, base - 4950 * k - 28, m('head', .7), { size: 20, fill: COL.dim });
+    text(p, '$4,950', 1432, base - 4950 * k - 6, m('head', .7), { size: 20, fill: COL.dim });
+    const at = ['head', 'd1', 'd2', 'd3', 'd3', 'd5', 'd5'], off = [1, 0, 0, 0, 2, 0, 1.6];
+    MARGIN.forEach(([day, f, chg, bal, call], i) => {
+      const t0 = m(at[i], off[i]), g = G(p, { o: 0, y: 20 });
+      const start = i === 0 ? 4950 : 0;
+      void start;
+      mk('rect', { x: bx(i) - 50, y: base - bal * k, width: 100, height: bal * k, rx: 4, fill: chg < 0 ? COL.bad : chg > 0 ? COL.good : COL.whole, 'fill-opacity': .82 }, g);
+      T(g, '$' + bal.toLocaleString('en-US'), { x: bx(i), y: base - bal * k - 14, size: 22, weight: 600, anchor: 'middle' });
+      T(g, day, { x: bx(i), y: base + 34, size: 24, fill: COL.dim, anchor: 'middle' });
+      T(g, '$' + f.toFixed(2), { x: bx(i), y: base + 66, size: 20, fill: COL.task, anchor: 'middle' });
+      if (chg) T(g, (chg > 0 ? '+' : '−') + '$' + Math.abs(chg).toLocaleString('en-US'), { x: bx(i), y: base - bal * k + 34, size: 20, fill: COL.board, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, t0, .6, out);
+      if (call) {
+        const c = G(p, { o: 0 }), ck = call === 588 ? 'c1' : 'c2';
+        mk('rect', { x: bx(i) - 50, y: base - 4950 * k, width: 100, height: call * k, rx: 4, fill: COL.task }, c);
+        T(c, '+$' + call, { x: bx(i) + 58, y: base - 4950 * k + call * k / 2 + 8, size: 22, fill: COL.task, weight: 700 });
+        show(c, m(ck, .3));
+      }
+    });
+    text(p, 'futures price', 120, base + 66, m('head', 1), { size: 20, fill: COL.task, anchor: 'middle' });
+    mtext(p, ['margin calls: $588 + $880 = $1,468'], 200, 170, m('sum'), COL.task, 30, 'start');
+    mtext(p, ['margin returned: $5,255 − $4,950 = $305'], 200, 214, m('sum', 3), COL.good, 30, 'start');
+    mtext(p, ['net: $305 − $1,468 = −$1,163  (same as the forward)'], 200, 258, m('sum', 6), COL.chalk, 30, 'start');
+    pill(p, 'only the timing differs', COL.whole, 1240, 214, m('timing'), 26);
+  }],
+
+  ['rules', 'Futures rules', (m) => {
+    const p = panel(0);
+    title(p, 'More futures rules', m('head'));
+    numbered(p, [['Margins can be raised, or called during the day', 'r1'], ['Price limits and circuit breakers pause trading', 'r2'],
+      ['Close out early with an offsetting contract', 'r3'], ['Delivery or cash settlement: futures price → spot at expiry', 'r4']], m, { y0: 260, gap: 125 });
+  }],
+
+  ['swaps', 'Swaps', (m) => {
+    const p = panel(0), L = 330, R = 1270, fx = COL.whole, fl = COL.int;
+    cbox(p, 'Fixed-rate payer', fx, L, 200, m('pair'), { w: 330, h: 90, size: 28 });
+    cbox(p, 'Floating-rate payer', fl, R, 200, m('pair'), { w: 330, h: 90, size: 28 });
+    flow(p, L + 170, 180, R - 170, 180, fx, m('pair', 1.5), 'fixed rate (swap rate)', { size: 26, ly: 160 });
+    flow(p, R - 170, 222, L + 170, 222, fl, m('pair', 3.5), 'market reference rate (MRR)', { size: 26, ly: 270 });
+    const base = 620, xs = [400, 650, 900, 1150], flt = [90, 135, 110, 165];
+    draw(path(p, `M250 ${base}H1300`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('periods'), .7);
+    xs.forEach((x, i) => {
+      text(p, 't = ' + (i + 1), x, base + 40, m('periods', .3), { size: 24, fill: COL.dim, anchor: 'middle' });
+      const a = G(p, { o: 0, y: 20 });
+      mk('rect', { x: x - 44, y: base - 120, width: 40, height: 120, rx: 4, fill: fx }, a);
+      tw(a, { o: 1, y: 0 }, m('periods', .6 + i * .3), .5, out);
+      const b = G(p, { o: 0, y: 20 });
+      mk('rect', { x: x + 4, y: base - flt[i], width: 40, height: flt[i], rx: 4, fill: fl }, b);
+      tw(b, { o: 1, y: 0 }, m('float', i * .4), .5, out);
+    });
+    text(p, 'fixed: same each period', 250, base - 250, m('periods', 2), { size: 24, fill: fx, weight: 600 });
+    text(p, 'floating: resets', 250, base - 210, m('float', 1.5), { size: 24, fill: fl, weight: 600 });
+    xs.forEach((x, i) => {
+      draw(path(p, `M${x - 70} ${base + 70}V${base + 84}H${x + 70}V${base + 70}`, { stroke: COL.real, 'stroke-width': 3 }, { d: 0 }), m('series', i * .3), .4);
+      text(p, 'forward ' + (i + 1), x, base + 120, m('series', .2 + i * .3), { size: 22, fill: COL.real, anchor: 'middle', weight: 600 });
+    });
+  }],
+
+  ['fyleton', 'Swap example', (m) => {
+    const p = panel(0), L = 330, R = 1270;
+    text(p, 'Fyleton Investments: 5-year swap, notional £200 million', 800, 100, m('head'), { size: 32, weight: 700, anchor: 'middle' });
+    cbox(p, 'Fyleton', COL.good, L, 240, m('head', .5), { w: 260, h: 90 });
+    cbox(p, 'Dealer', COL.rat, R, 240, m('head', .5), { w: 260, h: 90 });
+    flow(p, R - 140, 220, L + 140, 220, COL.whole, m('head', 2), '2.25% fixed, semiannual', { size: 26, ly: 200 });
+    flow(p, L + 140, 262, R - 140, 262, COL.int, m('head', 6), '6-month MRR', { size: 26, ly: 310 });
+    note(p, 'Fixed leg:', 220, 420, m('fix'), COL.whole, 30);
+    note(p, '£200,000,000 × 2.25% ÷ 2  =  £2,250,000', 470, 420, m('fix', 1), COL.chalk, 30, 500);
+    note(p, 'Floating leg:', 220, 490, m('flt'), COL.int, 30);
+    note(p, '£200,000,000 × 1.95% ÷ 2  =  £1,950,000', 470, 490, m('flt', 1), COL.chalk, 30, 500);
+    draw(path(p, 'M470 520H1200', { stroke: COL.chalk, 'stroke-width': 2 }, { d: 0 }), m('net'), .5);
+    note(p, 'Net:', 220, 570, m('net', .3), COL.good, 32);
+    note(p, 'the dealer pays Fyleton £300,000', 470, 570, m('net', .6), COL.good, 32);
+    pill(p, 'notional is not exchanged', COL.dim, 520, 700, m('notional'), 28);
+    pill(p, 'value at inception = 0', COL.real, 1120, 700, m('zero'), 28);
+    text(p, 'later: + value for one side, − for the other', 1120, 780, m('zero', 3), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['options', 'Options', (m) => {
+    const p = panel(0), L = 300, R = 1300;
+    cbox(p, 'Option buyer', COL.good, L, 170, m('right'), { w: 260, h: 80, size: 28 });
+    cbox(p, 'Option seller', COL.bad, R, 170, m('right'), { w: 260, h: 80, size: 28 });
+    text(p, 'right, not obligation', L, 245, m('right', 1), { size: 24, fill: COL.good, anchor: 'middle' });
+    text(p, 'must perform if asked', R, 245, m('right', 3), { size: 24, fill: COL.bad, anchor: 'middle' });
+    flow(p, L + 140, 170, R - 140, 170, COL.task, m('prem'), 'premium $5 at t = 0', { size: 26, ly: 150 });
+    text(p, 'call: right to buy at X = $30', 800, 230, m('prem', 2.5), { size: 26, fill: COL.real, anchor: 'middle', weight: 600 });
+    const card = (x, c, k, head, l1, l2, l3) => {
+      const g = G(p, { o: 0, y: 20 });
+      mk('rect', { x, y: 300, width: 620, height: 270, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g);
+      M(g, head, { x: x + 310, y: 360, size: 34, fill: c });
+      T(g, l1, { x: x + 310, y: 425, size: 28, anchor: 'middle' });
+      T(g, l2, { x: x + 310, y: 475, size: 28, anchor: 'middle' });
+      T(g, l3, { x: x + 310, y: 535, size: 30, fill: c, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m(k), .6, out);
+    };
+    card(130, COL.good, 'up', [...ST, ' = $40 > X'], 'exercise: buy at $30', 'payoff $40 − $30 = $10', 'profit $10 − $5 = $5');
+    card(850, COL.bad, 'down', [...ST, ' = $25 < X'], 'do not exercise', 'payoff $0', 'profit −$5 (the premium)');
+    pill(p, 'European: exercise only at maturity', COL.whole, 470, 660, m('styles'), 26);
+    pill(p, 'American: exercise any time', COL.whole, 1150, 660, m('styles', 2.6), 26);
+    pill(p, 'call = right to buy', COL.good, 600, 780, m('cp'), 28);
+    pill(p, 'put = right to sell', COL.real, 1000, 780, m('cp', 1.2), 28);
+  }],
+
+  ['longcall', 'Long call', (m) => {
+    const p = panel(0), c0 = 24.85, X = 1240;
+    const ax = payAxes(p, { x0: 140, y0: 150, w: 780, h: 560, xmin: 1180, xmax: 1320, ymin: -40, ymax: 80, ticks: [[X, 'X', COL.whole]] }, m('axes'));
+    payLine(p, ax, [[1180, 0], [X, 0], [1320, 80]], COL.chalk, m('payoff'), 1.2, { dash: '10 8' });
+    mtext(p, ['payoff ', 'c', Sb('T'), ' = max(0, ', ...ST, ' − X)'], 1060, 200, m('payoff'), COL.chalk, 32, 'start');
+    payLine(p, ax, [[1180, -c0], [X, -c0], [1320, 80 - c0]], COL.good, m('profit'), 1.2);
+    mtext(p, ['profit Π = max(0, ', ...ST, ' − X) − c', Sb('0')], 1060, 260, m('profit'), COL.good, 32, 'start');
+    text(p, 'max loss = premium', ax.px(1182), ax.py(-c0) + 40, m('profit', 3), { size: 24, fill: COL.bad, weight: 600 });
+    payDot(p, ax, X + c0, 0, COL.task, m('be'));
+    mtext(p, ['breakeven = X + c', Sb('0')], 1060, 320, m('be'), COL.task, 32, 'start');
+    const tb = G(p, { o: 0 });
+    mk('rect', { x: 1040, y: 380, width: 520, height: 390, rx: 14, fill: COL.board, stroke: COL.good, 'stroke-width': 3 }, tb);
+    T(tb, 'Hightest: X = $1,240, c₀ = $24.85', { x: 1300, y: 425, size: 26, fill: COL.good, weight: 700, anchor: 'middle' });
+    M(tb, [...ST], { x: 1110, y: 480, size: 28, fill: COL.dim });
+    T(tb, 'payoff', { x: 1300, y: 480, size: 26, fill: COL.dim, anchor: 'middle' }); T(tb, 'profit', { x: 1470, y: 480, size: 26, fill: COL.dim, anchor: 'middle' });
+    show(tb, m('hi'));
+    T(p, 'breakeven $1,264.85', { x: ax.px(X + c0) + 14, y: ax.py(0) + 40, size: 22, fill: COL.task, weight: 600, o: 0 });
+    show(p.lastChild, m('hi', 2));
+    [[1280, 40, 15.15], [1260, 20, -4.85], [1240, 0, -24.85], [1220, 0, -24.85]].forEach(([s, pay, pr], i) => {
+      const y = 535 + i * 58, t0 = m('pts', [0, 4, 8.5, 8.5][i] + (i === 3 ? .6 : 0));
+      const g = G(p, { o: 0 });
+      T(g, '$' + s.toLocaleString('en-US'), { x: 1110, y, size: 26, anchor: 'middle' });
+      T(g, '$' + pay, { x: 1300, y, size: 26, anchor: 'middle' });
+      T(g, (pr < 0 ? '−$' : '$') + Math.abs(pr).toFixed(2), { x: 1470, y, size: 26, fill: pr < 0 ? COL.bad : COL.good, weight: 600, anchor: 'middle' });
+      show(g, t0);
+      payDot(p, ax, s, pr, pr < 0 ? COL.bad : COL.good, t0, 9);
+    });
+    pill(p, 'non-linear: asymmetric payoff', COL.real, 530, 820, m('nonlin'), 26);
+  }],
+
+  ['money', 'Moneyness and time value', (m) => {
+    const p = panel(0), y = 330, X = 800, xS = 1150;
+    draw(path(p, `M200 ${y}H1420`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('line'), .7);
+    text(p, 'spot price S (call option)', 200, y - 70, m('line', .2), { size: 26, fill: COL.dim });
+    path(p, `M${X} ${y - 14}V${y + 14}`, { stroke: COL.whole, 'stroke-width': 4 }, { o: 0 });
+    show(p.lastChild, m('line', .5));
+    text(p, 'X', X, y + 50, m('line', .5), { size: 32, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, 'in the money: S > X', 1110, y - 30, m('itm'), { size: 28, fill: COL.good, anchor: 'middle', weight: 600 });
+    const d = G(p, { x: xS, y, s: 0, o: 0 }); mk('circle', { r: 12, fill: COL.task }, d); pop(d, m('itm', .5));
+    text(p, 'S', xS, y + 50, m('itm', .5), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+    draw(path(p, `M${X} ${y + 80}V${y + 94}H${xS}V${y + 80}`, { stroke: COL.good, 'stroke-width': 3 }, { d: 0 }), m('itm', 2), .5);
+    text(p, 'intrinsic value S − X', (X + xS) / 2, y + 134, m('itm', 2.3), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'at the money: S = X', X, y - 110, m('atm'), { size: 26, fill: COL.whole, anchor: 'middle', weight: 600 });
+    text(p, 'out of the money: S < X', 480, y - 30, m('otm'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'intrinsic value 0', 480, y + 50, m('otm', 1.5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    // option price = intrinsic + time value
+    const by = 640, k = 3.2, iv = 70, tv0 = 90;
+    text(p, 'option price', 200, by - 50, m('tv'), { size: 26, fill: COL.dim });
+    const r1 = mk('rect', { x: 200, y: by, width: iv * k, height: 70, rx: 6, fill: COL.good, opacity: 0 }, p);
+    const r2 = mk('rect', { x: 200 + iv * k, y: by, width: tv0 * k, height: 70, rx: 6, fill: COL.whole, opacity: 0 }, p);
+    show(put(r1, { o: 0 }), m('tv', .3)); show(put(r2, { o: 0 }), m('tv', .6));
+    const l1 = text(p, 'intrinsic', 200 + iv * k / 2, by + 44, m('tv', .3), { size: 24, fill: COL.board, anchor: 'middle', weight: 700 });
+    const l2 = text(p, 'time value', 200 + iv * k + tv0 * k / 2, by + 44, m('tv', .6), { size: 24, fill: COL.board, anchor: 'middle', weight: 700 });
+    void l1;
+    prog(q => { r2.setAttribute('width', tv0 * k * (1 - q)); l2.setAttribute('opacity', 1 - Math.min(1, q * 1.6)); }, m('tv', 6.5), 3, io);
+    text(p, '→ 0 at expiration', 200 + iv * k + 20, by + 120, m('tv', 7), { size: 26, fill: COL.whole, weight: 600 });
+  }],
+
+  ['shortcall', 'Short call', (m) => {
+    const p = panel(0), ax = payAxes(p, { ...GEN, ticks: [[30, 'X', COL.whole]] }, 0);
+    payLine(p, ax, [[0, 0], [30, 0], [60, 30]], COL.good, 0, .01, { dash: '10 8', o: .35 });
+    text(p, 'long call (buyer)', ax.px(36), ax.py(14), .2, { size: 24, fill: COL.good, anchor: 'end' });
+    payLine(p, ax, [[0, 5], [30, 5], [60, -25]], COL.bad, m('mirror'), 1.2);
+    mtext(p, ['short call profit = c', Sb('0'), ' − max(0, ', ...ST, ' − X)'], 1000, 220, m('mirror', .8), COL.bad, 30, 'start');
+    text(p, 'max gain = premium', ax.px(2), ax.py(5) - 18, m('max'), { size: 26, fill: COL.good, weight: 600 });
+    draw(path(p, `M${ax.px(50)} ${ax.py(-15) + 30}L${ax.px(57)} ${ax.py(-22) + 30}M${ax.px(57) - 18} ${ax.py(-22) + 26}L${ax.px(57)} ${ax.py(-22) + 30}L${ax.px(57) - 4} ${ax.py(-22) + 12}`, { stroke: COL.bad, 'stroke-width': 4 }, { d: 0 }), m('unl'), .6);
+    text(p, 'unlimited loss', ax.px(44), ax.py(-24) + 50, m('unl', .4), { size: 26, fill: COL.bad, weight: 600 });
+    cbox(p, 'Buyer', COL.good, 1100, 520, m('credit'), { w: 180, h: 80, size: 28 });
+    cbox(p, 'Seller', COL.bad, 1440, 520, m('credit'), { w: 180, h: 80, size: 28 });
+    flow(p, 1200, 520, 1340, 520, COL.task, m('credit', .5));
+    text(p, 'premium paid: seller has no exposure', 1270, 620, m('credit', 1.5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'buyer bears the seller’s credit risk', 1270, 680, m('credit', 5), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['puts', 'Puts', (m) => {
+    const p = panel(0), ax = payAxes(p, { ...GEN, ticks: [[30, 'X', COL.whole]] }, m('axes'));
+    payLine(p, ax, [[0, 30], [30, 0], [60, 0]], COL.chalk, m('payoff'), 1.2, { dash: '10 8' });
+    mtext(p, ['payoff ', 'p', Sb('T'), ' = max(0, X − ', ...ST, ')'], 1000, 200, m('payoff'), COL.chalk, 30, 'start');
+    payLine(p, ax, [[0, 25], [30, -5], [60, -5]], COL.good, m('profit'), 1.2);
+    mtext(p, ['long put profit = max(0, X − ', ...ST, ') − p', Sb('0')], 1000, 260, m('profit'), COL.good, 30, 'start');
+    payDot(p, ax, 25, 0, COL.task, m('profit', 2.5));
+    mtext(p, ['breakeven = X − p', Sb('0')], 1000, 320, m('profit', 2.5), COL.task, 30, 'start');
+    payLine(p, ax, [[0, -25], [30, 5], [60, 5]], COL.bad, m('short'), 1.2);
+    mtext(p, ['short put: max gain = p', Sb('0')], 1000, 420, m('short', .5), COL.bad, 30, 'start');
+    payDot(p, ax, 0, -25, COL.bad, m('maxloss', 1));
+    mtext(p, ['max loss = X − p', Sb('0'), ' = 30 − 5 = $25'], 1000, 480, m('maxloss', 2), COL.bad, 30, 'start');
+    text(p, 'price cannot fall below 0', 1000, 530, m('maxloss', 1), { size: 24, fill: COL.dim });
+  }],
+
+  ['cds', 'Credit default swaps', (m) => {
+    const p = panel(0), L = 330, R = 1270, y = 260;
+    cbox(p, 'Protection buyer', COL.good, L, y, m('pair', 1), { w: 330, h: 90, size: 28 });
+    cbox(p, 'Protection seller', COL.bad, R, y, m('pair', 1), { w: 330, h: 90, size: 28 });
+    flow(p, L + 170, y - 20, R - 170, y - 20, COL.task, m('spread'), 'fixed spread: 100 bps a year', { size: 26, ly: y - 40 });
+    flow(p, R - 170, y + 25, L + 170, y + 25, COL.bad, m('event'), 'if credit event: LGD × notional', { size: 26, ly: y + 70, dash: '12 10' });
+    cbox(p, 'Reference issuer\n(the borrower)', COL.dim, 800, 470, m('pair', 3), { w: 320, h: 100, size: 26 });
+    text(p, 'bankruptcy · failure to pay · restructuring', 800, 570, m('event', 1.2), { size: 24, fill: COL.dim, anchor: 'middle' });
+    pill(p, 'like insurance', COL.task, 800, 650, m('ins'), 26);
+    text(p, 'short credit risk', L, y + 80, m('ins', 1.5), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'long credit risk (like a bondholder)', R, y + 80, m('ins', 3), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    const gx = 420, gy = 760, k = 3;
+    text(p, 'issuer’s CDS spread', gx - 20, gy - 40, m('mig'), { size: 24, fill: COL.dim });
+    const bar = mk('rect', { x: gx, y: gy - 20, width: 100 * k, height: 40, rx: 6, fill: COL.task, opacity: 0 }, p);
+    show(put(bar, { o: 0 }), m('mig'));
+    const lab = T(p, '100 bps', { x: gx + 100 * k + 16, y: gy + 10, size: 28, weight: 700, o: 0 });
+    show(lab, m('mig'));
+    prog(q => { const v = 100 + 150 * q; bar.setAttribute('width', v * k); put(lab, { x: gx + v * k + 16 }); lab.textContent = Math.round(v) + ' bps'; }, m('mig', 1.5), 1.6);
+    text(p, 'buyer: gain', 1350, gy - 10, m('mig', 6), { size: 28, fill: COL.good, weight: 700 });
+    text(p, 'seller: loss', 1350, gy + 30, m('mig', 7), { size: 28, fill: COL.bad, weight: 700 });
+  }],
+
+  ['compare', 'Forward vs. option', (m) => {
+    const p = panel(0), ax = payAxes(p, { ...GEN, ticks: [[30, 'X', COL.whole]] }, m('axes'));
+    mtext(p, ['X = ', ...F0T, ',  premium = 5'], 1000, 760, m('axes', 1), COL.dim, 28, 'start');
+    payLine(p, ax, [[0, -30], [60, 30]], COL.whole, m('fwd'), 1);
+    text(p, 'long forward', ax.px(60) + 10, ax.py(30) + 10, m('fwd', .6), { size: 26, fill: COL.whole, weight: 600 });
+    payLine(p, ax, [[0, -5], [30, -5], [60, 25]], COL.good, m('call'), 1.2);
+    text(p, 'long call', ax.px(60) + 10, ax.py(25) + 30, m('call', .8), { size: 26, fill: COL.good, weight: 600 });
+    text(p, 'forward better', ax.px(45), ax.py(20) - 30, m('up'), { size: 26, fill: COL.whole, weight: 600, anchor: 'middle' });
+    text(p, 'call better', ax.px(8), ax.py(-11), m('down'), { size: 26, fill: COL.good, weight: 600, anchor: 'middle' });
+    payDot(p, ax, 25, -5, COL.task, m('cross'));
+    mtext(p, ['cross: ', ...ST, ' − ', ...F0T, ' = −c', Sb('0')], 1000, 560, m('cross'), COL.task, 32, 'start');
+    payLine(p, ax, [[0, -25], [30, 5], [60, 5]], COL.real, m('put'), 1.2);
+    text(p, 'short put', ax.px(60) + 10, ax.py(5) + 8, m('put', .8), { size: 26, fill: COL.real, weight: 600 });
+    text(p, 'short put: gains capped at the premium', 1000, 640, m('put', 2), { size: 26, fill: COL.real, weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['Forwards, futures and swaps: firm commitments, linear payoffs.', 'w1'],
+      ['Futures are marked to market daily through margin accounts.', 'w2'],
+      ['Options give the buyer a right for a premium: non-linear payoffs.', 'w3'],
+      ['Credit default swaps transfer default risk, much like insurance.', 'w4']], m, { y0: 250, gap: 120 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

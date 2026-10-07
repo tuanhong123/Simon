@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Forward Contracts</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 5, title: 'Pricing and Valuation of Forward Contracts and for an Underlying with Varying Maturities', minutes: 10, language: 'en' };
+
+/* ---------- data ---------- */
+const ST = ['S', Sb('T')], S0 = ['S', Sb('0')], F0T = ['F', Sb('0'), '(', 'T', ')'], VtT = ['V', Sb('t'), '(', 'T', ')'];
+const Z = [0.023960, 0.034197, 0.040005];                                   // bootstrapped zero rates
+const IFR = [Z[0], (1 + Z[1]) ** 2 / (1 + Z[0]) - 1, (1 + Z[2]) ** 3 / (1 + Z[1]) ** 2 - 1];   // 1-year forward rates starting at 0, 1, 2
+const line2 = (p, parts, x, y, t0, fill = COL.chalk, size = 34) => mline(p, parts, x, y, t0, fill, size, 'start');
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Forward pricing and valuation', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 5', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Pricing and Valuation of', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'Forward Contracts', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'the price is fixed at the start; the value moves every day', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['zero', 'Price vs. value', (m) => {
+    const p = panel(0);
+    pill(p, 'price: agreed at the start, fixed', COL.whole, 520, 130, m('head'), 30);
+    pill(p, 'value: changes over time', COL.task, 1130, 130, m('head', 1.5), 30);
+    cbox(p, 'AMY\n(buyer)', COL.good, 300, 330, m('price'), { w: 240, h: 110 });
+    cbox(p, 'Dealer\n(seller)', COL.bad, 1300, 330, m('price'), { w: 240, h: 110 });
+    const c = G(p, { o: 0 });
+    mk('rect', { x: 520, y: 270, width: 560, height: 120, rx: 14, fill: COL.board, stroke: COL.real, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, c);
+    T(c, '1,000 Airbus shares in 1 year', { x: 800, y: 318, size: 28, anchor: 'middle', weight: 600 });
+    M(c, [...F0T, ' = €30'], { x: 800, y: 366, size: 32, fill: COL.real });
+    show(c, m('price', .8));
+    mline(p, [...S0, ' = €29.70,  r = 1%:   29.70 × 1.01 = 29.997 ≈ €30'], 800, 520, m('amy'), COL.chalk, 36);
+    mline(p, ['V', Sb('0'), '(', 'T', ') = 0'], 800, 660, m('v0'), COL.task, 64);
+    text(p, 'neither an asset nor a liability', 800, 730, m('v0', 1), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['maturity', 'Value at maturity', (m) => {
+    const p = panel(0), x0 = 220, x1 = 1380, lo = 280, hi = 320, X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0), y = 420, F = 300.84;
+    mline(p, ['V', Sb('T'), '(', 'T', ') = ', ...ST, ' − ', ...F0T, '   (long)'], 800, 110, m('head'), COL.good, 38);
+    text(p, 'Viswan Family Office sells 1,000 Biomian shares forward at INR 300.84', 800, 200, m('ex'), { size: 30, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('ex', .5), .7);
+    [280, 290, 300, 310, 320].forEach(v => text(p, String(v), X(v), y + 44, m('ex', .7), { size: 22, fill: COL.dim, anchor: 'middle' }));
+    show(path(p, `M${X(F)} ${y - 30}V${y + 14}`, { stroke: COL.whole, 'stroke-width': 4 }, { o: 0 }), m('ex', 1));
+    mline(p, [...F0T, ' = 300.84'], X(F), y - 44, m('ex', 1), COL.whole, 28);
+    const sc = (v, k, buyer, vfo, yy) => {
+      const d = G(p, { x: X(v), y, s: 0, o: 0 }); mk('circle', { r: 11, fill: COL.task }, d); pop(d, m(k));
+      text(p, String(v), X(v), y - 22, m(k), { size: 26, fill: COL.task, anchor: 'middle', weight: 700 });
+      draw(path(p, `M${X(v)} ${y + 70}V${y + 84}H${X(F)}V${y + 70}`, { stroke: COL.task, 'stroke-width': 3 }, { d: 0 }), m(k, .5), .5);
+      text(p, Math.abs(v - F).toFixed(2), (X(v) + X(F)) / 2, y + 116, m(k, .7), { size: 24, fill: COL.task, anchor: 'middle', weight: 600 });
+      mline(p, [...ST, ' = ' + v + ':   buyer ', buyer, ',   VFO ', vfo], 800, yy, m(k, 1.2), COL.chalk, 34);
+    };
+    sc(287, 's1', '−13.84', '+13.84', 640);
+    sc(312, 's2', '+11.16', '−11.16', 720);
+  }],
+
+  ['during', 'Value during the life', (m) => {
+    const p = panel(0), c = growChart(p, m('chart'), { w: 700, lo: 90, hi: 118 });
+    mline(p, S0, 140, c.Y(100) + 12, m('chart', .3), COL.task, 32, 'end');
+    c.curve(q => 100 * 1.1 ** q, COL.whole, m('pv'), { dash: '12 8', label: ['PV of ', ...F0T] });
+    const path0 = [[0, 100], [.1, 102.5], [.2, 101], [.3, 104.6], [.4, 103], [.5, 109.5], [.55, 112]];
+    draw(path(p, path0.map(([q, v], i) => `${i ? 'L' : 'M'}${c.X(q)} ${c.Y(v)}`).join(''), { stroke: COL.task, 'stroke-width': 5 }, { d: 0 }), m('st'), 1.6);
+    mline(p, ['S', Sb('t')], c.X(.55) + 14, c.Y(112) - 14, m('st', 1.4), COL.task, 32, 'start');
+    const pvt = 100 * 1.1 ** .55;
+    draw(path(p, `M${c.X(.55)} ${c.Y(112)}V${c.Y(pvt)}`, { stroke: COL.good, 'stroke-width': 6 }, { d: 0 }), m('gap'), .5);
+    mline(p, VtT, c.X(.55) + 16, (c.Y(112) + c.Y(pvt)) / 2 + 22, m('gap', .4), COL.good, 30, 'end');
+    mline(p, [...VtT, ' = S', Sb('t'), ' − ', ...F0T, '(1 + r)', E('−(T − t)')], 1240, 220, m('gap'), COL.chalk, 32);
+    text(p, 'long side', 1240, 270, m('gap', .5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'spot above the dashed line:', 960, 400, m('sign'), { size: 28, weight: 600 });
+    text(p, 'buyer gains', 960, 440, m('sign'), { size: 28, fill: COL.good, weight: 700 });
+    text(p, 'spot below the dashed line:', 960, 520, m('sign', 1.8), { size: 28, weight: 600 });
+    text(p, 'seller gains', 960, 560, m('sign', 1.8), { size: 28, fill: COL.bad, weight: 700 });
+  }],
+
+  ['biomian', 'Biomian mark to market', (m) => {
+    const p = panel(0), x = 140;
+    title(p, 'VFO is short the Biomian forward at INR 300.84', m('imp'), 100);
+    line2(p, ['implied rate: 300.84 = 295(1 + r)', E('0.5'), '   →   r = 4%'], x, 200, m('imp', 2));
+    line2(p, ['price jumps to 325 at t = 0:   V = 295 − 325 = −INR 30'], x, 300, m('jump'), COL.bad);
+    line2(p, ['3 months later, ', 'S', Sb('t'), ' = 285:'], x, 410, m('later'), COL.chalk);
+    line2(p, ['V = 300.84 × 1.04', E('−0.25'), ' − 285 = +INR 12.90'], x + 60, 470, m('later', 2.5), COL.good);
+    line2(p, ['if r = 8%:   V = 300.84 × 1.08', E('−0.25'), ' − 285 = +INR 10.11'], x + 60, 570, m('rate'), COL.task);
+    text(p, 'higher r → lower PV of the forward price → smaller gain for the seller', 800, 690, m('rate', 4), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['carry', 'Valuation with carry', (m) => {
+    const p = panel(0), x0 = 240, x1 = 1360, y = 420, X = q => x0 + q * (x1 - x0);
+    mline(p, [...VtT, ' = (S', Sb('t'), ' − PV', Sb('t'), '(I) + PV', Sb('t'), '(C)) − ', ...F0T, '(1 + r)', E('−(T − t)')], 800, 120, m('eq'), COL.chalk, 36);
+    text(p, 'Hightest: Unilever forward at €50.6311, r = 5%', 800, 230, m('ex'), { size: 30, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.whole, 'stroke-width': 3 }, { d: 0 }), m('ex', .3), .6);
+    [[0, '0'], [4 / 6, 't = 4 months'], [1, 'T = 6 months']].forEach(([q, s]) => { show(path(p, `M${X(q)} ${y - 10}V${y + 10}`, { stroke: COL.whole, 'stroke-width': 3 }, { o: 0 }), m('ex', .4)); text(p, s, X(q), y + 44, m('ex', .4), { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    flow(p, X(1), y - 90, X(1), y - 14, COL.good, m('ex', 4), 'dividend €0.30', { lx: X(1) - 20, ly: y - 60, anchor: 'end' });
+    line2(p, ['PV', Sb('t'), '(I) = 0.30 × 1.05', E('−2/12'), ' = €0.2976'], 240, 560, m('ex', 7), COL.good);
+    line2(p, ['PV', Sb('t'), '(', ...F0T, ') = 50.6311 × 1.05', E('−2/12'), ' = €50.2211'], 240, 630, m('pvf'), COL.whole);
+    line2(p, ['breakeven ', 'S', Sb('t'), ' = 50.2211 + 0.2976 = €50.5186'], 240, 720, m('be'), COL.task, 38);
+  }],
+
+  ['fx', 'FX forward value', (m) => {
+    const p = panel(0), x = 140;
+    mline(p, [...VtT, ' = S', Sb('t,f/d'), ' − F', Sb('0,f/d'), '(', 'T', ') × exp[−(r', Sb('f'), ' − r', Sb('d'), ')(T − t)]'], 800, 120, m('eq'), COL.chalk, 36);
+    text(p, 'Rook Point: buy EUR 1,000,000 for USD 1,201,000 in one year', 800, 220, m('ex'), { size: 30, anchor: 'middle', weight: 600 });
+    text(p, 'spot USD/EUR = 1.192', 800, 270, m('ex', 4), { size: 28, fill: COL.dim, anchor: 'middle' });
+    line2(p, ['USD rate: 0.50% → 0.75%      EUR rate: −0.25%'], x, 380, m('move'), COL.whole);
+    line2(p, ['V = 1.192 − 1.201 e', E('−(0.0075 + 0.0025)(1)'), ' = +0.00295 USD per EUR'], x, 490, m('calc'), COL.good, 36);
+    line2(p, ['× EUR 1,000,000 = +USD 2,950.15'], x + 400, 590, m('usd'), COL.good, 40);
+    pill(p, 'gain for Rook Point (long euros)', COL.good, 800, 710, m('usd', 2), 28);
+  }],
+
+  ['zeros', 'Zero rates', (m) => {
+    const p = panel(0), cx = [200, 380, 560, 760];
+    title(p, 'Bootstrapping zero rates', m('head'), 100);
+    ['Maturity', 'Coupon', 'Price', 'Zero rate'].forEach((s, i) => text(p, s, cx[i], 190, m('bonds'), { size: 26, fill: COL.dim, weight: 600, anchor: 'middle' }));
+    [['1 year', '1.50%', '99.125'], ['2 years', '2.50%', '98.275'], ['3 years', '3.25%', '98.000']].forEach((r, i) => {
+      r.forEach((s, j) => text(p, s, cx[j], 250 + i * 60, m('bonds', .4 + i * .3), { size: 28, anchor: 'middle' }));
+      text(p, (Z[i] * 100).toFixed(i === 1 ? 2 : 3).replace(/0$/, '') + '%', cx[3], 250 + i * 60, m('z' + (i + 1)), { size: 30, fill: COL.task, weight: 700, anchor: 'middle' });
+    });
+    line2(p, ['99.125 = ', F('101.5', '1 + z₁')], 120, 470, m('z1', .5), COL.chalk, 32);
+    line2(p, ['98.275 = ', F('2.5', '1.02396'), ' + ', F('102.5', '(1 + z₂)²')], 120, 570, m('z2', .5), COL.chalk, 32);
+    text(p, '… and so on: bootstrapping', 120, 660, m('z3', 1), { size: 28, fill: COL.dim });
+    const gx = 1000, gy = 560, X = i => gx + 110 + i * 150, Y = r => gy - (r - .015) * 9000;
+    const g = G(p, { o: 0 });
+    path(g, `M${gx} ${gy}H${gx + 530}M${gx} ${gy}V${gy - 330}`, { stroke: COL.dim, 'stroke-width': 3 });
+    [1, 2, 3].forEach(i => T(g, i + 'y', { x: X(i - 1), y: gy + 34, size: 24, fill: COL.dim, anchor: 'middle' }));
+    T(g, 'zero rate', { x: gx + 10, y: gy - 340, size: 24, fill: COL.dim });
+    show(g, m('z1'));
+    Z.forEach((z, i) => { const d = G(p, { x: X(i), y: Y(z), s: 0, o: 0 }); mk('circle', { r: 10, fill: COL.task }, d); pop(d, m('z' + (i + 1), .3)); });
+    draw(path(p, Z.map((z, i) => `${i ? 'L' : 'M'}${X(i)} ${Y(z)}`).join(''), { stroke: COL.task, 'stroke-width': 4 }, { d: 0 }), m('z3', .8), .8);
+    line2(p, ['DF', Sb('i'), ' = 1 / (1 + z', Sb('i'), ')', E('i'), ':   0.9766,  0.9350,  0.8890'], 120, 780, m('df'), COL.whole, 32);
+  }],
+
+  ['ifr', 'Implied forward rates', (m) => {
+    const p = panel(0), xs = [150, 500, 850], y1 = 200, y2 = 330;
+    xs.forEach((x, i) => text(p, 't = ' + i, x, 120, m('two'), { size: 26, fill: COL.dim, anchor: 'middle' }));
+    text(p, '$100', xs[0], y1 + 10, m('two'), { size: 30, weight: 700, anchor: 'middle' });
+    flow(p, xs[0] + 50, y1, xs[1] - 60, y1, COL.task, m('two', 1), '2.396%', { size: 24, ly: y1 - 20 });
+    text(p, '$102.40', xs[1], y1 + 10, m('two', 1.6), { size: 30, weight: 700, anchor: 'middle' });
+    flow(p, xs[1] + 60, y1, xs[2] - 60, y1, COL.good, m('two', 2.4), 'forward rate?', { size: 24, ly: y1 - 20 });
+    text(p, '$106.96', xs[2], y1 + 10, m('two', 3), { size: 30, weight: 700, anchor: 'middle' });
+    text(p, '$100', xs[0], y2 + 10, m('two', 4), { size: 30, weight: 700, anchor: 'middle' });
+    flow(p, xs[0] + 50, y2, xs[2] - 60, y2, COL.whole, m('two', 4.5), '3.4197% for 2 years', { size: 24, ly: y2 + 40 });
+    text(p, '$106.96', xs[2], y2 + 10, m('two', 5), { size: 30, weight: 700, anchor: 'middle' });
+    mline(p, ['1.02396 × (1 + IFR', Sb('1,1'), ') = 1.034197', E('2')], 480, 480, m('eq'), COL.chalk, 34);
+    mline(p, ['IFR', Sb('1,1'), ' = 4.45%'], 480, 560, m('ans'), COL.good, 44);
+    mline(p, ['(1.034197)', E('2'), '(1 + IFR', Sb('2,1'), ') = 1.040005', E('3'), ' → 5.17%'], 480, 650, m('ifr21'), COL.good, 32);
+    const gx = 990, gy = 700, X = i => gx + 90 + i * 170, Y = r => gy - (r - .015) * 11000;
+    const g = G(p, { o: 0 });
+    path(g, `M${gx} ${gy}H${gx + 560}M${gx} ${gy}V${gy - 460}`, { stroke: COL.dim, 'stroke-width': 3 });
+    [1, 2, 3].forEach(i => T(g, i + 'y', { x: X(i - 1), y: gy + 34, size: 24, fill: COL.dim, anchor: 'middle' }));
+    show(g, m('curve'));
+    draw(path(p, Z.map((z, i) => `${i ? 'L' : 'M'}${X(i)} ${Y(z)}`).join(''), { stroke: COL.task, 'stroke-width': 4 }, { d: 0 }), m('curve', .3), .8);
+    text(p, 'zero curve', X(2) + 16, Y(Z[2]) + 30, m('curve', .8), { size: 24, fill: COL.task, weight: 600 });
+    draw(path(p, IFR.map((z, i) => `${i ? 'L' : 'M'}${X(i)} ${Y(z)}`).join(''), { stroke: COL.good, 'stroke-width': 4, 'stroke-dasharray': '10 8' }, { d: 0 }), m('curve', 1.6), .8);
+    text(p, 'forward curve', X(2) - 10, Y(IFR[2]) - 20, m('curve', 2.2), { size: 24, fill: COL.good, weight: 600, anchor: 'end' });
+    IFR.forEach((z, i) => text(p, (z * 100).toFixed(2) + '%', X(i) - 12, Y(z) - 12, m('curve', 2 + i * .3), { size: 20, fill: COL.good, anchor: 'end' }));
+  }],
+
+  ['mrr', 'Forward reference rates', (m) => {
+    const p = panel(0), x = 140;
+    title(p, '3-month MRR 1.25%,  6-month MRR 1.75%', m('head'), 110);
+    line2(p, ['(1 + APR', Sb('4'), '/4)', E('4'), ' = (1 + 0.0175/2)', E('2'), '   →   APR', Sb('4'), ' = 1.7462%'], x, 260, m('conv'), COL.whole);
+    line2(p, ['(1 + 0.0125/4)(1 + IFR/4) = (1 + 0.017462/4)', E('2')], x, 380, m('ans'), COL.chalk);
+    line2(p, ['IFR', Sb('3m,3m'), ' = 2.24299%'], x + 300, 470, m('ans', 2), COL.good, 44);
+    line2(p, ['CNY 100 million × (1 + 0.0125/4)(1 + 0.0224299/4) = CNY 100,875,000'], x, 600, m('check'), COL.task, 30);
+    line2(p, ['CNY 100 million × (1 + 0.0175/2) = CNY 100,875,000'], x, 660, m('check', 3), COL.task, 30);
+  }],
+
+  ['fra', 'Forward rate agreements', (m) => {
+    const p = panel(0), x0 = 200, x1 = 1400, ty = 300, X = q => x0 + q * (x1 - x0);
+    title(p, 'Forward rate agreement (FRA)', m('head'), 90);
+    draw(path(p, `M${x0} ${ty}H${x1}`, { stroke: COL.whole, 'stroke-width': 3 }, { d: 0 }), m('mech'), .6);
+    [[0, 't = 0: fixed rate agreed'], [.5, 'A = 3 months: MRR set, cash settled'], [1, 'B = 6 months']].forEach(([q, s]) => { show(path(p, `M${X(q)} ${ty - 10}V${ty + 10}`, { stroke: COL.whole, 'stroke-width': 3 }, { o: 0 }), m('mech', .2)); text(p, s, X(q), ty + 44, m('mech', .3), { size: 24, fill: COL.dim, anchor: q ? q === 1 ? 'end' : 'middle' : 'start' }); });
+    cbox(p, 'Buyer: pays fixed', COL.good, 420, 180, m('mech', 1), { w: 300, h: 70, size: 26 });
+    cbox(p, 'Seller: pays MRR', COL.bad, 1180, 180, m('mech', 1), { w: 300, h: 70, size: 26 });
+    text(p, 'net only; notional not exchanged', 800, 190, m('mech', 6), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Yangzi Bank buys a 3×6 FRA: CNY 100m at 2.24299%', 140, 440, m('yz'), { size: 30, weight: 700 });
+    line2(p, ['MRR sets at 2.15%'], 140, 510, m('set'), COL.task, 32);
+    line2(p, ['(2.15% − 2.24299%) × 100,000,000 × 90/360 = −CNY 23,247.50'], 140, 590, m('net'), COL.chalk, 32);
+    line2(p, ['settled at A:  −23,247.50 / (1 + 0.0215/4) = −CNY 23,123.21'], 140, 680, m('pv'), COL.bad, 32);
+    pill(p, 'offset by a lower MRR cost on its liability', COL.good, 800, 790, m('hedge'), 28);
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['A forward’s price is fixed; its value starts at zero.', 'w1'],
+      ['Long value = spot (adjusted for carry) − PV of the forward price.', 'w2'],
+      ['Zero rates are bootstrapped; implied forward rates link them.', 'w3'],
+      ['An FRA locks in a future rate; it settles the PV of the difference.', 'w4']], m, { y0: 250, gap: 120 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
