@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interest Rate Risk and Return</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 10, title: 'Interest Rate Risk and Return', minutes: 9, language: 'en' };
+
+const fvC = (c, r, n) => n ? c * ((1 + r) ** n - 1) / r : 0;
+const pvB = (c, r, n) => c * (1 - (1 + r) ** -n) / r + 100 * (1 + r) ** -n;
+const PVS = Array.from({ length: 10 }, (_, i) => (i < 9 ? 6.2 : 106.2) / 1.062 ** (i + 1));
+const WT = PVS.map(v => v / 100), MAC = PVS.reduce((a, v, i) => a + v * (i + 1), 0) / 100;
+const HY = { flat: [6.20, 6.20], up: [6.43, 5.28], down: [5.98, 7.16] };
+const GAIN = h => fvC(6.2, .072, h) - fvC(6.2, .062, h), LOSS = h => h < 10 ? pvB(6.2, .072, 10 - h) - 100 : 0;
+
+const BEATS = [
+  ['intro', 'Interest rate risk and return', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 10', { x: 800, y: 290, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Interest Rate Risk', { x: 800, y: 400, size: 84, weight: 600, anchor: 'middle' });
+    T(g, 'and Return', { x: 800, y: 495, size: 84, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'where a bond\'s return comes from, and why the horizon matters', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['sources', 'Three sources of return', (m) => {
+    const p = panel(0);
+    [[290, COL.task, '1', 'Coupons and principal', 'promised, on schedule', 'a'], [800, COL.whole, '2', 'Reinvestment', 'interest on interest', 'b'], [1310, COL.good, '3', 'Gain or loss on sale', 'if sold before maturity', 'c']].forEach(([x, c, n, t, s, k]) => {
+      const g = card1(p, x, 300, 440, 260, c); T(g, n, { y: -70, size: 64, fill: c, weight: 700, anchor: 'middle' }); T(g, t, { y: 0, size: 36, fill: c, weight: 600, anchor: 'middle' }); T(g, s, { y: 50, size: 28, fill: COL.dim, anchor: 'middle' });
+      show(g, m(k));
+    });
+    show(pill(p, 'horizon yield = annualized return over the holding period', COL.rat, 800, 540, 0, 34), m('d'));
+    text(p, 'horizon yield = YTM only if:', 800, 650, m('e'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    ['held to maturity', 'no default', 'coupons reinvested at the YTM'].forEach((s, i) => text(p, '✓  ' + s, 800, 710 + i * 50, m('e', 1 + i * 1.3), { size: 32, fill: COL.good, anchor: 'middle', weight: 600 }));
+  }],
+
+  ['buy', 'Buy and hold: interest on interest', (m) => {
+    const p = panel(0), base = 740, k = 2.8, x = 300;
+    text(p, '10-year bond · 6.2% annual coupon · bought at par · reinvested at 6.2%', 800, 110, .3, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, `M240 ${base}H900`, { stroke: COL.chalk, 'stroke-width': 3 });
+    const seg = (y0, h, c, label, val, t) => { const g = G(p, { y: 20, o: 0 }); mk('rect', { x, y: base - y0 - h, width: 240, height: h, fill: c, 'fill-opacity': .88 }, g); T(g, val, { x: x + 120, y: base - y0 - h / 2 + 10, size: 32, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, label, { x: x + 270, y: base - y0 - h / 2 + 10, size: 28, fill: c, weight: 600 }); tw(g, { o: 1, y: 0 }, t, .6, out); };
+    seg(0, 100 * k, COL.task, 'principal', '100', m('vfo', -2));
+    seg(100 * k, 62 * k, COL.good, 'coupons (10 × 6.2)', '62', m('vfo'));
+    seg(162 * k, 20.493 * k, COL.whole, 'interest on interest', '20.493', m('ioi'));
+    text(p, 'future value of coupons: 82.493', 960, 330, m('vfo', 1), { size: 30, fill: COL.good, weight: 600 });
+    text(p, 'ending value 182.49  →  annual return', 960, 560, m('ret'), { size: 30, fill: COL.chalk, weight: 600 }); text(p, '6.2% = the YTM', 960, 620, m('ret', 1.3), { size: 44, fill: COL.good, weight: 700 });
+  }],
+
+  ['scen', 'Same bond, two horizons', (m) => {
+    const p = panel(0), base = 700, k = 200, bx = [[380, 520], [820, 960], [1260, 1400]];
+    text(p, 'horizon yield: buy-and-hold (10 years) vs sell after 4 years', 800, 110, .3, { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    path(p, `M240 ${base}H1500`, { stroke: COL.chalk, 'stroke-width': 3 });
+    [['rates unchanged', 'flat', 'flat', 'flat'], ['rates +1 point', 'up', 'up', 'upb'], ['rates −1 point', 'down', 'dn', 'dnb']].forEach(([name, key, k1, k2], i) => {
+      text(p, name, (bx[i][0] + bx[i][1]) / 2, base + 50, m(k1, -.3), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+      HY[key].forEach((v, j) => {
+        const h = (v - 5) * k, g = G(p, { y: 30, o: 0 }); mk('rect', { x: bx[i][j] - 55, y: base - h, width: 110, height: h, fill: j ? COL.task : COL.whole, 'fill-opacity': .88, rx: 5 }, g);
+        T(g, v.toFixed(2) + '%', { x: bx[i][j], y: base - h - 14, size: 32, fill: COL.chalk, weight: 700, anchor: 'middle' });
+        tw(g, { o: 1, y: 0 }, m(j ? k2 : k1, .3), .6, out);
+      });
+    });
+    const leg = (s, c, y) => { const g = G(p, { o: 0 }); mk('rect', { x: 260, y: y - 20, width: 24, height: 24, rx: 5, fill: c }, g); T(g, s, { x: 300, y, size: 26, fill: COL.dim }); show(g, .5); };
+    leg('Viswan: holds 10 years', COL.whole, 210); leg('Baywhite: sells after 4', COL.task, 250);
+    text(p, 'axis starts at 5%', 240, 800, .5, { size: 22, fill: COL.faint });
+    text(p, 'Baywhite sells at 95.263:', 960, base + 78, m('upb', 2), { size: 24, fill: COL.bad, anchor: 'middle', weight: 600 }); text(p, 'capital loss', 960, base + 108, m('upb', 2), { size: 24, fill: COL.bad, anchor: 'middle', weight: 700 }); text(p, 'Baywhite sells at 105.043:', 1400, base + 78, m('dnb', 2), { size: 24, fill: COL.good, anchor: 'middle', weight: 600 }); text(p, 'capital gain', 1400, base + 108, m('dnb', 2), { size: 24, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'same bond, different horizons, opposite results', 800, 860, m('end'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 700 });
+  }],
+
+  ['risks', 'Reinvestment risk vs price risk', (m) => {
+    const p = panel(0), X = h => 300 + h * 110, Y = v => 342 - v * 43;
+    axes2(p, 240, 342, 1450, 150, null, null);
+    [0, 2, 4, 6, 8, 10].forEach(h => { path(p, `M${X(h)} 334V350`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, String(h), X(h), 690, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'investment horizon (years)', 1450, 735, .3, { size: 26, fill: COL.dim, anchor: 'end' }); text(p, 'effect of a 1-point rate rise on value (per 100)', 240, 130, .3, { size: 26, fill: COL.dim });
+    [[-6, 'M232 ' + Y(-6) + 'H248'], [-4], [4], [0]].forEach(() => {});
+    [-6, -4, -2, 0, 2, 4].forEach(v => text(p, String(v), 224, Y(v) + 8, .3, { size: 22, fill: COL.dim, anchor: 'end' }));
+    const pts = f => polyline(Array.from({ length: 11 }, (_, h) => [X(h), Y(f(h))]));
+    draw(path(p, pts(GAIN), { stroke: COL.good, 'stroke-width': 6 }, { d: 0 }), m('re'), 1.5); text(p, 'reinvestment gain', X(10) - 20, Y(GAIN(10)) - 22, m('re', 1), { size: 28, fill: COL.good, anchor: 'end', weight: 700 });
+    draw(path(p, pts(LOSS), { stroke: COL.bad, 'stroke-width': 6 }, { d: 0 }), m('pr'), 1.5); text(p, 'price loss', X(1) + 20, Y(LOSS(1)) + 46, m('pr', 1), { size: 28, fill: COL.bad, weight: 700 });
+    draw(path(p, pts(h => GAIN(h) + LOSS(h)), { stroke: COL.chalk, 'stroke-width': 5, 'stroke-dasharray': '12 8' }, { d: 0 }), m('hor'), 1.8); text(p, 'net effect', X(3.2), Y(GAIN(3) + LOSS(3)) - 34, m('hor', 1), { size: 28, fill: COL.chalk, weight: 700 });
+    draw(path(p, `M${X(7.74)} 150V660`, { stroke: COL.task, 'stroke-width': 3, 'stroke-dasharray': '8 8' }, { d: 0 }), m('eq'), .7);
+    text(p, 'net effect ≈ 0 near 7.7 years', X(7.74) - 12, 190, m('eq', .4), { size: 30, fill: COL.task, anchor: 'end', weight: 700 });
+    text(p, 'long horizon: reinvestment risk matters more · short horizon: price risk matters more', 800, 800, m('hor', 2), { size: 30, fill: COL.dim, anchor: 'middle' });
+    text(p, 'illustrative: 10-year, 6.2% bond, rates +1 point', 800, 850, m('re'), { size: 22, fill: COL.faint, anchor: 'middle' });
+  }],
+
+  ['mac', 'Macaulay duration', (m) => {
+    const p = panel(0), base = 540, X = t => 300 + (t - 1) * 130, k = 7;
+    text(p, 'weight = share of the bond\'s price', 800, 120, m('w'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    path(p, `M240 ${base}H1560`, { stroke: COL.chalk, 'stroke-width': 3 });
+    PVS.forEach((v, i) => {
+      const g = G(p, { y: 20, o: 0 }), h = v * 7.5; mk('rect', { x: X(i + 1) - 40, y: base - h, width: 80, height: h, fill: i < 9 ? COL.good : COL.task, 'fill-opacity': .88, rx: 4 }, g);
+      T(g, (WT[i] * 100).toFixed(1) + '%', { x: X(i + 1), y: base - h - 12, size: 24, fill: COL.chalk, weight: 600, anchor: 'middle' }); T(g, String(i + 1), { x: X(i + 1), y: base + 38, size: 26, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('w', .6 + i * .15), .5, out);
+    });
+    text(p, 'year', 1560, base + 76, m('w', 1), { size: 24, fill: COL.dim, anchor: 'end' });
+    const fx = G(p, { x: X(MAC), y: base + 10, o: 0 }); mk('path', { d: 'M0 0L-34 62H34Z', fill: COL.rat }, fx); show(fx, m('val'));
+    text(p, 'Macaulay duration = 7.74 years', X(MAC), base + 120, m('val', .4), { size: 36, fill: COL.rat, anchor: 'middle', weight: 700 });
+    [['horizon = duration: the risks offset', COL.whole, 0], ['horizon > duration: reinvestment risk dominates', COL.good, 1], ['horizon < duration: price risk dominates', COL.bad, 2]].forEach(([s, c, i]) => text(p, s, 800, 730 + i * 50, m('gap', i * 2.4), { size: 32, fill: c, anchor: 'middle', weight: 600 }));
+  }],
+
+  ['carry', 'Constant-yield price trajectory', (m) => {
+    const p = panel(0), X = t => 340 + t * 200, Y = v => 760 - (v - 96) * 130;
+    axes2(p, 240, 760, 1440, 220, null, 'price');
+    [0, 1, 2, 3, 4, 5].forEach(t => { path(p, `M${X(t)} 752V768`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, t + (t === 5 ? ' years' : ''), X(t), 806, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    [96, 98, 100].forEach(v => text(p, String(v), 224, Y(v) + 8, .3, { size: 24, fill: COL.dim, anchor: 'end' }));
+    draw(path(p, `M240 ${Y(100)}H1440`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), .3, .6); text(p, 'par', 1440, Y(100) - 14, .6, { size: 24, fill: COL.dim, anchor: 'end' });
+    const pts = Array.from({ length: 11 }, (_, k) => [X(k / 2), Y(bondPrice(4.0, 3.2, 10 - k))]);
+    draw(path(p, polyline(pts), { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('traj'), 2);
+    text(p, 'bought at 96.41 (yield 4%)', X(0) - 40, 856, m('traj', .5), { size: 28, fill: COL.task, weight: 700 });
+    text(p, 'constant-yield price trajectory', X(0.2), 500, m('traj', 1.5), { size: 28, fill: COL.whole, anchor: 'start', weight: 700 });
+    text(p, 'carrying value = purchase price + amortized discount', 800, 115, m('carry'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    const d1 = G(p, { x: X(3), y: Y(99.2), o: 0 }), d2 = G(p, { x: X(3), y: Y(96.8), o: 0 }); mk('circle', { r: 12, fill: COL.good }, d1); mk('circle', { r: 12, fill: COL.bad }, d2); show(d1, m('gain')); show(d2, m('gain', 1));
+    text(p, 'sold above: capital gain', X(3) + 24, Y(99.2) + 8, m('gain', .3), { size: 26, fill: COL.good, weight: 700 }); text(p, 'sold below: capital loss', X(3) + 24, Y(96.8) + 8, m('gain', 1.3), { size: 26, fill: COL.bad, weight: 700 });
+    show(pill(p, 'the drift toward par is interest income, not a gain', COL.rat, 800, 180, 0, 28), m('int'));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Return: coupons, reinvestment, gain or loss on sale.', 'w1'], ['Horizon yield = YTM only under three conditions.', 'w2'],
+     ['Reinvestment risk and price risk offset; horizon decides.', 'w3'], ['Macaulay duration: where the two risks balance.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
