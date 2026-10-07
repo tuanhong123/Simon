@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Efficiency</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 7, title: 'Market Efficiency', minutes: 7, language: 'en', next: '../ch08/' };
+
+const cardRow = (p, m, items, { x0 = 100, step = 300, w = 270, y = 250, h = 380, hs = 30, bs = 24, n = 20 } = {}) => items.forEach(([head, body, c, mk_], i) =>
+  infoCard(p, x0 + i * step, y, w, h, c, head, body.map(s => [s]), m(mk_), { hs, bs, n }));
+const wob = (x, a) => a * (Math.sin(x * .045) * .6 + Math.sin(x * .13 + 1) * .3 + Math.sin(x * .31) * .1);
+const DAYS = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5];
+const EFF = DAYS.map(d => d < 0 ? 100 : 110), UNDER = DAYS.map(d => d < 0 ? 100 : [102.5, 105, 107, 108.5, 109.5, 110][d]), OVER = DAYS.map(d => d < 0 ? 100 : [118, 116, 114, 112, 111, 110][d]);
+
+const BEATS = [
+  introBeat('Equity Investments, Chapter 7', 'Market', 'Efficiency', 'can anyone beat the market?'),
+
+  ['efficient', 'Efficient and inefficient markets', (m) => {
+    const p = panel(0);
+    const panelAt = (x0, title, c, amp, mk_) => {
+      text(p, title, x0 + 310, 150, m('iv'), { size: 34, fill: c, anchor: 'middle', weight: 700 });
+      draw(path(p, `M${x0} 400H${x0 + 620}`, { stroke: COL.chalk, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), m('iv'), .8);
+      const pts = Array.from({ length: 63 }, (_, i) => i * 10);
+      draw(path(p, pts.map((x, i) => (i ? 'L' : 'M') + (x0 + x) + ' ' + (400 + wob(x + (amp > 40 ? 40 : 0), amp))).join(''), { stroke: c, 'stroke-width': 5 }, { d: 0 }), m(mk_), 2);
+    };
+    panelAt(120, 'Efficient market', COL.good, 22, 'eff'); panelAt(860, 'Inefficient market', COL.bad, 110, 'ineff');
+    leg(p, 'Intrinsic value (dashed)', COL.chalk, 120, 560, m('iv', .8)); leg(p, 'Market price', COL.whole, 120, 605, m('iv', 1.4));
+    ['Participants and analyst coverage', 'Availability of information', 'Limits to trading'].forEach((s, i) => show(pill(p, s, COL.task, 330 + i * 470, 760, 0, 26), m('factors', i * 1.2)));
+  }],
+
+  ['forms', 'Three forms of efficiency', (m) => {
+    const p = panel(0), cx = 520, cy = 470;
+    const ell = (rx, ry, c, t0) => { const g = G(p, { o: 0 }); mk('ellipse', { cx, cy, rx, ry, fill: c, 'fill-opacity': .1, stroke: c, 'stroke-width': 4 }, g); show(g, t0); };
+    ell(150, 110, COL.whole, m('weak')); ell(300, 215, COL.task, m('semi')); ell(450, 320, COL.real, m('strong'));
+    text(p, 'Past market data', cx, cy + 10, m('weak', .3), { size: 28, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, 'Public information', cx, cy - 135, m('semi', .3), { size: 28, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'All information, incl. private', cx, cy - 250, m('strong', .3), { size: 28, fill: COL.real, anchor: 'middle', weight: 700 });
+    [['Weak form', 'prices reflect past prices and volume', COL.whole, 'weak', 240], ['Semi-strong form', 'prices reflect all public information', COL.task, 'semi', 400], ['Strong form', 'prices reflect public and private information', COL.real, 'strong', 560]].forEach(([n, d, c, k, y]) => {
+      text(p, n, 1010, y, m(k), { size: 36, fill: c, weight: 700 });
+      lines(d, 30).forEach((l, i) => text(p, l, 1010, y + 40 + i * 32, m(k, .3), { size: 26, fill: COL.dim }));
+    });
+    show(pill(p, 'Evidence: semi-strong in developed markets; not strong', COL.good, 1130, 790, 0, 24), m('ev'));
+  }],
+
+  ['reaction', 'Speed of reaction to news', (m) => {
+    const p = panel(0), X = d => 250 + (d + 5) * 105, Y = v => 700 - (v - 95) * 20;
+    axisLine(p, 200, 1380, 740); path(p, 'M200 740V150', { stroke: COL.chalk, 'stroke-width': 3 });
+    DAYS.forEach(d => text(p, String(d), X(d), 785, .3, { size: 24, fill: COL.dim, anchor: 'middle' }));
+    text(p, 'Day', 1380, 830, .3, { size: 24, fill: COL.dim, anchor: 'end' }); text(p, 'Price', 170, 150, .3, { size: 24, fill: COL.dim, anchor: 'end' });
+    draw(path(p, `M${X(0)} 160V740`, { stroke: COL.faint, 'stroke-width': 3, 'stroke-dasharray': '8 8' }, { d: 0 }), m('news'), .8);
+    text(p, 'good news (+10%)', X(0) + 14, 190, m('news', .4), { size: 28, fill: COL.task, weight: 700 });
+    const poly = (vals, x0i) => vals.map((v, i) => (i ? 'L' : 'M') + X(DAYS[i]) + ' ' + Y(v)).join('');
+    path(p, `M${X(-5)} ${Y(100)}H${X(0)}`, { stroke: COL.dim, 'stroke-width': 6 });
+    const eff = `M${X(0)} ${Y(100)}V${Y(110)}H${X(5)}`;
+    draw(path(p, eff, { stroke: COL.good, 'stroke-width': 6 }, { d: 0 }), m('eff'), 1.6);
+    draw(path(p, `M${X(0)} ${Y(100)}` + UNDER.slice(5).map((v, i) => 'L' + X(DAYS[5 + i]) + ' ' + Y(v)).join(''), { stroke: COL.task, 'stroke-width': 6 }, { d: 0 }), m('under'), 2);
+    draw(path(p, `M${X(0)} ${Y(100)}` + OVER.slice(5).map((v, i) => 'L' + X(DAYS[5 + i]) + ' ' + Y(v)).join(''), { stroke: COL.bad, 'stroke-width': 6 }, { d: 0 }), m('over'), 2);
+    leg(p, 'Efficient: jumps at once', COL.good, 900, 620, m('eff')); leg(p, 'Underreaction: drifts up', COL.task, 900, 665, m('under')); leg(p, 'Overreaction: overshoots', COL.bad, 900, 710, m('over'));
+    text(p, 'No consistent profit after the news is out', 800, 880, m('note'), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['implications', 'What efficiency means in practice', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Technical analysis', ['Studies past prices and volume.', 'A profitable pattern is copied until it is arbitraged away.'], COL.whole, 'tech'],
+      ['Fundamental analysis', ['Estimates intrinsic value from public information.', 'Analysts make prices efficient; a real edge can still pay.'], COL.task, 'fund'],
+      ['Portfolio management', ['Active trading rarely beats the market after costs.', 'The role: fit objectives, risk, diversification, taxes.'], COL.good, 'port']], { x0: 130, step: 470, w: 430, y: 200, h: 380, hs: 34, bs: 28, n: 30, });
+  }],
+
+  ['anomalies', 'Market anomalies', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Time series', ['January effect', 'weekend and holiday effects', 'momentum and overreaction'], COL.whole, 'time'],
+      ['Cross-sectional', ['size effect: small caps', 'value effect: low price relative to fundamentals'], COL.task, 'cross'],
+      ['Other', ['closed-end fund discounts', 'drift after earnings surprises', 'IPO returns'], COL.real, 'other']], { x0: 130, step: 470, w: 430, y: 170, h: 290, hs: 38, bs: 28, n: 32 });
+    show(pill(p, 'Caution: many fade out of sample and vanish after transaction costs', COL.bad, 800, 580, 0, 28), m('caveat'));
+  }],
+
+  ['behavioral', 'Behavioral finance', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Loss aversion', ['losses hurt more than equal gains please'], COL.bad, 'loss'], ['Herding', ['copying others; can create information cascades'], COL.whole, 'herd'],
+      ['Overconfidence', ['biases push investors to over-trade'], COL.task, 'over'], ['Bubbles', ['together, can feed booms and crashes'], COL.real, 'bubble']], { x0: 90, step: 370, w: 340, y: 190, h: 260, hs: 34, bs: 27, n: 24 });
+    text(p, 'Irrational behavior by some does not by itself make a market inefficient', 800, 560, m('note'), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['Efficient prices reflect available information; intrinsic and market value stay close.', 'w1'],
+    ['Weak form: past data. Semi-strong: public information. Strong: all information.', 'w2'],
+    ['Analysis cannot easily beat an efficient market; passive management is a strong baseline.', 'w3'],
+    ['Anomalies exist, but many vanish after costs and on new data.', 'w4']], 29); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
