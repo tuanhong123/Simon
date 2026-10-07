@@ -13,7 +13,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 16, title: 'Credit Analysis for Corporate Issuers', minutes: 9, language: 'en' };
+const CHAPTER = { number: 16, title: 'Credit Analysis for Corporate Issuers', minutes: 9, language: 'en', next: '../ch17/' };
 
 const item = (p, x, y, w, name, sub, c, t, h = 100) => { const g = card1(p, x, y, w, h, c); T(g, name, { x: -w / 2 + 28, y: -4, size: 34, fill: c, weight: 700 }); T(g, sub, { x: -w / 2 + 28, y: 34, size: 25, fill: COL.dim }); show(g, t); return g; };
 
