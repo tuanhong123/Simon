@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Financial Analysis Techniques</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 3, title: 'Financial Analysis Techniques', minutes: 9, language: 'en', next: '../ch04/' };
+
+const CS = [['Cost of sales', COL.bad], ['SG&A', COL.task], ['Interest', COL.nat], ['Tax', COL.rat], ['Net income', COL.good]];
+const CS_A = [60, 25, 3, 3.6, 8.4], CS_B = [70, 14, 2, 4.2, 9.8];
+const REV = [100, 105, 112, 118, 125], NI = [100, 98, 115, 135, 170];
+const DUPONT = [['Tax burden', '0.70', '1 − tax rate', COL.whole], ['Interest burden', '0.90', 'EBT ÷ EBIT', COL.nat], ['EBIT margin', '5.29%', 'EBIT ÷ revenue', COL.task],
+  ['Asset turnover', '1.11', 'revenue ÷ assets', COL.irr], ['Leverage', '1.60', 'assets ÷ equity', COL.real]];
+
+const BEATS = [
+  introBeat('Financial Statement Analysis, Chapter 3', 'Financial', 'Analysis Techniques', 'which ratio answers which question'),
+
+  ['process', 'The analysis process', (m) => {
+    const p = panel(0), steps = ['Purpose and context', 'Collect data', 'Process data', 'Analyze and interpret', 'Develop conclusions', 'Follow up'];
+    text(p, 'Financial analysis is a process', 800, 140, .2, { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    steps.forEach((s, i) => {
+      const x = 130 + i * 240, c = [COL.whole, COL.irr, COL.int, COL.task, COL.nat, COL.real][i], t0 = m('s' + (i + 1));
+      show(box(p, x, 300, 200, 180, c, t0, .1), 0);
+      text(p, String(i + 1), x + 100, 365, t0, { size: 48, fill: c, anchor: 'middle', weight: 700 });
+      const words = s.split(' '); const half = Math.ceil(words.length / 2);
+      [words.slice(0, half).join(' '), words.slice(half).join(' ')].filter(Boolean).forEach((l, j) => text(p, l, x + 100, 420 + j * 34, t0 + .2, { size: 26, anchor: 'middle', weight: 600 }));
+      if (i < 5) arrowRight(p, x + 204, x + 236, 390, COL.dim, t0 + .3);
+    });
+    text(p, 'A computed ratio is not yet analysis', 800, 640, m('note'), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'analysis explains what the numbers mean for the question', 800, 690, m('note', 1.2), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['commonsize', 'Common-size statements', (m) => {
+    const p = panel(0), x0 = 200, k = 12;
+    text(p, 'Every line as a percent of revenue', 800, 120, .2, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    CS.forEach(([s, c], i) => leg(p, s, c, 200 + i * 240, 200, .5));
+    const row = (vals, y, name, mk_) => {
+      text(p, name, x0, y - 24, m(mk_), { size: 32, weight: 700 });
+      let x = x0;
+      vals.forEach((v, i) => {
+        const g = G(p, { o: 0 });
+        mk('rect', { x, y, width: v * k, height: 90, fill: CS[i][1], 'fill-opacity': .88, rx: 3 }, g);
+        const lab = v + '%', big = v >= 8;
+        T(g, lab, { x: x + v * k / 2, y: big ? y + 56 : (i === 2 ? y - 14 : y + 90 + 34), size: big ? 32 : 26, fill: big ? COL.board : CS[i][1], weight: 700, anchor: 'middle' });
+        show(g, m(mk_, .3 + i * .35)); x += v * k;
+      });
+    };
+    row(CS_A, 330, 'Company A', 'a'); row(CS_B, 570, 'Company B', 'b');
+    text(p, 'Similar net income, very different cost structures', 800, 810, m('note'), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['trend', 'Trend analysis', (m) => {
+    const p = panel(0), X = i => 250 + i * 275, Y = v => 720 - (v - 90) * 5.78;
+    text(p, 'Index, year 1 = 100', 800, 120, .2, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [100, 125, 150, 175].forEach(v => { path(p, `M200 ${Y(v)}H1400`, { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '6 8' }); text(p, String(v), 170, Y(v) + 8, .2, { size: 24, fill: COL.dim, anchor: 'end' }); });
+    [0, 1, 2, 3, 4].forEach(i => text(p, 'Year ' + (i + 1), X(i), 770, .3, { size: 26, fill: COL.dim, anchor: 'middle' }));
+    const line = (vals, c, t0, name) => {
+      draw(path(p, vals.map((v, i) => (i ? 'L' : 'M') + X(i) + ' ' + Y(v)).join(''), { stroke: c, 'stroke-width': 6 }, { d: 0 }), t0, 2.2);
+      const e = text(p, `${name} ${vals[4]}`, X(4) + 20, Y(vals[4]) + 8, t0 + 2.2, { size: 30, fill: c, weight: 700 });
+    };
+    line(REV, COL.whole, m('rev'), 'Revenue');
+    line(NI, COL.good, m('ni'), 'Net income');
+    text(p, 'fixed costs: profit swings more than sales', 800, 850, m('why'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['categories', 'Five families of ratios', (m) => {
+    const p = panel(0);
+    text(p, 'Ratio families', 800, 140, .2, { size: 38, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Activity', 'how efficiently assets are used', COL.irr, 'a'], ['Liquidity', 'can it pay short-term bills?', COL.whole, 'l'], ['Solvency', 'can it carry its debt?', COL.bad, 's'],
+     ['Profitability', 'earnings on sales and capital', COL.good, 'p'], ['Valuation', 'price per unit of earnings or assets', COL.dim, 'v']].forEach(([n, d, c, k], i) => {
+      const x = 110 + i * 290, t0 = m(k);
+      show(box(p, x, 250, 260, 360, c, t0, .1), 0);
+      text(p, n, x + 130, 340, t0, { size: 36, fill: c, anchor: 'middle', weight: 700 });
+      const w = d.split(' '), half = Math.ceil(w.length / 2);
+      [w.slice(0, half).join(' '), w.slice(half).join(' ')].forEach((l, j) => text(p, l, x + 130, 430 + j * 40, t0 + .3, { size: 22, anchor: 'middle' }));
+    });
+    text(p, 'This chapter: the first four', 800, 720, m('v', 2.5), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['activity', 'Activity ratios', (m) => {
+    const p = panel(0), x0 = 250, d = 12;
+    text(p, 'Days', 160, 380, .2, { size: 24, fill: COL.dim, anchor: 'end' });
+    const seg = (a, b, y, c, name, t0, val) => {
+      const g = G(p, { o: 0 });
+      mk('rect', { x: x0 + a * d, y, width: (b - a) * d, height: 70, rx: 6, fill: c, 'fill-opacity': .88 }, g);
+      T(g, val, { x: x0 + (a + b) * d / 2, y: y + 46, size: 32, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, name, { x: x0 + (a + b) * d / 2, y: y - 14, size: 26, fill: c, weight: 600, anchor: 'middle' });
+      show(g, t0);
+    };
+    text(p, 'Inventory: COGS 3,650 ÷ average 400 = 9.1×', 250, 160, m('inv'), { size: 28, fill: COL.whole, weight: 600 });
+    text(p, 'Receivables: revenue 5,475 ÷ average 675 = 8.1×', 250, 205, m('rec'), { size: 28, fill: COL.task, weight: 600 });
+    seg(0, 40, 340, COL.whole, 'Days of inventory on hand', m('inv', 1), '40');
+    seg(40, 85, 340, COL.task, 'Days sales outstanding', m('rec', 1), '45');
+    seg(0, 30, 480, COL.bad, 'Days of payables', m('pay'), '30');
+    const br = path(p, `M${x0 + 30 * d} 600H${x0 + 85 * d}`, { stroke: COL.good, 'stroke-width': 5 }, { d: 0 });
+    draw(br, m('ccc'), .8);
+    path(p, `M${x0 + 30 * d} 590V610M${x0 + 85 * d} 590V610`, { stroke: COL.good, 'stroke-width': 5 });
+    text(p, 'Cash conversion cycle = 40 + 45 − 30 = 55 days', 800, 700, m('ccc', .8), { size: 38, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'shorter is better', 800, 760, m('ccc', 2), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['liquidity', 'Liquidity ratios', (m) => {
+    const p = panel(0), base = 780, k = .8, ax = 480, lx = 780, w = 170;
+    axisLine(p, 200, 1000, base);
+    const segs = [['Cash', 100, COL.good], ['Short-term investments', 50, COL.irr], ['Receivables', 250, COL.task], ['Inventory', 300, COL.whole], ['Prepaid', 50, COL.dim]];
+    let y = base; const groups = [];
+    segs.forEach(([n, v, c], i) => {
+      const g = G(p, { y: 20, o: 0 }), h = v * k; y -= h;
+      mk('rect', { x: ax - w / 2, y: y + 1, width: w, height: h - 2, fill: c, 'fill-opacity': .88, rx: 3 }, g);
+      T(g, `${n} ${v}`, { x: ax - w / 2 - 14, y: y + h / 2 + 8, size: 24, fill: c, weight: 600, anchor: 'end' });
+      tw(g, { o: 1, y: 0 }, m('ca', .3 + i * .7), .5, out); groups.push(g);
+    });
+    text(p, 'Current assets 750', ax, base + 44, m('ca', 4), { size: 26, fill: COL.dim, anchor: 'middle' });
+    bar(p, lx, base, k, [[500, COL.bad]], m('ca', 4.2), { w, label: 'Current liabilities 500' });
+    path(p, `M${ax - w / 2 - 10} ${base - 500 * k}H${lx + w / 2 + 20}`, { stroke: COL.chalk, 'stroke-width': 3, 'stroke-dasharray': '10 8' });
+    const r = (s, c, y2, mk_) => text(p, s, 1100, y2, m(mk_), { size: 36, fill: c, weight: 700 });
+    r('Current  750 ÷ 500 = 1.50', COL.chalk, 300, 'cur');
+    r('Quick  400 ÷ 500 = 0.80', COL.task, 420, 'quick');
+    r('Cash  150 ÷ 500 = 0.30', COL.good, 540, 'cash');
+    pulse(groups[3], m('cur'), 1); pulse(groups[0], m('cash'), 1);
+    text(p, 'each step is stricter', 1100, 650, m('note'), { size: 28, fill: COL.dim });
+  }],
+
+  ['solvency', 'Solvency ratios', (m) => {
+    const p = panel(0), base = 740, k = .5;
+    axisLine(p, 120, 760, base);
+    bar(p, 270, base, k, [[1000, COL.whole]], m('bs'), { label: 'Assets 1,000', w: 150 });
+    bar(p, 560, base, k, [[600, COL.good], [400, COL.bad]], m('bs', .8), { label: 'Financing', w: 150 });
+    text(p, 'Equity 600', 670, base - 150, m('bs', 1.4), { size: 26, fill: COL.good, weight: 600 });
+    text(p, 'Debt 400', 670, base - 350, m('bs', 1.4), { size: 26, fill: COL.bad, weight: 600 });
+    text(p, 'Debt ÷ assets = 400 ÷ 1,000 = 0.40', 900, 230, m('da'), { size: 34, fill: COL.bad, weight: 700 });
+    text(p, 'Debt ÷ equity = 400 ÷ 600 = 0.67', 900, 300, m('da', 1.2), { size: 34, fill: COL.chalk, weight: 700 });
+    text(p, 'Interest coverage = EBIT ÷ interest', 900, 450, m('cov'), { size: 32, fill: COL.dim, weight: 600 });
+    const hb = (y, v, c, label, t0) => { const g = G(p, { o: 0 }); mk('rect', { x: 900, y, width: v * 2.6, height: 56, rx: 4, fill: c, 'fill-opacity': .88 }, g); T(g, label, { x: 900 + v * 2.6 + 16, y: y + 40, size: 30, weight: 700 }); show(g, t0); };
+    hb(480, 150, COL.task, 'EBIT 150', m('cov', .6)); hb(560, 30, COL.bad, 'Interest 30', m('cov', 1.3));
+    text(p, '150 ÷ 30 = 5.0 times', 900, 690, m('cov', 2), { size: 36, fill: COL.good, weight: 700 });
+    text(p, 'more debt, less coverage: more financial risk', 900, 780, m('note'), { size: 28, fill: COL.task, weight: 600 });
+  }],
+
+  ['profit', 'Profitability ratios', (m) => {
+    const p = panel(0), x0 = 140, k = 7;
+    text(p, 'Of every 100 of revenue', x0, 150, .2, { size: 32, fill: COL.dim, weight: 600 });
+    [[100, 'Revenue', COL.whole, 'gm', ''], [40, 'Gross margin', COL.irr, 'gm', '40%'], [15, 'Operating margin', COL.task, 'om', '15%'], [8.4, 'Net margin', COL.good, 'nm', '8.4%']].forEach(([v, n, c, mk_, lab], i) => {
+      const y = 230 + i * 125, g = G(p, { x: -20, o: 0 });
+      mk('rect', { x: x0, y, width: v * k, height: 70, rx: 6, fill: c, 'fill-opacity': .88 }, g);
+      T(g, n, { x: x0, y: y - 12, size: 26, fill: c, weight: 600 });
+      T(g, lab || '100', { x: x0 + v * k + 16, y: y + 48, size: 34, weight: 700 });
+      tw(g, { o: 1, x: 0 }, i === 0 ? .4 : m(mk_, i === 1 ? 0 : 0), .6, out);
+    });
+    text(p, 'Return on capital', 1160, 220, m('ret'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    show(box(p, 960, 270, 400, 150, COL.good, m('ret', .5), .1), 0);
+    text(p, 'ROA  84 ÷ 1,000 = 8.4%', 1160, 360, m('ret', .5), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+    show(box(p, 960, 470, 400, 150, COL.real, m('ret', 2.8), .1), 0);
+    text(p, 'ROE  84 ÷ 600 = 14.0%', 1160, 560, m('ret', 2.8), { size: 32, fill: COL.real, anchor: 'middle', weight: 700 });
+  }],
+
+  ['dupont', 'DuPont analysis', (m) => {
+    const p = panel(0), w = 230, gap = 60, x0 = 105, y = 300;
+    text(p, 'ROE = tax burden × interest burden × EBIT margin × asset turnover × leverage', 800, 130, .2, { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const marks = ['tax', 'int', 'ebit', 'turn', 'lev'];
+    DUPONT.forEach(([n, v, d, c], i) => {
+      const x = x0 + i * (w + gap), t0 = m(marks[i]);
+      show(box(p, x, y, w, 200, c, t0, .1), 0);
+      text(p, n, x + w / 2, y + 50, t0, { size: 28, fill: c, anchor: 'middle', weight: 700 });
+      text(p, v, x + w / 2, y + 125, t0 + .2, { size: 54, anchor: 'middle', weight: 700 });
+      text(p, d, x + w / 2, y + 175, t0 + .4, { size: 22, fill: COL.dim, anchor: 'middle' });
+      if (i < 4) text(p, '×', x + w + gap / 2, y + 115, t0 + .3, { size: 44, fill: COL.dim, anchor: 'middle' });
+    });
+    const res = (x1, x2, label, val, c, t0, d, ly) => {
+      const a = x0 + x1 * (w + gap), b = x0 + x2 * (w + gap) + w;
+      draw(path(p, `M${a} ${y + 215}V${y + d}H${b}V${y + 215}`, { stroke: c, 'stroke-width': 4 }, { d: 0 }), t0, .7);
+      text(p, `${label} = ${val}`, (a + b) / 2, y + ly, t0 + .4, { size: 34, fill: c, anchor: 'middle', weight: 700 });
+    };
+    res(0, 2, 'Net margin', '3.33%', COL.task, m('ebit', 1.4), 245, 305);
+    res(0, 3, 'ROA', '3.70%', COL.irr, m('turn', 1.4), 345, 405);
+    const g = G(p, { o: 0 }); text(g, 'ROE = 5.92%', 800, 800, 0, { size: 52, fill: COL.good, anchor: 'middle', weight: 700 }); show(g, m('lev', 1.4));
+    text(p, 'which lever drives ROE?', 800, 860, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['limits', 'Limits of ratio analysis', (m) => {
+    const p = panel(0);
+    text(p, 'Ratios need context', 800, 150, .2, { size: 38, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Accounting methods', 'differences distort comparison', COL.nat, 'a'], ['Several business lines', 'ratios blend together', COL.whole, 'b'],
+     ['Industry norms', 'good in one, poor in another', COL.task, 'c'], ['Economic cycle', 'better in booms, weaker in recessions', COL.irr, 'd']].forEach(([h, d, c, k], i) => {
+      const x = 110 + i * 350, t0 = m(k);
+      show(box(p, x, 250, 320, 300, c, t0, .1), 0);
+      text(p, h, x + 160, 340, t0, { size: 26, fill: c, anchor: 'middle', weight: 700 });
+      const w = d.split(' '), half = Math.ceil(w.length / 2);
+      [w.slice(0, half).join(' '), w.slice(half).join(' ')].forEach((l, j) => text(p, l, x + 160, 420 + j * 38, t0 + .3, { size: 24, anchor: 'middle' }));
+    });
+    text(p, 'Compare with peers, history, and the company\'s own goals', 800, 700, m('note'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['Common-size and trend statements show structure and direction.', 'w1'],
+    ['Activity, liquidity, solvency and profitability ratios answer different questions.', 'w2'],
+    ['Cash conversion cycle = days of inventory + days sales outstanding − days payable.', 'w3'],
+    ['DuPont splits ROE: tax, interest, margin, efficiency, leverage.', 'w4']], 28); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
