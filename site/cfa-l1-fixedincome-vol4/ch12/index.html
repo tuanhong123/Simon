@@ -13,7 +13,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 12, title: 'Yield-Based Bond Convexity and Portfolio Properties', minutes: 8, language: 'en' };
+const CHAPTER = { number: 12, title: 'Yield-Based Bond Convexity and Portfolio Properties', minutes: 8, language: 'en', next: '../ch13/' };
 
 const modDur = (y, c, n, d = .05) => (bondPrice(y - d, c, n) - bondPrice(y + d, c, n)) / (2 * (d / 100) * bondPrice(y, c, n));
 const conv = (y, c, n, d = .05) => { const P0 = bondPrice(y, c, n); return (bondPrice(y - d, c, n) + bondPrice(y + d, c, n) - 2 * P0) / ((d / 100) ** 2 * P0); };

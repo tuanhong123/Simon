@@ -11,7 +11,7 @@
 10 | Interest Rate Risk and Return | Interest Rate Risk | 9 | ready
 11 | Yield-Based Bond Duration Measures and Properties | Interest Rate Risk | 8 | ready
 12 | Yield-Based Bond Convexity and Portfolio Properties | Interest Rate Risk | 8 | ready
-13 | Curve-Based and Empirical Fixed-Income Risk Measures | Interest Rate Risk | | planned
+13 | Curve-Based and Empirical Fixed-Income Risk Measures | Interest Rate Risk | 9 | ready
 14 | Credit Risk | Credit and Securitization | | planned
 15 | Credit Analysis for Government Issuers | Credit and Securitization | | planned
 16 | Credit Analysis for Corporate Issuers | Credit and Securitization | | planned

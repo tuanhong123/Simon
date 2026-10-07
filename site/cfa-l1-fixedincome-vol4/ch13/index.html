@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curve-Based and Empirical Fixed-Income Risk Measures</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 13, title: 'Curve-Based and Empirical Fixed-Income Risk Measures', minutes: 9, language: 'en' };
+
+const softmin = (a, b, k = 1.3) => -Math.log(Math.exp(-k * a) + Math.exp(-k * b)) / k;
+const KRD = [[2, 0.676], [5, 1.632], [10, 3.037]];
+
+const BEATS = [
+  ['intro', 'Curve-based risk measures', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 13', { x: 800, y: 270, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Curve-Based and Empirical', 'Fixed-Income Risk Measures'].forEach((s, i) => T(g, s, { x: 800, y: 390 + i * 95, size: 74, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'uncertain cash flows and changes in the shape of the curve', 800, 670, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['effective', 'Effective duration and convexity', (m) => {
+    const p = panel(0);
+    show(pill(p, 'callable bond: cash flows depend on rates, no single YTM', COL.rat, 800, 110, 0, 32), m('opt'));
+    show(pill(p, 'effective duration: price sensitivity to a parallel shift of the benchmark curve', COL.whole, 800, 190, 0, 28), m('ed'));
+    [[300, 'curve −5 bp', '100.241', COL.good, 'PV−'], [800, 'original', '100.000', COL.chalk, 'PV0'], [1300, 'curve +5 bp', '99.760', COL.bad, 'PV+']].forEach(([x, t, v, c, n], i) => {
+      const g = card1(p, x, 400, 400, 190, c); T(g, n, { y: -50, size: 28, fill: COL.dim, anchor: 'middle', weight: 600 }); T(g, v, { y: 15, size: 56, fill: c, weight: 700, anchor: 'middle' }); T(g, t, { y: 65, size: 26, fill: COL.dim, anchor: 'middle' });
+      show(g, m('ex', i * .5 - 0));
+    });
+    text(p, 'EffDur = (PV− − PV+) ÷ (2 × ΔCurve × PV0)', 800, 580, m('f'), { size: 38, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'EffCon = (PV− + PV+ − 2 × PV0) ÷ (ΔCurve² × PV0)', 800, 645, m('ec'), { size: 38, fill: COL.rat, anchor: 'middle', weight: 600 });
+    text(p, 'prices come from an option pricing model: call schedule · credit spread · rate volatility', 800, 725, m('mod'), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, '(100.241 − 99.760) ÷ (2 × 0.0005 × 100) = 4.81', 800, 810, m('ex', 1.5), { size: 42, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['callable', 'Callable vs non-callable', (m) => {
+    const p = panel(0), X = y => 300 + (y - 1) * 200, Y = v => 760 - (v - 88) * 24, cap = 103.25;
+    axes2(p, 240, 760, 1400, 200, null, 'price');
+    [1, 2, 3, 4, 5, 6].forEach(y => { path(p, `M${X(y)} 752V768`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, y + '%', X(y), 806, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'benchmark yield', 1400, 850, .3, { size: 24, fill: COL.dim, anchor: 'end' });
+    const nc = y => bondPrice(y, 3.2, 10) + 0, cl = y => softmin(nc(y), cap);
+    const curve = f => { const pts = []; for (let y = 1; y <= 6.001; y += .05) pts.push([X(y), Y(f(y))]); return polyline(pts); };
+    draw(path(p, curve(nc), { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('nc'), 1.4); text(p, 'non-callable', X(1.1), Y(nc(1.1)) - 20, m('nc', .8), { size: 28, fill: COL.whole, weight: 700 });
+    draw(path(p, curve(cl), { stroke: COL.task, 'stroke-width': 6 }, { d: 0 }), m('c'), 1.6); text(p, 'callable', X(4.8), Y(cl(4.8)) + 56, m('c', .8), { size: 28, fill: COL.task, weight: 700 });
+    text(p, 'gap = value of the call option', X(1.1), Y(cap) + 56, m('c', 2.2), { size: 26, fill: COL.rat, weight: 600 });
+    show(pill(p, 'high yields: similar behavior', COL.good, 1130, 600, 0, 26), m('hi')); show(pill(p, 'low yields: price capped, duration falls', COL.bad, 1000, 250, 0, 26), m('lo'));
+    show(pill(p, 'negative convexity', COL.bad, 800, 130, 0, 34), m('neg'));
+    text(p, 'put option = mirror image: duration falls when rates rise', 240, 888, m('put'), { size: 24, fill: COL.dim });
+    text(p, 'MBS: refinancing acts like a call option', 240, 850, m('mbs'), { size: 24, fill: COL.rat });
+  }],
+
+  ['est', 'Estimating a price change', (m) => {
+    const p = panel(0);
+    text(p, '%ΔP ≈ − EffDur × ΔCurve  +  ½ × EffCon × ΔCurve²', 800, 150, m('f'), { size: 46, fill: COL.good, anchor: 'middle', weight: 700 });
+    const a = card1(p, 800, 300, 1200, 130, COL.whole); T(a, 'callable bond: EffDur 6.094 · EffCon −230.1 · curve +50 bp', { y: 14, size: 34, fill: COL.whole, weight: 600, anchor: 'middle' }); show(a, m('ex'));
+    text(p, 'duration effect:   −6.094 × 0.005 = −3.047%', 800, 470, m('dur'), { size: 42, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'convexity effect:   ½ × (−230.1) × 0.005² = −0.288%', 800, 550, m('cvx'), { size: 42, fill: COL.bad, anchor: 'middle', weight: 600 });
+    draw(path(p, 'M300 595H1300', { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('tot'), .6);
+    text(p, 'total ≈ −3.33%', 800, 690, m('tot'), { size: 62, fill: COL.bad, anchor: 'middle', weight: 700 });
+    text(p, 'negative convexity hurts in both directions', 800, 780, m('note'), { size: 32, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['keyrate', 'Key rate duration', (m) => {
+    const p = panel(0), base = 640, k = 90, X = t => 300 + (t - 2) * 80;
+    axes2(p, 200, base, 1050, 220, null, 'key rate duration');
+    [2, 5, 10].forEach(t => { path(p, `M${X(t)} ${base - 8}V${base + 8}`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, t + ' years', X(t), base + 48, m('def'), { size: 26, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'shift one maturity at a time', 560, 140, m('def'), { size: 38, fill: COL.whole, anchor: 'middle', weight: 600 });
+    KRD.forEach(([t, v], i) => {
+      const g = G(p, { y: 30, o: 0 }); mk('rect', { x: X(t) - 50, y: base - v * k, width: 100, height: v * k, fill: [COL.good, COL.task, COL.bad][i], 'fill-opacity': .88, rx: 5 }, g);
+      T(g, v.toFixed(3), { x: X(t), y: base - v * k - 14, size: 30, fill: COL.chalk, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('bars', .2 + i * 1.5), .6, out);
+    });
+    text(p, 'sum = 5.345 = portfolio duration', 1560, 200, m('sum'), { size: 34, fill: COL.rat, anchor: 'end', weight: 700 });
+    text(p, '2-, 5- and 10-year government bonds, equal par', 1560, 250, m('ex'), { size: 26, fill: COL.dim, anchor: 'end' });
+    text(p, 'only the 2-year rate +25 bp (flattening):', 1560, 420, m('sc'), { size: 26, fill: COL.chalk, anchor: 'end', weight: 600 });
+    text(p, '−0.676 × 0.0025 ≈ −0.17%', 1560, 480, m('sc', 2), { size: 40, fill: COL.bad, anchor: 'end', weight: 700 });
+    show(pill(p, 'tilt the portfolio toward expected curve changes · reveals shaping risk', COL.rat, 800, 780, 0, 30), m('use'));
+  }],
+
+  ['empirical', 'Analytical vs empirical duration', (m) => {
+    const p = panel(0), base = 600, k = 80;
+    show(infoCard(p, 420, 190, 640, 150, COL.whole, 'Analytical duration', ['formulas · yields and spreads independent'], 34), m('emp', -2));
+    show(infoCard(p, 1180, 190, 640, 150, COL.rat, 'Empirical duration', ['historical data · statistical models'], 34), m('emp'));
+    path(p, `M180 ${base}H940`, { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'flight to quality: price effects on a risky bond (illustrative)', 800, 310, m('ex'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['benchmark yield ↓', 3.0, COL.good, 'gov', 300], ['credit spread ↑', -1.8, COL.bad, 'spr', 560], ['net', 1.2, COL.task, 'net', 820]].forEach(([s, v, c, k_, x]) => {
+      const g = G(p, { y: 30, o: 0 }), h = Math.abs(v) * k; mk('rect', { x: x - 70, y: v > 0 ? base - h : base, width: 140, height: h, fill: c, 'fill-opacity': .88, rx: 5 }, g);
+      T(g, (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%', { x, y: v > 0 ? base - h - 14 : base + h + 38, size: 32, fill: COL.chalk, weight: 700, anchor: 'middle' }); T(g, s, { x, y: v > 0 ? base + 42 : base - 16, size: 26, fill: c, weight: 600, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m(k_), .6, out);
+    });
+    text(p, 'net gain smaller than analytical duration predicts', 1560, 480, m('net', 1), { size: 28, fill: COL.task, anchor: 'end', weight: 700 }); text(p, '→ lower empirical duration', 1560, 530, m('net', 1.8), { size: 28, fill: COL.task, anchor: 'end', weight: 700 });
+    show(pill(p, 'government bonds: similar · corporate / high yield: use empirical', COL.rat, 800, 860, 0, 30), m('use'));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Effective duration and convexity handle embedded options.', 'w1'], ['Callable bonds: lower duration, negative convexity at low yields.', 'w2'],
+     ['Key rate durations sum to effective duration; they show shaping risk.', 'w3'], ['Empirical duration reflects yield–spread correlation.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 33, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
