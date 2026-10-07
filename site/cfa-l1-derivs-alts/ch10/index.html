@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valuing a Derivative Using a One-Period Binomial Model</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 10, title: 'Valuing a Derivative Using a One-Period Binomial Model', minutes: 7, language: 'en', next: '../ch11/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+
+// the two-branch tree: root on the left, up node on top, down node below
+const tree = (p, root, up, dn, t0, tU, tD) => {
+  lbox(p, root, COL.chalk, 240, 450, 340, 100, t0, 30);
+  seg(p, 410, 420, 720, 290, C_GAIN, tU, .8, 4); seg(p, 410, 480, 720, 610, C_RISK, tD, .8, 4);
+  lbox(p, up, C_GAIN, 900, 270, 360, 100, tU, 30); lbox(p, dn, C_RISK, 900, 630, 360, 100, tD, 30);
+};
+
+const BEATS = [
+  ['intro', 'The binomial model', introBeat('Derivatives', 10, 'Valuing a Derivative Using', 'a One-Period Binomial Model', 'two outcomes are enough to price an option')],
+
+  ['tree', 'Two possible prices', (m) => {
+    const p = panel(0);
+    tree(p, 'S₀ = €80', 'S₁ᵘ = €110', 'S₁ᵈ = €60', m('a'), m('up'), m('down'));
+    text(p, 'Rᵤ = 110 ÷ 80 = 1.375', 900, 360, m('up', .8), { size: 26, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    text(p, 'R_d = 60 ÷ 80 = 0.75', 900, 720, m('down', .8), { size: 26, fill: C_RISK, anchor: 'middle', weight: 600 });
+    harrow(p, 1100, 1230, 270, COL.dim, m('call'), .5, 3); lbox(p, 'call pays €10', C_GAIN, 1360, 270, 250, 80, m('call'), 28);
+    harrow(p, 1100, 1230, 630, COL.dim, m('call', 1), .5, 3); lbox(p, 'call pays €0', C_RISK, 1360, 630, 250, 80, m('call', 1), 28);
+    text(p, 'One-year call, X = €100:  c₁ = max(0, S₁ − X)', 800, 130, m('call'), { size: 34, fill: C_UND, anchor: 'middle', weight: 700 });
+    text(p, 'the probability of an up move is not needed', 800, 810, m('q'), { size: 32, fill: C_PRICE, anchor: 'middle', weight: 700 });
+  }],
+
+  ['hedge', 'Building a risk-free portfolio', (m) => {
+    const p = panel(0);
+    text(p, 'Sell the call, buy h shares', 800, 110, m('a'), { size: 36, anchor: 'middle', weight: 700 });
+    text(p, 'h* = (c₁ᵘ − c₁ᵈ) ÷ (S₁ᵘ − S₁ᵈ)  =  (10 − 0) ÷ (110 − 60)  =  0.20', 800, 190, m('eq'), { size: 34, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    tree(p, 'V₀ = h·S₀ − c₀', '0.2 × 110 − 10 = 12', '0.2 × 60 − 0 = 12', m('a'), m('up'), m('dn'));
+    text(p, 'V₁ = €12 in both scenarios', 800, 810, m('pt'), { size: 40, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['price', 'Pricing the call', (m) => {
+    const p = panel(0);
+    text(p, 'A risk-free portfolio must earn the risk-free rate', 800, 130, m('a'), { size: 36, anchor: 'middle', weight: 700 });
+    text(p, 'V₀ = V₁ ÷ (1 + r) = 12 ÷ 1.05 = €11.43', 130, 300, m('rate'), { size: 44, fill: C_UND, weight: 700 });
+    text(p, 'V₀ = h·S₀ − c₀   →   c₀ = 0.2 × 80 − 11.43', 130, 440, m('c0'), { size: 38, weight: 600 });
+    text(p, 'c₀ = 16 − 11.43 = €4.57', 130, 540, m('c0', 2.5), { size: 64, fill: C_GAIN, weight: 700 });
+    text(p, 'check: 11.43 × 1.05 = 12', 130, 680, m('chk'), { size: 34, fill: COL.dim, weight: 600 });
+    text(p, 'the hedged portfolio earns exactly r', 130, 740, m('chk', 2), { size: 34, fill: C_GAIN, weight: 700 });
+  }],
+
+  ['example', 'Hightest Capital', (m) => {
+    const p = panel(0), cx = [110, 920, 1280], rows = [['stock up / down', '60 / 40', '70 / 30'], ['call payoff if up', '$5', '$15'], ['hedge ratio h*', '0.25', '0.375'], ['V₁ (certain)', '$10.00', '$11.25'], ['V₀ = V₁ ÷ 1.05', '$9.52', '$10.71'], ['call c₀ = h·S₀ − V₀', '$2.98', '$8.04'], ['put (put–call parity)', '$5.36', '$10.42']];
+    text(p, 'Sell a call, X = $55: stock $50, r = 5%', 110, 130, m('a'), { size: 32, fill: COL.dim, weight: 600 });
+    text(p, '±20%', cx[1], 220, m('s20', -.6), { size: 38, fill: C_UND, anchor: 'middle', weight: 700 }); text(p, '±40%', cx[2], 220, m('s40', -.6), { size: 38, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    path(p, 'M110 245H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    rows.forEach(([a, b, c], i) => {
+      const y = 295 + i * 66, big = i === 5;
+      text(p, a, cx[0], y, m('s20', i * .6 - .4), { size: big ? 30 : 28, fill: big ? COL.chalk : COL.dim, weight: big ? 700 : 500 });
+      text(p, b, cx[1], y, m('s20', i * .6), { size: big ? 40 : 32, fill: big ? C_GAIN : COL.chalk, anchor: 'middle', weight: 700 });
+      text(p, c, cx[2], y, i < 6 && i !== 0 ? m('s40', (i - 1) * .9) : m('s40'), { size: big ? 40 : 32, fill: big ? C_GAIN : COL.chalk, anchor: 'middle', weight: 700 });
+    });
+    text(p, 'more volatility → higher option value', 800, 790, m('vol'), { size: 30, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    text(p, 'a more bullish view does not change the price', 800, 835, m('view'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['rn', 'Risk-neutral pricing', (m) => {
+    const p = panel(0);
+    text(p, 'c₀ = [π·c₁ᵘ + (1 − π)·c₁ᵈ] ÷ (1 + r)', 800, 130, m('a'), { size: 44, anchor: 'middle', weight: 700 });
+    text(p, 'π = (1 + r − R_d) ÷ (R_u − R_d)', 800, 220, m('pi'), { size: 40, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    path(p, 'M110 270H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, '€80 stock: π = (1.05 − 0.75) ÷ (1.375 − 0.75) = 0.48', 130, 350, m('ex1'), { size: 30, weight: 600 });
+    const bw = 900, bx = 130, by = 390, g1 = G(p, { o: 0 }); mk('rect', { x: bx, y: by, width: bw * .48, height: 44, fill: C_GAIN, 'fill-opacity': .85 }, g1); mk('rect', { x: bx + bw * .48, y: by, width: bw * .52, height: 44, fill: C_RISK, 'fill-opacity': .6 }, g1); T(g1, 'π = 0.48', { x: bx + bw * .24, y: by + 31, size: 24, fill: COL.board, weight: 700, anchor: 'middle' }); T(g1, '1 − π = 0.52', { x: bx + bw * .74, y: by + 31, size: 24, fill: COL.chalk, weight: 700, anchor: 'middle' }); show(g1, m('ex1', 1));
+    text(p, 'c₀ = (0.48 × 10) ÷ 1.05 = €4.57', 130, 520, m('ex1', 3), { size: 34, fill: C_GAIN, weight: 700 });
+    text(p, 'Hightest, ±20%: π = (1.05 − 0.8) ÷ 0.4 = 0.625', 130, 620, m('ex2'), { size: 30, weight: 600 });
+    text(p, 'c₀ = (0.625 × 5) ÷ 1.05 = $2.98', 130, 690, m('ex2', 2), { size: 34, fill: C_GAIN, weight: 700 });
+    text(p, 'π is not a real probability: only R_u, R_d and r matter', 800, 810, m('pt'), { size: 32, fill: C_PRICE, anchor: 'middle', weight: 700 });
+  }],
+
+  ['put', 'Pricing a put', (m) => {
+    const p = panel(0);
+    text(p, 'Put, X = £21 · stock £20 · ±10% · six months · r = 4%', 800, 110, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    tree(p, 'S₀ = £20', 'S₁ᵘ = £22', 'S₁ᵈ = £18', m('a'), m('pay'), m('pay', 1));
+    text(p, 'put pays £0', 900, 355, m('pay', .6), { size: 26, fill: C_GAIN, anchor: 'middle', weight: 600 }); text(p, 'put pays £3', 900, 715, m('pay', 1.6), { size: 26, fill: C_RISK, anchor: 'middle', weight: 600 });
+    text(p, 'h* = (0 − 3) ÷ (22 − 18) = −0.75', 1120, 330, m('h'), { size: 28, fill: C_PRICE, weight: 700 }); text(p, 'buy the put and 0.75 shares', 1120, 375, m('h', 1), { size: 26, fill: COL.dim });
+    text(p, 'V₁ = 0.75 × 22 + 0 = £16.50', 1120, 470, m('v1'), { size: 26, fill: C_UND, weight: 700 }); text(p, '= 0.75 × 18 + 3 = £16.50', 1120, 510, m('v1', 1), { size: 26, fill: C_UND, weight: 700 });
+    text(p, 'V₀ = 16.50 × 1.04^−0.5 = £16.18', 1120, 610, m('v0'), { size: 28, weight: 600 });
+    text(p, 'p₀ = 16.18 − 0.75 × 20 = £1.18', 800, 810, m('res'), { size: 46, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'An option needs a model of the underlying; the binomial model gives it two outcomes.',
+    'Selling a call and buying h shares gives a risk-free portfolio that must earn r.',
+    'Or price it as a discounted expected payoff under risk-neutral probabilities.',
+    'Real probabilities do not matter; volatility (R_u, R_d) does.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

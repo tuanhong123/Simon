@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Futures Contracts</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 6, title: 'Pricing and Valuation of Futures Contracts', minutes: 6, language: 'en', next: '../ch07/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+
+const BEATS = [
+  ['intro', 'Futures pricing', introBeat('Derivatives', 6, 'Pricing and Valuation', 'of Futures Contracts', 'forwards with daily settlement')],
+
+  ['price', 'Futures price at inception', (m) => {
+    const p = panel(0), X = ruler(p, 160, 1440, 520, 1770, 1782, [1770, 1772, 1774, 1776, 1778, 1780, 1782], v => '$' + v.toLocaleString('en-US'));
+    mline(p, ['f₀(T) = S₀(1 + ', 'r', ')', E('T')], 800, 150, m('a'), COL.chalk, 52);
+    text(p, 'Gold $1,770 · rate 2% · 91 days (T = 91/365)', 800, 230, m('ex'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    rdot(p, X, 1770, 520, C_UND, 'spot $1,770', m('ex', 1), {});
+    rdot(p, X, 1778.76, 520, C_PRICE, 'futures = forward $1,778.76', m('calc'), {});
+    rdot(p, X, 1780.76, 520, C_RISK, 'with storage $1,780.76', m('st'), { ly: -85 });
+    text(p, '1,770 × 1.02^(91/365) = 1,778.76  →  $177,876 for 100 ounces', 160, 680, m('calc'), { size: 32, fill: C_PRICE, weight: 700 });
+    text(p, 'storage PV = 2 ÷ 1.02^0.2493 = 1.99  →  (1,770 + 1.99) × 1.02^0.2493 = 1,780.76', 160, 750, m('st'), { size: 30, fill: C_RISK, weight: 600 });
+    text(p, 'a much lower futures price may signal a convenience yield', 160, 820, m('note'), { size: 26, fill: COL.dim });
+  }],
+
+  ['mtm', 'Forward versus futures over time', (m) => {
+    const p = panel(0), c1 = 700, c2 = 1210;
+    text(p, 'Both contracts at $1,778.76 per ounce, 100 ounces', 800, 110, m('a'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'Forward', c1, 215, m('fwd'), { size: 38, fill: C_UND, anchor: 'middle', weight: 700 });
+    text(p, 'Futures', c2, 215, m('fut'), { size: 38, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    path(p, 'M110 240H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'price', 110, 310, m('fwd'), { size: 28, fill: COL.dim, weight: 600 }); text(p, 'fixed', c1, 310, m('fwd'), { size: 32, anchor: 'middle' }); text(p, 'resets daily', c2, 310, m('fut'), { size: 32, anchor: 'middle' });
+    text(p, 'gold at $1,720 after 71 days', 110, 420, m('fwd', 1.5), { size: 26, fill: COL.dim });
+    text(p, '1,720 − 1,778.76 × 1.02^−0.0548 = −$56.83/oz', c1 - 20, 420, m('fwd', 3), { size: 26, fill: C_RISK, anchor: 'start' });
+    text(p, '= −$5,683, unsettled until maturity', c1 - 20, 460, m('fwd', 4.5), { size: 28, fill: C_RISK, weight: 700 });
+    text(p, 'day 1: price −$5', 110, 580, m('fut', 1), { size: 28, fill: COL.dim, weight: 600 });
+    text(p, 'paid −$500, margin $4,450', c2, 570, m('fut', 3.5), { size: 28, fill: C_RISK, anchor: 'middle', weight: 600 });
+    text(p, 'call $500 → $4,950', c2, 615, m('call'), { size: 28, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    text(p, 'value reset to $0', c2, 660, m('reset'), { size: 28, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'value −$498, no cash', c1, 580, m('tab'), { size: 28, fill: C_RISK, anchor: 'middle', weight: 600 });
+    text(p, 'day 2: value −$895, no cash', c1, 740, m('tab', 5), { size: 28, fill: C_RISK, anchor: 'middle', weight: 600 });
+    text(p, 'paid −$400, margin $4,550', c2, 740, m('tab', 5), { size: 28, fill: C_RISK, anchor: 'middle', weight: 600 });
+    text(p, 'Same cumulative gains and losses: different cash timing and credit risk', 800, 840, m('pt'), { size: 30, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['irfut', 'Interest rate futures', (m) => {
+    const p = panel(0);
+    text(p, 'f = 100 − 100 × MRR', 400, 150, m('a'), { size: 44, anchor: 'middle', weight: 700 });
+    text(p, 'price 98.25  →  MRR = 1.75%', 400, 220, m('ex'), { size: 30, fill: C_PRICE, anchor: 'middle', weight: 600 });
+    lbox(p, 'Long futures\ngains as MRR falls', C_GAIN, 220, 380, 320, 110, m('dir'), 26); lbox(p, 'Short futures\ngains as MRR rises', C_RISK, 580, 380, 320, 110, m('dir', 1.5), 26);
+    text(p, '≈ FRA fixed-rate payer', 580, 480, m('dir', 3.5), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'BPV = notional × 0.01% × period', 400, 600, m('bpv'), { size: 30, anchor: 'middle', weight: 700 });
+    text(p, '$1,000,000 × 0.0001 × ¼ = $25', 400, 660, m('bpv', 1.5), { size: 32, fill: C_UND, anchor: 'middle', weight: 700 });
+    path(p, 'M800 150V780', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Baywhite pays floating, fears higher rates', 1180, 150, m('bw'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'sells futures on $50,000,000', 1190, 230, m('bw', 1), { size: 30, anchor: 'middle', weight: 700 });
+    text(p, 'BPV = 50,000,000 × 0.0001 × 1/12 = $416.67', 1190, 330, m('bw', 2.2), { size: 28, fill: C_UND, anchor: 'middle', weight: 600 });
+    text(p, 'sells at 98.75 → settles at 97.75', 1190, 500, m('res'), { size: 30, anchor: 'middle', weight: 700 });
+    text(p, 'MRR 1.25% → 2.25%: +100 bp', 1190, 560, m('res', 1), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, '100 × $416.67 = $41,667 gain', 1190, 660, m('res', 2), { size: 40, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['diff', 'Why forwards and futures differ', (m) => {
+    const p = panel(0);
+    text(p, 'Prices are equal if…', 110, 150, m('a'), { size: 34, fill: COL.dim, weight: 700 });
+    text(p, 'interest rates are constant', 160, 220, m('a', 1), { size: 34 }); text(p, '…or uncorrelated with futures prices', 160, 280, m('a', 2), { size: 34 });
+    path(p, 'M110 340H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    lbox(p, 'Prices rise with rates', C_GAIN, 450, 450, 600, 80, m('pos'), 32);
+    text(p, 'profits reinvested when rates are high;', 450, 540, m('pos', 2), { size: 28, anchor: 'middle' }); text(p, 'losses come when rates are low', 450, 585, m('pos', 3), { size: 28, anchor: 'middle' });
+    text(p, '→ long futures more attractive', 450, 660, m('pos', 4.5), { size: 32, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    lbox(p, 'Prices fall as rates rise', C_RISK, 1150, 450, 600, 80, m('neg'), 32);
+    text(p, '→ long forward more attractive', 1150, 660, m('neg', 1.5), { size: 32, fill: C_RISK, anchor: 'middle', weight: 700 });
+    text(p, 'The more attractive contract tends to have the higher price', 800, 780, m('rule'), { size: 32, anchor: 'middle', weight: 700 });
+    text(p, 'for short maturities the gap is usually very small', 800, 835, m('pt'), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['convex', 'Convexity bias', (m) => {
+    const p = panel(0), cx = [300, 800, 1200], rows = [['2.01%', '$497.50', '$500'], ['2.11%', '$248.69', '$250'], ['2.21%', '$0', '$0'], ['2.31%', '($248.56)', '($250)'], ['2.41%', '($497.01)', '($500)']];
+    text(p, '$1,000,000 notional · three-month MRR · contract at 2.21%', 800, 110, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['MRR at settlement', 'Short FRA (PV)', 'Long futures'].forEach((s, i) => text(p, s, cx[i], 200, m('a', .5), { size: 28, fill: [COL.dim, C_UND, C_PRICE][i], anchor: 'middle', weight: 700 }));
+    path(p, 'M110 225H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    rows.forEach(([a, b, c], i) => {
+      const y = 300 + i * 80, t0 = [m('fut'), m('fut', 1.2), m('fra'), m('tab', 3), m('tab', 5)][i];
+      text(p, a, cx[0], y, t0, { size: 34, anchor: 'middle' }); text(p, b, cx[1], y, t0 + .2, { size: 34, fill: b[0] === '(' ? C_RISK : C_GAIN, anchor: 'middle', weight: 600 }); text(p, c, cx[2], y, t0 + .4, { size: 34, fill: c[0] === '(' ? C_RISK : C_GAIN, anchor: 'middle', weight: 600 });
+    });
+    text(p, 'futures: fixed $25 per basis point', 110, 740, m('fut'), { size: 28, fill: C_PRICE, weight: 600 });
+    text(p, 'FRA: payment ÷ (1 + MRR/4), so not linear', 110, 785, m('fra'), { size: 28, fill: C_UND, weight: 600 });
+    text(p, 'convexity grows with the discounting period', 110, 830, m('pt'), { size: 28, fill: COL.dim, weight: 600 });
+  }],
+
+  ['clearing', 'Central clearing', (m) => {
+    const p = panel(0);
+    lbox(p, 'CCP', COL.int, 800, 230, 280, 90, m('ccp'), 36, .15);
+    lbox(p, 'Dealer', COL.chalk, 450, 460, 260, 80, m('ccp', .6), 32); lbox(p, 'Dealer', COL.chalk, 1150, 460, 260, 80, m('ccp', .8), 32);
+    seg(p, 520, 420, 700, 270, COL.int, m('ccp', 1.2), .6, 4); seg(p, 1080, 420, 900, 270, COL.int, m('ccp', 1.4), .6, 4);
+    text(p, 'margin', 540, 330, m('ccp', 1.6), { size: 26, fill: COL.int, anchor: 'middle', weight: 600 }); text(p, 'margin', 1060, 330, m('ccp', 1.6), { size: 26, fill: COL.int, anchor: 'middle', weight: 600 });
+    [250, 450, 650, 950, 1150, 1350].forEach((x, i) => { const d = x < 800 ? 450 : 1150; seg(p, x, 650, d, 500, COL.faint, m('ccp', 2.2 + i * .1), .5, 3); const g = G(p, { x, y: 670, o: 0 }); mk('circle', { r: 20, fill: 'none', stroke: COL.dim, 'stroke-width': 3 }, g); show(g, m('ccp', 2 + i * .1)); });
+    text(p, 'dealers ask end users for margin too', 800, 760, m('ccp', 3), { size: 28, fill: C_PRICE, anchor: 'middle', weight: 600 });
+    text(p, 'stress: futures positions are closed early; OTC forwards may stay open', 800, 130, m('stress'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'forwards behave more like futures', 800, 820, m('res'), { size: 34, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'A futures price = the forward price: spot compounded at the risk-free rate, plus carry.',
+    'Futures settle daily and reset to zero; forwards settle at maturity.',
+    'Interest rate futures are priced at 100 − yield, with a fixed value per basis point.',
+    'Correlation and convexity separate them; clearing narrows the gap.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

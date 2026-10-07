@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Forward Contracts</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 5, title: 'Pricing and Valuation of Forward Contracts', minutes: 8, language: 'en', next: '../ch06/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+const F0 = 300.84, pvF = (r, t) => F0 * (1 + r) ** -(.5 - t);
+
+const BEATS = [
+  ['intro', 'Pricing and valuing forwards', introBeat('Derivatives', 5, 'Pricing and Valuation', 'of Forward Contracts', 'price is fixed, value moves')],
+
+  ['value', 'Price versus value', (m) => {
+    const p = panel(0);
+    text(p, 'Forward price F₀(T) = ₹300.84 per share, fixed at the start', 800, 130, m('a'), { size: 32, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'value at the start V₀ = 0 for both sides', 800, 180, m('a', 1.2), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'At maturity, long:  V_T = S_T − F₀(T)', 800, 270, m('val'), { size: 42, anchor: 'middle', weight: 700 });
+    path(p, 'M110 400H1490', { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'S_T = ₹287', 840, 380, m('s1'), { size: 32, anchor: 'middle', weight: 700 }); text(p, 'S_T = ₹312', 1260, 380, m('s2'), { size: 32, anchor: 'middle', weight: 700 });
+    [['Buyer (long)', '−₹13.84', '+₹11.16', 520], ['Seller (short): VFO', '+₹13.84', '−₹11.16', 640]].forEach(([n, a, b, y], i) => {
+      text(p, n, 110, y, m('s1', .4 + i * .5), { size: 30, weight: 700, fill: i ? C_PRICE : C_UND });
+      text(p, a, 840, y, m('s1', .8 + i * .6), { size: 50, anchor: 'middle', weight: 700, fill: a[0] === '+' ? C_GAIN : C_RISK });
+      text(p, b, 1260, y, m('s2', .8 + i * .6), { size: 50, anchor: 'middle', weight: 700, fill: b[0] === '+' ? C_GAIN : C_RISK });
+    });
+    text(p, 'One side’s gain is always the other side’s loss', 800, 790, m('pt'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['midlife', 'Value during the life', (m) => {
+    const p = panel(0);
+    const ch = chart(p, { x: 110, y: 170, w: 820, h: 560, x0: 0, x1: .5, y0: 280, y1: 330, xl: 'time', yl: 'price per share (₹)', ticks: [[0, 'start'], [.25, '3 months'], [.5, '6 months']] });
+    curve(ch, p, t => pvF(.04, t), C_PRICE, m('a'), 1.2, 5, '12 10'); text(p, 'PV of forward price, r = 4%', ch.X(.02), ch.Y(pvF(.04, .02)) - 62, m('a', 1), { size: 24, fill: C_PRICE });
+    const dot = (t, v, c, t0, lab, dx = 0, ly = -26) => { const g = G(p, { x: ch.X(t), y: ch.Y(v), o: 0 }); mk('circle', { r: 11, fill: c, stroke: COL.board, 'stroke-width': 3 }, g); T(g, lab, { x: dx, y: ly, size: 24, fill: c, weight: 700, anchor: 'middle' }); show(g, t0); return g; };
+    dot(0, 295, C_UND, m('imp'), 'S₀ = 295', 42, 44);
+    dot(.5, F0, C_PRICE, m('imp', 1), 'F₀ = 300.84', -20, -26);
+    dot(0, 325, C_RISK, m('jump'), 'S = 325', 46, 6); seg(p, ch.X(0), ch.Y(295), ch.X(0), ch.Y(325), C_RISK, m('jump', .2), .8, 4);
+    dot(.25, 285, C_RISK, m('t1'), 'S_t = 285', -78, 8); dot(.25, pvF(.04, .25), C_PRICE, m('t1', .6), '297.90', 0, -26);
+    seg(p, ch.X(.25), ch.Y(285), ch.X(.25), ch.Y(pvF(.04, .25)), C_GAIN, m('t1', 1), .8, 6);
+    const alt = dot(.25, pvF(.08, .25), COL.rat, m('t2'), '295.11', 62, 8);
+    text(p, 'Seller’s value  V = PV(F₀) − S_t', 1010, 220, m('a'), { size: 30, weight: 700 });
+    text(p, 'implied rate: 295(1 + r)^0.5 = 300.84 → r = 4%', 1010, 300, m('imp'), { size: 26, fill: COL.dim });
+    text(p, 'spot jumps to 325: V = 295 − 325 = −₹30', 1010, 380, m('jump'), { size: 26, fill: C_RISK, weight: 600 });
+    text(p, '3 months in, S_t = 285:', 1010, 480, m('t1'), { size: 26, fill: COL.dim });
+    text(p, '300.84 × 1.04^−0.25 − 285 = +₹12.90', 1010, 525, m('t1', .8), { size: 28, fill: C_GAIN, weight: 700 });
+    text(p, 'rate doubles to 8%:', 1010, 620, m('t2'), { size: 26, fill: COL.dim });
+    text(p, '300.84 × 1.08^−0.25 − 285 = +₹10.11', 1010, 665, m('t2', .6), { size: 28, fill: COL.rat, weight: 700 });
+    text(p, 'a higher rate lowers the seller’s gain by ₹2.79', 1010, 720, m('t2', 2), { size: 24, fill: COL.dim });
+  }],
+
+  ['carry', 'Valuation with income', (m) => {
+    const p = panel(0), X = ruler(p, 160, 1440, 400, 50.1, 50.7, [50.1, 50.2, 50.3, 50.4, 50.5, 50.6, 50.7], v => '€' + v.toFixed(2));
+    text(p, 'V = (S_t − PV(I) + PV(C)) − F₀(T)(1 + r)^−(T−t)', 800, 120, m('a'), { size: 36, anchor: 'middle', weight: 700 });
+    text(p, 'Unilever forward at €50.6311 · 4 months in · one €0.30 dividend left · r = 5%', 800, 190, m('ex'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    rdot(p, X, 50.2202, 400, C_PRICE, 'PV of F₀ = €50.2202', m('pv'), {});
+    seg(p, X(50.2202), 440, X(50.5178), 440, C_GAIN, m('be'), .8, 6);
+    text(p, '+ PV(dividend) €0.2976', (X(50.2202) + X(50.5178)) / 2, 490, m('be', .5), { size: 28, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    rdot(p, X, 50.5178, 400, C_UND, 'breakeven S_t = €50.5178', m('be', 1), {});
+    text(p, '0.30 × 1.05^(−2/12) = 0.2976', 160, 640, m('ex', 4), { size: 30, fill: C_GAIN, weight: 600 });
+    text(p, '50.6311 × 1.05^(−2/12) = 50.2202', 160, 700, m('pv'), { size: 30, fill: C_PRICE, weight: 600 });
+    text(p, 'V = 0  when  S_t = 50.2202 + 0.2976 = 50.5178', 160, 780, m('be', 1.5), { size: 34, fill: C_UND, weight: 700 });
+  }],
+
+  ['fx', 'Currency forward value', (m) => {
+    const p = panel(0);
+    text(p, 'V = S − F₀ · e^(−(r_f − r_d)(T − t))', 800, 130, m('a'), { size: 38, anchor: 'middle', weight: 700 });
+    text(p, 'Rook Point: buys €1,000,000 for $1,201,000 in one year', 130, 260, m('ex'), { size: 32, fill: C_PRICE, weight: 700 });
+    text(p, 'spot 1.192 USD/EUR · forward 1.201 · USD rate 0.50% · EUR rate −0.25%', 130, 315, m('ex', 1.2), { size: 28, fill: COL.dim });
+    text(p, 'USD rate rises 0.50% → 0.75%: the gap r_f − r_d widens', 130, 440, m('up'), { size: 30, fill: C_RISK, weight: 600 });
+    text(p, '1.201 × e^−(0.0075 + 0.0025) = 1.18905', 130, 520, m('up', 1.5), { size: 34, weight: 600 });
+    text(p, 'V = 1.192 − 1.18905 = 0.00295 USD per EUR', 130, 590, m('res'), { size: 34, weight: 600 });
+    text(p, '× 1,000,000 = $2,950.15 gain', 130, 690, m('res', 1), { size: 50, fill: C_GAIN, weight: 700 });
+  }],
+
+  ['zero', 'Zero rates from coupon bonds', (m) => {
+    const p = panel(0), cx = [130, 330, 560, 850, 1220], rows = [[1, '1.50%', '99.125', '2.3960%', '0.976601', 'z1'], [2, '2.50%', '98.275', '3.4197%', '0.934961', 'z2'], [3, '3.25%', '98.000', '4.0005%', '0.888982', 'z3']];
+    ['Years', 'Coupon', 'Price', 'Zero rate', 'Discount factor'].forEach((s, i) => text(p, s, cx[i], 190, m('a'), { size: 26, fill: COL.dim, weight: 700 }));
+    path(p, 'M110 215H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    rows.forEach(([y, c, pr, z, df, k], i) => {
+      const yy = 290 + i * 80;
+      text(p, String(y), cx[0], yy, m('t', i * .5), { size: 34 }); text(p, c, cx[1], yy, m('t', i * .5), { size: 34, fill: C_PRICE }); text(p, pr, cx[2], yy, m('t', i * .5), { size: 34, fill: C_PRICE });
+      text(p, z, cx[3], yy, m(k), { size: 36, fill: C_GAIN, weight: 700 }); text(p, df, cx[4], yy, m('df', i * .6), { size: 34, fill: C_UND });
+    });
+    const f = (s, t0, t1) => { const e = text(p, s, 130, 640, t0, { size: 32, fill: COL.chalk, weight: 600 }); if (t1) hide(e, t1, .3); return e; };
+    f('99.125 = 101.5 ÷ (1 + z₁)   →   z₁ = 2.3960%', m('z1'), m('z2'));
+    f('98.275 = 2.5 ÷ 1.02396 + 102.5 ÷ (1 + z₂)²   →   z₂ = 3.4197%', m('z2'), m('z3'));
+    f('98.00 = 3.25 ÷ 1.02396 + 3.25 ÷ 1.034197² + 103.25 ÷ (1 + z₃)³   →   z₃ = 4.0005%', m('z3'), m('df'));
+    text(p, 'DF = 1 ÷ (1 + z)^n  — the price today of one unit paid in n years', 130, 640, m('df'), { size: 32, fill: C_UND, weight: 700 });
+    text(p, 'bootstrapping: each zero rate uses the ones before it', 130, 760, m('z1'), { size: 26, fill: COL.dim });
+  }],
+
+  ['ifr', 'Implied forward rates', (m) => {
+    const p = panel(0), y = 520, xs = [300, 800, 1300];
+    path(p, `M${xs[0]} ${y}H${xs[2]}`, { stroke: COL.chalk, 'stroke-width': 3 });
+    ['t = 0', 't = 1', 't = 2'].forEach((s, i) => { path(p, `M${xs[i]} ${y - 12}V${y + 12}`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, s, [xs[0] - 28, 800, xs[2] + 28][i], i === 1 ? y - 40 : y + 8, m('a'), { size: 26, fill: COL.dim, anchor: ['end', 'middle', 'start'][i] }); });
+    draw(path(p, `M${xs[0]} ${y - 20}Q800 170 ${xs[2]} ${y - 20}`, { stroke: C_UND, 'stroke-width': 5 }, { d: 0 }), m('p1'), 1.2);
+    text(p, '100 × (1 + z₂)² = 100 × 1.034197² = 106.96', 800, 290, m('p1', 1), { size: 30, fill: C_UND, anchor: 'middle', weight: 700 });
+    text(p, 'two-year zero rate', 800, 245, m('p1', .5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    draw(path(p, `M${xs[0]} ${y + 20}Q550 700 ${xs[1]} ${y + 20}`, { stroke: C_PRICE, 'stroke-width': 5 }, { d: 0 }), m('p2'), 1); text(p, '× 1.02396 = 102.40', 550, 700, m('p2', .6), { size: 26, fill: C_PRICE, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${xs[1]} ${y + 20}Q1050 700 ${xs[2]} ${y + 20}`, { stroke: C_GAIN, 'stroke-width': 5 }, { d: 0 }), m('p2', 1.5), 1); text(p, '× (1 + IFR)', 1050, 700, m('p2', 2), { size: 26, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    text(p, '(1 + z₁)(1 + IFR₁,₁) = (1 + z₂)²', 640, 810, m('eq'), { size: 36, anchor: 'middle', weight: 700 });
+    text(p, 'IFR₁,₁ = 4.4536%', 1260, 810, m('res'), { size: 40, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    text(p, '(1 + z_A)^A (1 + IFR)^(B−A) = (1 + z_B)^B  →  IFR₂,₁ = 5.1719%', 800, 120, m('gen'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['mrr', 'Forward market reference rate', (m) => {
+    const p = panel(0);
+    text(p, '3-month rate 1.25% · 6-month rate 1.75% (semiannual)', 130, 150, m('a'), { size: 34, fill: C_PRICE, weight: 700 });
+    text(p, '(1 + APR₄/4)⁴ = (1 + 0.0175/2)²   →   APR₄ = 1.74619%', 130, 270, m('conv'), { size: 32, weight: 600 });
+    text(p, '(1 + 0.0125/4)(1 + IFR/4) = (1 + 0.0174619/4)²', 130, 400, m('solve'), { size: 32, weight: 600 });
+    text(p, 'IFR₃ₘ,₃ₘ = 2.24299%', 130, 520, m('res'), { size: 56, fill: C_GAIN, weight: 700 });
+    text(p, 'check: 100,000,000 × 1.003125 × 1.0056075 = 100,875,000', 130, 660, m('chk'), { size: 30, fill: C_UND, weight: 600 });
+    text(p, '= 100,000,000 × (1 + 0.0175/2)', 130, 710, m('chk', 1.5), { size: 30, fill: C_UND, weight: 600 });
+  }],
+
+  ['fra', 'Forward rate agreement', (m) => {
+    const p = panel(0), y = 380, xs = [250, 800, 1350];
+    lbox(p, 'Yangzi Bank (pays fixed)', C_PRICE, 420, 170, 500, 70, m('a'), 28); lbox(p, 'Intermediary (pays MRR)', COL.dim, 1180, 170, 500, 70, m('a'), 28);
+    path(p, `M${xs[0]} ${y}H${xs[2]}`, { stroke: COL.chalk, 'stroke-width': 3 });
+    [['t = 0', 'rate fixed 2.24299%'], ['t = A (3 months)', 'MRR sets at 2.15%'], ['t = B (6 months)', 'period ends']].forEach(([a, b], i) => { path(p, `M${xs[i]} ${y - 12}V${y + 12}`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, a, xs[i], y + 50, m('ex', i * 1.2), { size: 26, fill: COL.dim, anchor: 'middle' }); text(p, b, xs[i], y - 36, m(i === 0 ? 'ex' : i === 1 ? 'set' : 'net'), { size: 26, fill: i === 1 ? C_RISK : COL.chalk, anchor: 'middle', weight: 600 }); });
+    text(p, 'net = (2.15% − 2.24299%) × 100,000,000 × 90/360 = −23,247.50', 130, 580, m('net'), { size: 32, weight: 600 });
+    text(p, 'settled at the start of the period: ÷ (1 + 0.0215/4)', 130, 650, m('pv'), { size: 30, fill: COL.dim });
+    text(p, 'cash settlement = −CNY 23,123.21', 130, 730, m('pv', 1.5), { size: 48, fill: C_RISK, weight: 700 });
+    text(p, 'offset by a lower MRR payment on the hedged liability', 130, 800, m('pt'), { size: 28, fill: C_GAIN, weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'A forward starts at zero value: its price is fixed, but its value moves.',
+    'Value = spot (adjusted for income and costs) minus the PV of the forward price.',
+    'Zero rates are bootstrapped from coupon bonds; discount factors price cash flows.',
+    'Implied forward rates link zero rates; an FRA locks one in.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

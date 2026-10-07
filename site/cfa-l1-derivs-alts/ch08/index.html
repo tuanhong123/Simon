@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Options</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 8, title: 'Pricing and Valuation of Options', minutes: 6, language: 'en', next: '../ch09/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+const cPrice = s => 3.5 * Math.log(1 + Math.exp((s - 100) / 3.5)) + 1;      // illustrative option price
+
+const BEATS = [
+  ['intro', 'Pricing options', introBeat('Derivatives', 8, 'Pricing and Valuation', 'of Options', 'exercise value, time value and what drives them')],
+
+  ['exercise', 'Exercise value', (m) => {
+    const p = panel(0), X = 100;
+    const ch = chart(p, { x: 110, y: 170, w: 760, h: 540, x0: 80, x1: 120, y0: 0, y1: 28, xl: 'S_t', yl: 'call value (illustrative)', ticks: [[X, 'X']] });
+    curve(ch, p, s => Math.max(0, s - X), COL.dim, m('a'), 1, 5, '12 10'); text(p, 'payoff at T (dashed)', ch.X(113), ch.Y(5), m('a', .8), { size: 24, fill: COL.dim, anchor: 'middle' });
+    curve(ch, p, s => Math.max(0, s - X * .99), C_UND, m('call'), 1.2, 6); text(p, 'exercise value', ch.X(117), ch.Y(17) - 60, m('call', 1), { size: 26, fill: C_UND, weight: 700, anchor: 'end' });
+    curve(ch, p, cPrice, C_GAIN, m('call', 2), 1.2, 6); text(p, 'option price', ch.X(90), ch.Y(5), m('call', 3), { size: 26, fill: C_GAIN, weight: 700, anchor: 'end' });
+    text(p, 'Call exercise value  max(0, S_t − X(1 + r)^−(T−t))', 920, 250, m('call'), { size: 24, fill: C_UND, weight: 700 });
+    text(p, 'Put exercise value  max(0, X(1 + r)^−(T−t) − S_t)', 920, 300, m('put'), { size: 24, fill: C_PRICE, weight: 700 });
+    text(p, 'One-year put, X = €1,000, r = 1%', 920, 420, m('ex'), { size: 28, weight: 700 });
+    text(p, 'six months in, S_t = €950', 920, 465, m('ex', .8), { size: 26, fill: COL.dim });
+    text(p, '1,000 × 1.01^−0.5 = 995.04', 920, 535, m('ex', 2.5), { size: 28, fill: C_PRICE, weight: 600 });
+    text(p, '995.04 − 950 = €45.04', 920, 600, m('res'), { size: 40, fill: C_GAIN, weight: 700 });
+  }],
+
+  ['money', 'Moneyness', (m) => {
+    const p = panel(0), x0 = 160, xm = 800, x1 = 1440;
+    text(p, 'Spot price relative to the exercise price X', 800, 130, m('a'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const zone = (xa, xb, y, label, c, t0) => { const g = G(p, { o: 0 }); mk('rect', { x: xa + 4, y, width: xb - xa - 8, height: 100, rx: 12, fill: c, 'fill-opacity': .22, stroke: c, 'stroke-width': 3 }, g); T(g, label, { x: (xa + xb) / 2, y: y + 62, size: 34, fill: c, weight: 700, anchor: 'middle' }); show(g, t0); };
+    text(p, 'Call', 110, 345, m('call'), { size: 34, weight: 700 }); text(p, 'Put', 110, 545, m('put'), { size: 34, weight: 700 });
+    zone(x0 + 100, xm, 290, 'out of the money', C_RISK, m('call')); zone(xm, x1, 290, 'in the money', C_GAIN, m('call', 1));
+    zone(x0 + 100, xm, 490, 'in the money', C_GAIN, m('put')); zone(xm, x1, 490, 'out of the money', C_RISK, m('put', 1));
+    path(p, `M${xm} 260V630`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, 'at the money: S = X', xm, 680, m('a', 1), { size: 28, anchor: 'middle', weight: 600 });
+    text(p, 'put: S_t = 950, X = 1,000  →  in the money by €50', 800, 750, m('ex'), { size: 30, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    text(p, 'deep ITM: moves ~1-for-1 · deep OTM: barely moves · near ATM: small moves decide exercise', 800, 825, m('sens'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['time', 'Time value', (m) => {
+    const p = panel(0);
+    text(p, 'price = exercise value + time value', 800, 130, m('a'), { size: 44, anchor: 'middle', weight: 700 });
+    text(p, 'Put, S_t = €950', 120, 250, m('ex'), { size: 28, fill: COL.dim, weight: 600 });
+    text(p, 'price  €50.00', 120, 320, m('ex'), { size: 34, fill: C_PRICE, weight: 700 }); text(p, '− exercise value  €45.04', 120, 375, m('ex', .8), { size: 34, fill: C_UND, weight: 700 });
+    path(p, 'M120 405H560', { stroke: COL.chalk, 'stroke-width': 3 }); text(p, 'time value  €4.96', 120, 465, m('res'), { size: 40, fill: C_GAIN, weight: 700 });
+    const ch = chart(p, { x: 700, y: 220, w: 760, h: 440, x0: 0, x1: 1, y0: 0, y1: 8, xl: 'time to expiry →', yl: 'time value (illustrative)', ticks: [[0, 'now'], [1, 'T']] });
+    curve(ch, p, t => 7.5 * Math.sqrt(1 - t), C_GAIN, m('decay'), 2.5, 6);
+    text(p, 'decays to zero at maturity', ch.X(.4), ch.Y(5.2) - 40, m('decay', 1.5), { size: 26, fill: C_GAIN, weight: 700 });
+    text(p, 'always positive before T · larger with time and volatility · biggest at the money', 800, 790, m('atm'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['bounds', 'No-arbitrage bounds', (m) => {
+    const p = panel(0), X = ruler(p, 160, 1440, 600, 0, 1100, [0, 200, 400, 600, 800, 1000], v => '€' + v);
+    text(p, 'Call:  max(0, S_t − X(1 + r)^−(T−t))  ≤  c  ≤  S_t', 800, 130, m('call'), { size: 38, fill: C_UND, anchor: 'middle', weight: 700 });
+    text(p, 'Put:  max(0, X(1 + r)^−(T−t) − S_t)  ≤  p  ≤  X', 800, 200, m('put'), { size: 38, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'Call: X = €1,000, r = 1%, six months left, S_t = €1,050', 800, 330, m('ex'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const band = G(p, { o: 0 }); mk('rect', { x: X(54.96), y: 570, width: X(1050) - X(54.96), height: 20, rx: 6, fill: C_GAIN, 'fill-opacity': .35 }, band); show(band, m('res'));
+    rdot(p, X, 54.96, 600, C_GAIN, 'lower €54.96', m('res'), { ly: -50 }); rdot(p, X, 1050, 600, C_UND, 'upper €1,050', m('res', 1), { ly: -50 });
+    text(p, '1,050 − 1,000 × 1.01^−0.5 = 54.96', 800, 470, m('res'), { size: 30, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    text(p, 'a price outside the band is an arbitrage', 800, 780, m('res', 3), { size: 32, anchor: 'middle', weight: 700 });
+  }],
+
+  ['replicate', 'Replicating options', (m) => {
+    const p = panel(0);
+    path(p, 'M800 150V780', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Forward', 400, 180, m('a'), { size: 40, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    bullets(p, ['buy the underlying', 'borrow all of PV(F₀)', 'never adjust'], 130, 270, 70, [m('a', 1.5), m('a', 3), m('a', 4.5)], { size: 30 });
+    text(p, 'Call option', 1200, 180, m('call'), { size: 40, fill: C_UND, anchor: 'middle', weight: 700 });
+    bullets(p, ['buy the underlying', 'borrow a proportion of PV(X)', 'the proportion ≈ likelihood of exercise'], 860, 270, 70, [m('call', 1), m('call', 3), m('call', 6)], { size: 28 });
+    lbox(p, 'adjust as moneyness changes', C_GAIN, 1200, 520, 560, 80, m('adj'), 30);
+    text(p, 'Put option', 1200, 640, m('put'), { size: 36, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'short the underlying, lend a proportion of the proceeds', 1200, 700, m('put', .6), { size: 26, anchor: 'middle' });
+    text(p, 'at expiry: exercised → sell the underlying to repay the loan; otherwise nothing', 800, 830, m('end'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['factors', 'What drives option value', (m) => {
+    const p = panel(0), rows = [
+      ['Underlying price', '+', '−', 's', ''], ['Exercise price', '−', '+', 'x', ''], ['Time to expiration', '+', '+ / −', 't', 'deep ITM put can fall: lower PV of payoff'],
+      ['Risk-free rate', '+', '−', 'r', 'higher rate lowers PV(X)'], ['Volatility', '+', '+', 'v', 'wider upside, same downside'], ['Income on the underlying', '−', '+', 'i', 'carry costs: the reverse']];
+    text(p, 'a higher…', 110, 170, m('a'), { size: 26, fill: COL.dim, weight: 600 });
+    text(p, 'Call value', 900, 170, m('a'), { size: 32, fill: C_UND, anchor: 'middle', weight: 700 }); text(p, 'Put value', 1180, 170, m('a'), { size: 32, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    path(p, 'M110 195H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    const col = s => s === '+' ? C_GAIN : s === '−' ? C_RISK : COL.chalk;
+    rows.forEach(([f, c, pu, k, note], i) => {
+      const y = 280 + i * 100;
+      text(p, f, 110, y, m(k), { size: 32, weight: 600 });
+      text(p, c, 900, y, m(k, .3), { size: 52, fill: col(c), anchor: 'middle', weight: 700 }); text(p, pu, 1180, y, m(k, .6), { size: 52, fill: col(pu), anchor: 'middle', weight: 700 });
+      if (note) text(p, note, 110, y + 36, m(k, 1.5), { size: 22, fill: COL.dim });
+    });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'Option price = exercise value + time value, and time value decays to zero.',
+    'Moneyness shows how likely exercise is and how sensitive the option is.',
+    'A call lies between its exercise value and S; a put, between its exercise value and X.',
+    'Replicating an option needs a changing position, unlike a forward.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

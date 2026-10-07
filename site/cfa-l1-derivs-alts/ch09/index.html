@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option Replication Using Put–Call Parity</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 9, title: 'Option Replication Using Put–Call Parity', minutes: 6, language: 'en', next: '../ch10/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+
+const BEATS = [
+  ['intro', 'Put–call parity', introBeat('Derivatives', 9, 'Option Replication Using', 'Put–Call Parity', 'one equation ties calls, puts, the underlying and a bond')],
+
+  ['portfolios', 'Two portfolios, one payoff', (m) => {
+    const p = panel(0), X = 100;
+    const mkc = (x, title, c1, f1, n1, c2, f2, n2, t0, t1, l1, l2) => {
+      const ch = chart(p, { x, y: 220, w: 620, h: 380, x0: 60, x1: 140, y0: 0, y1: 150, xl: 'S_T', ticks: [[X, 'X']], size: 22 });
+      text(p, title, x, 190, t0, { size: 30, weight: 700 });
+      curve(ch, p, f1, COL.dim, t0 + .3, 1, 4, '12 10'); curve(ch, p, f2, C_GAIN, t0 + 1.2, 1, 4, '12 10');
+      text(p, n1, ch.X(l1[0]), ch.Y(f1(l1[0])) + l1[1], t0 + .6, { size: 22, fill: COL.dim }); text(p, n2, ch.X(l2[0]), ch.Y(f2(l2[0])) + l2[1], t0 + 1.5, { size: 22, fill: C_GAIN });
+      curve(ch, p, s => Math.max(X, s), C_PRICE, t1, 1.2, 8);
+      return ch;
+    };
+    mkc(110, 'Fiduciary call', 0, () => X, 'bond pays X', 0, s => Math.max(0, s - X), 'long call', m('fid'), m('tab'), [66, -22], [128, 40]);
+    mkc(870, 'Protective put', 0, s => s, 'underlying', 0, s => Math.max(0, X - s), 'long put', m('prot'), m('tab', .6), [122, 44], [68, -22]);
+    text(p, 'S_T < X:  both worth X', 800, 750, m('tab', 1), { size: 30, weight: 700, anchor: 'middle', fill: C_PRICE });
+    text(p, 'S_T > X:  both worth S_T', 800, 800, m('tab', 5), { size: 30, weight: 700, anchor: 'middle', fill: C_PRICE });
+    text(p, 'identical payoffs  →  identical cost today', 800, 860, m('pt'), { size: 32, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['parity', 'Put–call parity', (m) => {
+    const p = panel(0);
+    mline(p, ['S₀ + p₀ = c₀ + X(1 + ', 'r', ')', E('−T')], 800, 140, m('a'), COL.chalk, 60);
+    text(p, 'European options · same X and expiry · no income on the underlying', 800, 200, m('a', 2), { size: 26, fill: COL.dim, anchor: 'middle' });
+    path(p, 'M110 250H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'Biomian: S₀ = ₹295 · call (X = 265, 6 months) = ₹59 · r = 4%', 130, 310, m('ex'), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, 'bond = 265 × 1.04^−0.5 = ₹259.85', 130, 380, m('bond'), { size: 32, fill: C_UND, weight: 600 });
+    text(p, '295 + p₀ = 59 + 259.85  →  p₀ = ₹23.85', 130, 460, m('res'), { size: 44, fill: C_GAIN, weight: 700 });
+    path(p, 'M110 520H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'If the put trades at ₹30:', 130, 580, m('arb'), { size: 32, fill: C_RISK, weight: 700 });
+    text(p, 'sell the share and the put, buy the call and the bond', 130, 640, m('arb', 1.5), { size: 30 });
+    text(p, '295 + 30 − 59 − 259.85 = +₹6.15 today', 130, 710, m('arb', 4), { size: 36, fill: C_GAIN, weight: 700 });
+    text(p, 'every outcome at maturity nets to zero', 130, 770, m('arb', 6), { size: 28, fill: COL.dim });
+  }],
+
+  ['blocks', 'Replicating each position', (m) => {
+    const p = panel(0);
+    text(p, 'Rearrange  S₀ + p₀ = c₀ + PV(X):', 800, 130, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Long put  =  call + bond − underlying', 400, 230, 'put', C_GAIN], ['Long call  =  underlying + put − bond', 1200, 230, 'call', C_UND], ['Underlying  =  call − put + bond', 400, 370, 'und', C_PRICE], ['Bond  =  underlying + put − call', 1200, 370, 'bond', COL.rat]].forEach(([s, x, y, k, c]) => lbox(p, s, c, x, y, 700, 90, m(k), 28));
+    text(p, 'Covered call  =  underlying − call  =  bond − put', 800, 520, m('cc'), { size: 40, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'Biomian ₹295, call X = 325, put = ₹56, r = 4%', 800, 620, m('ex'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'bond = 325 × 1.04^−0.5 = 318.69', 800, 690, m('ex', 2.5), { size: 30, fill: C_UND, anchor: 'middle', weight: 600 });
+    text(p, '295 − c₀ = 318.69 − 56  →  c₀ = ₹32.31', 800, 770, m('ex', 5), { size: 40, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['forward', 'Put–call forward parity', (m) => {
+    const p = panel(0);
+    text(p, 'Replace the underlying by a long forward plus a bond paying F₀(T):', 800, 130, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'F₀(T)(1 + r)^−T + p₀ = c₀ + X(1 + r)^−T', 800, 260, m('eq'), { size: 52, anchor: 'middle', weight: 700 });
+    path(p, 'M110 330H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'p₀ − c₀ = [X − F₀(T)](1 + r)^−T', 800, 430, m('diff'), { size: 46, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'long put + short call  =  long bond + short forward', 800, 510, m('diff', 3), { size: 34, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    path(p, 'M110 580H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'Biomian: F₀(T) = 295 × 1.04^0.5 = ₹300.84', 130, 660, m('ex'), { size: 32, weight: 600 });
+    text(p, 'p₀ − 59 = (265 − 300.84) × 1.04^−0.5  →  p₀ = ₹23.86', 130, 740, m('ex', 2.5), { size: 36, fill: C_GAIN, weight: 700 });
+  }],
+
+  ['firm', 'Equity and debt as options', (m) => {
+    const p = panel(0), D = 100;
+    const ch = chart(p, { x: 110, y: 200, w: 760, h: 500, x0: 0, x1: 200, y0: 0, y1: 150, xl: 'firm value V_T', yl: 'payoff', ticks: [[D, 'D']] });
+    curve(ch, p, v => Math.min(v, D), C_PRICE, m('debt'), 1.2, 6); text(p, 'debtholders', ch.X(30), ch.Y(D) - 20, m('debt', .8), { size: 26, fill: C_PRICE, weight: 700 });
+    curve(ch, p, v => Math.max(0, v - D), C_GAIN, m('eq'), 1.2, 6); text(p, 'shareholders', ch.X(150), ch.Y(80) - 20, m('eq', .8), { size: 26, fill: C_GAIN, weight: 700, anchor: 'end' });
+    text(p, 'Zero-coupon debt, face value D', 960, 250, m('a'), { size: 30, weight: 700 });
+    text(p, 'V_T > D  solvent: debt repaid,', 960, 330, m('solv'), { size: 26, fill: C_GAIN, weight: 600 }); text(p, 'equity gets V_T − D', 960, 365, m('solv', .8), { size: 26, fill: C_GAIN });
+    text(p, 'V_T < D  insolvent: debt gets V_T,', 960, 440, m('insol'), { size: 26, fill: C_RISK, weight: 600 }); text(p, 'equity gets 0', 960, 475, m('insol', .8), { size: 26, fill: C_RISK });
+    text(p, 'Equity = call on the firm', 960, 560, m('eq'), { size: 30, fill: C_GAIN, weight: 700 });
+    text(p, 'Debt = risk-free bond − put sold', 960, 615, m('debt'), { size: 30, fill: C_PRICE, weight: 700 });
+    text(p, 'V₀ = c₀ + PV(D) − p₀', 960, 720, m('v'), { size: 38, weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'A fiduciary call and a protective put have identical payoffs, so they cost the same.',
+    'Put–call parity: S₀ + p₀ = c₀ + PV(X) for European options.',
+    'Any mispricing is an arbitrage; any one position can be built from the others.',
+    'Equity is a call on the firm; risky debt is a bond minus a put.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

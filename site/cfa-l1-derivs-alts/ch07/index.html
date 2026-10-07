@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Interest Rates and Other Swaps</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 7, title: 'Pricing and Valuation of Interest Rates and Other Swaps', minutes: 7, language: 'en', next: '../ch08/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+const IFR = [0.50, 0.74, 0.98, 1.22, 1.46, 1.70, 1.94, 2.18, 2.43, 2.67, 2.91, 3.15, 3.39, 3.78];
+
+const BEATS = [
+  ['intro', 'Swaps', introBeat('Derivatives', 7, 'Pricing and Valuation', 'of Interest Rate Swaps', 'a series of forwards at one fixed rate')],
+
+  ['series', 'Swap versus a series of forwards', (m) => {
+    const p = panel(0), rates = [2.396, 4.4536, 5.1719];
+    const ch = chart(p, { x: 110, y: 200, w: 760, h: 520, x0: 0, x1: 3, y0: 0, y1: 6, xl: 'period', yl: 'rate (%)', ticks: [[.5, 'year 1'], [1.5, 'year 2'], [2.5, 'year 3']] });
+    rates.forEach((v, i) => {
+      const g = G(p, { y: 24, o: 0 }), x = ch.X(i + .5);
+      mk('rect', { x: x - 70, y: ch.Y(v), width: 140, height: ch.Y(0) - ch.Y(v), fill: C_UND, 'fill-opacity': .88, rx: 4 }, g);
+      T(g, v + '%', { x, y: ch.Y(v) - 14, size: 28, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('fra', .4 + i * .9), .6, out);
+    });
+    text(p, 'one FRA per period: a different fixed rate each time', 110, 160, m('fra'), { size: 26, fill: C_UND, weight: 600 });
+    curve(ch, p, () => 3.9641, C_PRICE, m('swap'), 1.2, 6);
+    text(p, 'swap 3.9641%', ch.X(.1), ch.Y(3.9641) - 18, m('swap', 1), { size: 28, fill: C_PRICE, weight: 700 });
+    text(p, 'FRA', 960, 270, m('a'), { size: 34, fill: C_UND, weight: 700 }); text(p, 'Swap', 1230, 270, m('a'), { size: 34, fill: C_PRICE, weight: 700 });
+    bullets(p, ['one settlement, at the start of the period', 'no cash at inception', 'credit risk'], 960, 340, 60, [m('a', 1), m('a', 2.5), m('a', 4)], { size: 24 });
+    bullets(p, ['periodic settlements, at each period end', 'one constant fixed rate', 'value is zero at the start'], 960, 600, 60, [m('swap', 2), m('swap', 3.5), m('pt')], { size: 24 });
+  }],
+
+  ['par', 'The par swap rate', (m) => {
+    const p = panel(0), X = ruler(p, 160, 1440, 690, 2, 6, [2, 3, 4, 5, 6], v => v.toFixed(0) + '%');
+    text(p, 'PV(fixed payments) = PV(expected floating payments)', 800, 120, m('a'), { size: 38, anchor: 'middle', weight: 700 });
+    text(p, '2.396 ÷ 1.02396 + 4.4537 ÷ 1.034197² + 5.1719 ÷ 1.040005³ = 11.1017', 130, 230, m('fl'), { size: 30, fill: C_UND, weight: 600 });
+    text(p, 's × (1 ÷ 1.02396 + 1 ÷ 1.034197² + 1 ÷ 1.040005³) = s × 2.800545', 130, 320, m('df'), { size: 30, fill: C_PRICE, weight: 600 });
+    text(p, 's₃ = 11.1017 ÷ 2.800545 = 3.9641%', 130, 440, m('res'), { size: 52, fill: C_GAIN, weight: 700 });
+    [2.396, 4.4536, 5.1719].forEach((v, i) => rdot(p, X, v, 690, C_UND, ['IFR 2.396', 'IFR 4.4536', 'IFR 5.1719'][i], m('note', i * .5), {}));
+    rdot(p, X, 3.9641, 690, C_PRICE, 'swap 3.9641', m('res', .5), { ly: -85 });
+  }],
+
+  ['esterr', 'Swapping to fixed', (m) => {
+    const p = panel(0), cols = [[110, 'MRR sets at 3.75%', 's1', [['Swap: pay 2.05%, receive 3.75%', '+1.70%', C_GAIN], ['Loan: 3.75% + 1.50%', '−5.25%', C_RISK], '-', ['Net interest cost', '3.55%', C_PRICE, true]]],
+      [860, 'MRR sets at 1.25%', 's2', [['Swap: pay 2.05%, receive 1.25%', '−0.80%', C_RISK], ['Loan: 1.25% + 1.50%', '−2.75%', C_RISK], '-', ['Net interest cost', '3.55%', C_PRICE, true]]]];
+    text(p, 'Esterr: floating loan at MRR + 1.50%; swap pays 2.05%, receives MRR', 800, 120, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, 'M800 190V640', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    cols.forEach(([x, title, k, rows]) => { text(p, title, x, 240, m(k), { size: 36, weight: 700 }); ledger(p, x, 350, 630, rows, [m(k, 1), m(k, 2.5), m(k, 4), m(k, 4.2)], { size: 28, dy: 90 }); });
+    text(p, 'Interest cost is fixed: 3.55% × CAD 250m × 0.25 = CAD 2,218,750 a quarter', 800, 780, m('pt'), { size: 32, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['bond', 'A swap is like a bond position', (m) => {
+    const p = panel(0), cx = [110, 560, 1010, 1260];
+    text(p, 'Fixed-rate payer = short a fixed bond + long a floating-rate note', 800, 130, m('a'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['Swap position', 'Like a cash bond…', 'Rates up', 'Rates down'].forEach((s, i) => text(p, s, cx[i], 240, m('a', 1), { size: 26, fill: COL.dim, weight: 700 }));
+    path(p, 'M110 265H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'Receive fixed', cx[0], 370, m('recv'), { size: 34, fill: C_GAIN, weight: 700 }); text(p, 'long a fixed-rate bond', cx[1], 370, m('recv', .3), { size: 30 });
+    text(p, 'loss', cx[2], 370, m('recv', 1), { size: 34, fill: C_RISK, weight: 700 }); text(p, 'gain', cx[3], 370, m('recv', 1.6), { size: 34, fill: C_GAIN, weight: 700 });
+    text(p, 'Pay fixed', cx[0], 500, m('pay'), { size: 34, fill: C_RISK, weight: 700 }); text(p, 'short a fixed-rate bond', cx[1], 500, m('pay', .3), { size: 30 });
+    text(p, 'gain', cx[2], 500, m('pay', 1), { size: 34, fill: C_GAIN, weight: 700 }); text(p, 'loss', cx[3], 500, m('pay', 1.6), { size: 34, fill: C_RISK, weight: 700 });
+    text(p, 'Managers use swaps rather than bonds: more liquid, same benchmark exposure', 800, 700, m('use'), { size: 30, anchor: 'middle', weight: 600 });
+    text(p, 'expect rates to fall → receive fixed', 800, 770, m('use', 3), { size: 32, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['value', 'Valuing a swap over time', (m) => {
+    const p = panel(0);
+    const ch = chart(p, { x: 110, y: 190, w: 880, h: 520, x0: 0, x1: 14, y0: 0, y1: 4.5, xl: 'quarterly period', yl: 'expected MRR (%)', ticks: [[.5, '1'], [3.5, '4'], [6.5, '7'], [9.5, '10'], [13.5, '14']] });
+    IFR.forEach((v, i) => {
+      const g = G(p, { y: 20, o: 0 }), x = ch.X(i + .5), neg = v < 2.05;
+      mk('rect', { x: x - 24, y: ch.Y(v), width: 48, height: ch.Y(0) - ch.Y(v), fill: neg ? C_RISK : C_GAIN, 'fill-opacity': .85, rx: 3 }, g);
+      tw(g, { o: 1, y: 0 }, neg ? m('neg', .3 + i * .25) : m('pos', .3 + (i - 7) * .25), .5, out);
+    });
+    curve(ch, p, () => 2.05, C_PRICE, m('ex'), 1.2, 6);
+    text(p, 'fixed 2.05%', ch.X(.2), ch.Y(2.05) - 18, m('ex', .8), { size: 28, fill: C_PRICE, weight: 700 });
+    text(p, 'Esterr: pay 2.05%, receive MRR', 1040, 230, m('ex'), { size: 28, weight: 700 });
+    text(p, 'period 1: (0.50 − 2.05)% × 250m × ¼', 1040, 320, m('neg', 1), { size: 24, fill: COL.dim }); text(p, '= −CAD 968,750', 1040, 360, m('neg', 1.5), { size: 30, fill: C_RISK, weight: 700 });
+    text(p, 'period 2: (0.74 − 2.05)% × 250m × ¼', 1040, 430, m('neg', 3), { size: 24, fill: COL.dim }); text(p, '= −CAD 818,750', 1040, 470, m('neg', 3.5), { size: 30, fill: C_RISK, weight: 700 });
+    text(p, 'from period 8: net receipts', 1040, 550, m('pos'), { size: 28, fill: C_GAIN, weight: 700 });
+    text(p, 'MTM gain: PV(floating) > PV(fixed)', 1040, 640, m('mtm'), { size: 26, fill: C_GAIN, weight: 700 });
+    text(p, 'forward rates up → gain grows; down → loss', 1040, 690, m('up'), { size: 24, fill: COL.dim });
+    text(p, 'value = current settlement + PV of remaining settlements', 110, 840, m('a'), { size: 28, fill: COL.dim, weight: 600 });
+  }],
+
+  ['fyleton', 'Receive-fixed swap', (m) => {
+    const p = panel(0);
+    text(p, 'Fyleton: five-year swap, £200m, receives 2.38% fixed, pays MRR (0.71% first)', 800, 130, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, '(2.38% − 0.71%) × £200m × ½ = +£1,670,000', 800, 250, m('s1'), { size: 46, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    path(p, 'M110 330H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    lbox(p, 'Time passes, curve unchanged', C_RISK, 450, 440, 640, 80, m('time'), 30);
+    text(p, 'PV(floating paid) > PV(fixed received)', 450, 540, m('time', 1.5), { size: 28, anchor: 'middle' }); text(p, '→ MTM loss', 450, 595, m('time', 3), { size: 40, fill: C_RISK, anchor: 'middle', weight: 700 });
+    lbox(p, 'Forward rates fall', C_GAIN, 1150, 440, 640, 80, m('down'), 30);
+    text(p, 'PV(fixed received) > PV(floating paid)', 1150, 540, m('down', .6), { size: 28, anchor: 'middle' }); text(p, '→ MTM gain', 1150, 595, m('down', 1.8), { size: 40, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    text(p, 'Like a fixed-rate bond: discount as time passes on an upward curve, premium when rates fall', 800, 730, m('bond'), { size: 28, fill: C_PRICE, anchor: 'middle', weight: 600 });
+    text(p, 'a floating-rate note stays at par', 800, 785, m('bond', 3), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'A swap is a series of forwards at one fixed rate: the par swap rate.',
+    'The swap rate equates PV(fixed) with PV(expected floating).',
+    'Receive fixed ≈ long a bond; pay fixed ≈ short a bond.',
+    'Value = current settlement + PV of remaining settlements; it moves with forward rates.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
