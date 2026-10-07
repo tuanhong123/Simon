@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixed-Income Cash Flows and Types</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 2, title: 'Fixed-Income Cash Flows and Types', minutes: 9, language: 'en' };
+
+/* ---------- data (defined above BEATS) ---------- */
+const AMORT_A = 300 * .016 / (1 - 1.016 ** -10);
+const SCHED = (() => { let bal = 300; return Array.from({ length: 10 }, () => { const i = bal * .016, pr = AMORT_A - i; bal -= pr; return { i, pr, bal }; }); })();
+const PART_A = 172 * .016 / (1 - 1.016 ** -10);
+const balFull = k => { let b = 300; for (let j = 0; j < k; j++) b -= AMORT_A - b * .016; return Math.max(b, 0); };
+const balPart = k => { let b = 300; for (let j = 0; j < k; j++) b = b * 1.016 - 18.75; return b; };
+const CX = yy => 300 + (yy - 1) * 190, CY = pr => 720 - (pr - 85) * 17;
+const priceCurve = f => { const pts = []; for (let v = 1; v <= 6.001; v += .1) pts.push([CX(v), CY(f(v))]); return polyline(pts); };
+const yieldAxes = (p) => {
+  axes2(p, 240, 720, 1340, 230, 'yield (%)', 'price');
+  [2, 3, 4, 5, 6].forEach(v => { path(p, `M${CX(v)} 712V728`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, v + '%', CX(v), 758, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+};
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Cash flow structures', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 2', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Fixed-Income Cash', { x: 800, y: 400, size: 80, weight: 600, anchor: 'middle' });
+    T(g, 'Flows and Types', { x: 800, y: 495, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'same bond, different shapes of cash flow', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['bullet', 'Bullet bond', (m) => {
+    const p = panel(0), y = 600, xs = i => 260 + i * 108;
+    draw(path(p, `M200 ${y}H1420`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), .1, .7);
+    for (let i = 0; i <= 10; i++) { path(p, `M${xs(i)} ${y - 8}V${y + 8}`, { stroke: COL.chalk, 'stroke-width': 3 }); if (i % 2 === 0) text(p, i ? `Year ${i / 2}` : 'Start', xs(i), y + 48, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); }
+    text(p, 'Bullet bond: $300 million, 3.2% coupon, semiannual', 800, 130, .3, { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    const g0 = G(p, { y: 20, o: 0 }); mk('rect', { x: xs(0) - 34, y: y - 220, width: 68, height: 210, fill: COL.task, 'fill-opacity': .88, rx: 5 }, g0); tw(g0, { o: 1, y: 0 }, m('a'), .6, out);
+    text(p, 'investors lend $300m', xs(0) - 40, y - 245, m('a', .3), { size: 28, fill: COL.task, weight: 600 });
+    for (let i = 1; i <= 10; i++) {
+      const last = i === 10, g = G(p, { y: 20, o: 0 }), t = last ? m('c') : m('b', .1 + (i - 1) * .3);
+      mk('rect', { x: xs(i) - 24, y: y - 80, width: 48, height: 72, fill: COL.good, 'fill-opacity': .9, rx: 5 }, g);
+      if (last) mk('rect', { x: xs(i) - 24, y: y - 80 - 210, width: 48, height: 210, fill: COL.task, 'fill-opacity': .88, rx: 5 }, g);
+      T(g, last ? '$304.8m' : '$4.8m', { x: xs(i), y: y - (last ? 305 : 94), size: 22, fill: COL.chalk, weight: 600, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, t, .5, out);
+    }
+    text(p, 'interest only, then one lump of principal', 1290, y - 160, m('c', .5), { size: 28, fill: COL.task, anchor: 'end', weight: 600 });
+    show(pill(p, 'known income · set maturity', COL.whole, 800, 780, 0), m('d'));
+  }],
+
+  ['amort', 'Fully amortizing loan', (m) => {
+    const p = panel(0), base = 700, k = 9, bx = i => 270 + i * 108;
+    text(p, 'A  =  r × Principal ÷ [1 − (1 + r)^−N]   =   0.016 × 300 ÷ [1 − 1.016^−10]   =   $32.70 million', 800, 110, m('f'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'level payment every six months', 800, 160, m('f', 1), { size: 28, fill: COL.dim, anchor: 'middle' });
+    draw(path(p, `M200 ${base}H1420`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), .1, .7);
+    const gi = [], gp = [];
+    SCHED.forEach((s, j) => {
+      const i = j + 1, g = G(p, { y: 20, o: 0 });
+      mk('rect', { x: bx(i) - 38, y: base - s.pr * k, width: 76, height: s.pr * k, fill: COL.task, 'fill-opacity': .88 }, g);
+      const ri = mk('rect', { x: bx(i) - 38, y: base - AMORT_A * k, width: 76, height: s.i * k, fill: COL.good }, g);
+      T(g, '32.7', { x: bx(i), y: base - AMORT_A * k - 12, size: 22, fill: COL.chalk, weight: 600, anchor: 'middle' });
+      T(g, 'Yr ' + (i / 2), { x: bx(i), y: base + 36, size: 22, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('bars', .1 + j * .25), .5, out); gi.push(ri); gp.push(g);
+    });
+    const leg = (s, c, y, mk_) => { const g = G(p, { o: 0 }); mk('rect', { x: 250, y: y - 20, width: 24, height: 24, rx: 5, fill: c }, g); T(g, s, { x: 290, y, size: 26, fill: COL.dim }); show(g, mk_); };
+    leg('Interest', COL.good, 235, m('int')); leg('Principal', COL.task, 275, m('prin'));
+    text(p, 'balance after the last payment: 0', 1420, 780, m('end'), { size: 30, fill: COL.chalk, anchor: 'end', weight: 600 });
+  }],
+
+  ['balloon', 'Partial amortization', (m) => {
+    const p = panel(0), X = i => 280 + i * 95, Y = v => 740 - v * 1.8;
+    axes2(p, 240, 740, 1250, 170, 'payments (every six months)', 'principal owed ($m)');
+    [0, 2, 4, 6, 8, 10].forEach(i => { path(p, `M${X(i)} 732V748`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, String(i), X(i), 782, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    [0, 150, 300].forEach(v => text(p, String(v), 224, Y(v) + 8, .3, { size: 24, fill: COL.dim, anchor: 'end' }));
+    const line = (pts, c, t, lab, lx, ly, lt) => { draw(path(p, polyline(pts), { stroke: c, 'stroke-width': 6 }, { d: 0 }), t, 1.6); text(p, lab, lx, ly, lt, { size: 28, fill: c, weight: 600 }); };
+    line(Array.from({ length: 11 }, (_, i) => [X(i), Y(balPart(i))]).concat([[X(10), Y(0)]]), COL.rat, m('a', 5), 'Partial: $150m balloon', X(10) + 20, Y(150) + 10, m('a', 6.5));
+    line([[X(0), Y(300)], [X(10), Y(300)], [X(10), Y(0)]], COL.whole, m('b'), 'Bullet', X(10) + 20, Y(300) + 10, m('b', 1.2));
+    line(Array.from({ length: 11 }, (_, i) => [X(i), Y(balFull(i))]), COL.task, m('c'), 'Fully amortizing', X(10) + 20, Y(0) + 6, m('c', 1.4));
+    text(p, 'amortizing:  higher early cash flow · lower credit risk · more reinvestment risk', 800, 880, m('d'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['sinking', 'Sinking fund and waterfall', (m) => {
+    const p = panel(0);
+    text(p, 'Sinking fund', 420, 150, m('sink'), { size: 42, fill: COL.whole, anchor: 'middle', weight: 600 });
+    axes2(p, 130, 640, 720, 230, 'time', 'principal owed');
+    const pts = [[130, 270], [230, 270], [230, 340], [360, 340], [360, 420], [490, 420], [490, 500], [620, 500], [620, 640]];
+    draw(path(p, polyline(pts), { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('sink', 1.5), 3);
+    text(p, 'part of the bond is retired', 420, 700, m('sink', 3), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'before maturity', 420, 738, m('sink', 3.4), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Waterfall (ABS)', 1180, 150, m('wf'), { size: 42, fill: COL.rat, anchor: 'middle', weight: 600 });
+    [['Tranche A', 'principal first', COL.good], ['Tranche B', 'after A is repaid', COL.whole], ['Tranche C', 'after A and B', COL.bad]].forEach(([n, s, c], i) => {
+      const y = 280 + i * 130, g = G(p, { o: 0 });
+      T(g, n, { x: 900, y: y + 10, size: 30, fill: c, weight: 600, anchor: 'end' });
+      mk('rect', { x: 920, y: y - 32, width: 360, height: 64, rx: 8, fill: 'none', stroke: c, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, g);
+      T(g, s, { x: 1300, y: y + 10, size: 24, fill: COL.dim });
+      show(g, m('wf', .6 + i * .5));
+      const r = mk('rect', { x: 920, y: y - 32, width: 0, height: 64, rx: 8, fill: c, 'fill-opacity': .9 }, p); tw(r, { a_width: 360 }, m('wf', 3 + i * 2.2), 1.4);
+    });
+    text(p, 'losses hit the junior tranche first', 1180, 700, m('end'), { size: 30, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'both reduce credit risk · both add reinvestment risk', 800, 840, m('end', 2.2), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['variable', 'Floating-rate note', (m) => {
+    const p = panel(0), xs = [480, 800, 1120, 1440], mrr = [-.5, .15, .25, .5], pay = ['1,250,000', '1,656,250', '1,718,750', '1,875,000'], marks = ['ex', 'b', 'c', 'd'];
+    text(p, 'FRN coupon  =  market reference rate (MRR)  +  credit spread', 800, 120, m('f'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    [['MRR', 300, COL.whole], ['+ spread', 370, COL.bad], ['= coupon', 450, COL.good], ['interest paid', 520, COL.task]].forEach(([s, y, c], i) => text(p, s, 60, y, m('f', 1 + i * .3), { size: 28, fill: c, weight: 600 }));
+    xs.forEach((x, j) => {
+      const t = m(marks[j]), cp = 2.5 + mrr[j];
+      text(p, (mrr[j] < 0 ? '−' : '') + Math.abs(mrr[j]).toFixed(2) + '%', x, 300, t, { size: 32, fill: COL.whole, anchor: 'middle', weight: 600 });
+      text(p, '2.50%', x, 370, t + .3, { size: 32, fill: COL.bad, anchor: 'middle', weight: 600 });
+      text(p, cp.toFixed(2) + '%', x, 450, t + .6, { size: 40, fill: COL.good, anchor: 'middle', weight: 700 });
+      const g = G(p, { o: 0 }); mk('rect', { x: x - 60, y: 790 - cp * 60, width: 120, height: cp * 60, rx: 6, fill: COL.good, 'fill-opacity': .88 }, g); show(g, t + .6); tw(g, { o: 1 }, t + .6, .5);
+      text(p, '€' + pay[j], x, 530 + 0, m('e', .3 + j * .9), { size: 30, fill: COL.task, anchor: 'middle', weight: 600 });
+    });
+    text(p, '€250 million note · paid quarterly', 800, 590, m('e'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'the coupon adjusts: less interest rate risk, but credit risk remains', 800, 860, m('risk'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['special', 'Other coupon adjustments', (m) => {
+    const p = panel(0);
+    [[430, 300, COL.good, 'Step-up bond', ['coupon rises by a set margin', 'on set dates'], 'step'], [1170, 300, COL.bad, 'Credit-linked', ['coupon rises if credit weakens', 'e.g. the leverage ratio goes up'], 'credit'],
+     [430, 590, COL.task, 'Payment in kind (PIK)', ['interest is added to the principal', 'no cash paid; usually a higher rate'], 'pik'], [1170, 590, COL.rat, 'Sustainability-linked', ['+0.50% if the issuer misses', 'a carbon-reduction target'], 'esg']]
+      .forEach(([x, y, c, t, l, mark]) => show(infoCard(p, x, y, 640, 220, c, t, l, 38), m(mark)));
+  }],
+
+  ['indexed', 'Index-linked bonds', (m) => {
+    const p = panel(0);
+    text(p, 'Capital-indexed bond: the principal adjusts', 800, 130, m('tips'), { size: 42, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'principal $115,000,000 · coupon 1.00% a year · paid twice a year', 800, 200, m('tips', 1), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'price index: 265.00  →  267.25', 800, 330, m('cpi'), { size: 40, fill: COL.whole, anchor: 'middle', weight: 600 });
+    text(p, 'adjustment = (267.25 − 265) ÷ 265 = 0.849%', 800, 400, m('cpi', 2.2), { size: 34, fill: COL.chalk, anchor: 'middle' });
+    text(p, 'adjusted principal = 115,000,000 × 1.00849', 800, 500, m('adj'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    const big = T(p, '$115,000,000', { x: 800, y: 575, size: 54, fill: COL.task, weight: 700, anchor: 'middle', o: 0 }); show(big, m('adj'));
+    prog(q => { big.textContent = '$' + Math.round(115000000 * (1 + q * .00849)).toLocaleString('en-US'); }, m('adj', .8), 1.6);
+    text(p, 'coupon = 1.00% × 115,976,350 ÷ 2  =  $579,882', 800, 665, m('coup'), { size: 38, fill: COL.good, anchor: 'middle', weight: 600 });
+    show(pill(p, 'Interest-indexed: principal fixed, only the coupon adjusts', COL.rat, 800, 780, 0, 28), m('int'));
+  }],
+
+  ['zero', 'Zero-coupon and deferred', (m) => {
+    const p = panel(0), y1 = 330, y2 = 740, x = i => 300 + i * 200;
+    text(p, 'Zero-coupon', 130, 150, m('a'), { size: 40, fill: COL.good, weight: 600 });
+    draw(path(p, `M240 ${y1}H1360`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('a'), .6);
+    const pr = G(p, { y: 20, o: 0 }), par = G(p, { y: 20, o: 0 });
+    mk('rect', { x: x(0) - 40, y: y1 - 119, width: 80, height: 119, fill: COL.task, 'fill-opacity': .88, rx: 5 }, pr);
+    mk('rect', { x: x(5) - 40, y: y1 - 140, width: 80, height: 140, fill: COL.task, 'fill-opacity': .88, rx: 5 }, par);
+    tw(pr, { o: 1, y: 0 }, m('a', .4), .6, out); tw(par, { o: 1, y: 0 }, m('a', 2), .6, out);
+    text(p, 'price (discount)', x(0), y1 + 45, m('a', .6), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'par', x(5), y1 + 45, m('a', 2.2), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${x(0) + 60} ${y1 - 130}Q${(x(0) + x(5)) / 2} ${y1 - 260} ${x(5) - 60} ${y1 - 150}`, { stroke: COL.good, 'stroke-width': 5 }, { d: 0 }), m('a', 2.8), 1);
+    text(p, 'interest = par − price, paid at maturity', 800, y1 - 215, m('a', 3.4), { size: 30, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'illustrative price', 1360, y1 + 95, m('a', .6), { size: 22, fill: COL.faint, anchor: 'end' });
+    show(pill(p, 'no coupons to reinvest', COL.whole, 800, 470, 0, 28), m('b'));
+    text(p, 'Deferred coupon', 130, 580, m('c'), { size: 40, fill: COL.rat, weight: 600 });
+    draw(path(p, `M240 ${y2}H1360`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('c'), .6);
+    for (let i = 3; i <= 5; i++) { const g = G(p, { y: 20, o: 0 }); mk('rect', { x: x(i) - 28, y: y2 - 90, width: 56, height: 90, fill: COL.good, 'fill-opacity': .9, rx: 5 }, g); if (i === 5) mk('rect', { x: x(i) - 28, y: y2 - 90 - 140, width: 56, height: 140, fill: COL.task, 'fill-opacity': .88, rx: 5 }, g); tw(g, { o: 1, y: 0 }, m('c', 2 + (i - 3) * .6), .5, out); }
+    text(p, 'no coupons at first', x(0.9), y2 - 40, m('c', 1.2), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'higher coupons later', x(2.1), y2 - 125, m('c', 3.8), { size: 28, fill: COL.good, anchor: 'start', weight: 600 });
+  }],
+
+  ['calls', 'Callable bonds', (m) => {
+    const p = panel(0);
+    yieldAxes(p);
+    draw(path(p, priceCurve(v => bondPrice(v)), { stroke: COL.whole, 'stroke-width': 5 }, { d: 0 }), m('call'), 1.6);
+    text(p, 'non-callable bond', CX(1) + 20, CY(bondPrice(1)) - 14, m('call', 1.2), { size: 26, fill: COL.whole, weight: 600 });
+    show(infoCard(p, 1180, 270, 520, 230, COL.rat, 'Call schedule', ['no call for the first 3 years', '3–4 years: 103.25 · 4–5 years: 102.50', 'then declining toward par'], 34), m('prot'));
+    draw(path(p, `M${CX(1)} ${CY(103.25)}H${CX(6)}`, { stroke: COL.rat, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), m('cap'), .8);
+    text(p, 'call price 103.25', CX(1) + 10, CY(103.25) - 14, m('cap', .3), { size: 26, fill: COL.rat, weight: 600 });
+    draw(path(p, priceCurve(v => Math.min(bondPrice(v), 103.25)), { stroke: COL.task, 'stroke-width': 7 }, { d: 0 }), m('cap', .6), 1.6);
+    text(p, 'callable: price capped', CX(1.2), CY(103.25) + 46, m('cap', 1.5), { size: 28, fill: COL.task, weight: 700 });
+    show(pill(p, 'callable bond yields more than non-callable', COL.good, 800, 850, 0, 28), m('comp'));
+    text(p, 'make-whole call: price based on a government yield, so rarely used', 240, 800, m('make'), { size: 26, fill: COL.dim, anchor: 'start' });
+  }],
+
+  ['puts', 'Putable bonds', (m) => {
+    const p = panel(0);
+    yieldAxes(p);
+    draw(path(p, priceCurve(v => bondPrice(v)), { stroke: COL.whole, 'stroke-width': 5 }, { d: 0 }), .3, 1.4);
+    text(p, 'non-putable bond', CX(1) + 20, CY(bondPrice(1)) - 14, .8, { size: 26, fill: COL.whole, weight: 600 });
+    const dot = G(p, { x: CX(3.2), y: CY(100), o: 0 }); mk('circle', { r: 13, fill: COL.task }, dot); show(dot, m('a'));
+    const rd = T(p, 'Yield 3.20%    Price 100.00', { x: 1330, y: 300, size: 34, fill: COL.chalk, weight: 600, anchor: 'end', o: 0 }); show(rd, m('a'));
+    prog(q => { const v = 3.2 + 2 * q; put(dot, { x: CX(v), y: CY(bondPrice(v)) }); rd.textContent = `Yield ${v.toFixed(2)}%    Price ${bondPrice(v).toFixed(2)}`; }, m('a', .8), 1.8);
+    draw(path(p, `M${CX(3.2)} ${CY(100)}H${CX(6)}`, { stroke: COL.good, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), m('b'), .8);
+    text(p, 'put price (par) = floor', CX(6) - 10, CY(100) - 18, m('b', .3), { size: 26, fill: COL.good, anchor: 'end', weight: 600 });
+    draw(path(p, priceCurve(v => Math.max(bondPrice(v), 100)), { stroke: COL.good, 'stroke-width': 7 }, { d: 0 }), m('b', .5), 1.6);
+    show(pill(p, 'putable bond: higher price, lower yield', COL.good, 800, 850, 0, 28), m('c'));
+  }],
+
+  ['convert', 'Convertible bonds', (m) => {
+    const p = panel(0), X = s => 300 + (s - 20) * 25, Y = v => 720 - v * .3, floor = 1000, ratio = 1000 / 42;
+    text(p, 'Face value €1,000  ·  conversion price €42', 800, 105, m('ex'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'conversion ratio = 1,000 ÷ 42 = 23.81 shares', 800, 155, m('ratio'), { size: 32, fill: COL.rat, anchor: 'middle', weight: 600 });
+    axes2(p, 240, 720, 1360, 250, 'share price (€)', 'value (€)');
+    [20, 28, 35, 42, 50, 60].forEach(s => { path(p, `M${X(s)} 712V728`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, String(s), X(s), 758, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'today €28: conversion price is a 50% premium', X(28), 212, m('prem'), { size: 28, fill: COL.task, anchor: 'start', weight: 600 });
+    const tick = (s, c, t0) => { const l = path(p, `M${X(s)} 240V712`, { stroke: c, 'stroke-width': 2, 'stroke-dasharray': '8 8' }, { d: 0 }); draw(l, t0, .6); };
+    tick(28, COL.task, m('prem')); tick(42, COL.rat, m('ex', 2.5));
+    draw(path(p, polyline([[X(20), Y(ratio * 20)], [X(60), Y(ratio * 60)]]), { stroke: COL.rat, 'stroke-width': 6 }, { d: 0 }), m('val'), 1.4);
+    text(p, 'conversion value = 23.81 × share price', X(46), Y(ratio * 46) + 70, m('val', .5), { size: 26, fill: COL.rat, weight: 600 });
+    const d1 = G(p, { x: X(35), y: Y(ratio * 35), o: 0 }); mk('circle', { r: 12, fill: COL.rat }, d1); show(d1, m('val', 1.6));
+    text(p, '€833.35 at €35', X(35) + 22, Y(ratio * 35) + 40, m('val', 2), { size: 28, fill: COL.rat, weight: 700 });
+    draw(path(p, polyline([[X(20), Y(floor)], [X(42), Y(floor)]]), { stroke: COL.task, 'stroke-width': 6 }, { d: 0 }), m('hold'), 1);
+    text(p, 'bond price ≈ €1,000: keep the bond', X(21), Y(floor) - 22, m('hold', .6), { size: 28, fill: COL.task, weight: 700 });
+    draw(path(p, polyline([[X(42), Y(ratio * 42)], [X(60), Y(ratio * 60)]]), { stroke: COL.task, 'stroke-width': 9 }, { d: 0 }), m('up'), 1);
+    text(p, 'tracks conversion value', X(50), Y(ratio * 50) - 60, m('up', .5), { size: 26, fill: COL.task, weight: 600, anchor: 'end' });
+    text(p, 'like an ordinary bond', X(21), Y(floor) + 50, m('low'), { size: 26, fill: COL.task, weight: 600 });
+    show(pill(p, 'CoCo: converts on the downside, automatically, e.g. low bank capital', COL.bad, 800, 850, 0, 26), m('coco'));
+  }],
+
+  ['markets', 'Where a bond is issued', (m) => {
+    const p = panel(0);
+    [[430, 260, COL.good, 'Domestic bond', ['local issuer, local market', 'a US firm\'s dollar bond in the US'], 'dom'], [1170, 260, COL.whole, 'Foreign bond', ['foreign borrower, local market', 'a US firm\'s yuan bond in China'], 'for'],
+     [430, 490, COL.task, 'Eurobond', ['outside any one country\'s rules', 'any currency · lighter regulation'], 'euro'], [1170, 490, COL.rat, 'Global bond', ['Eurobond market + a domestic market', 'issued at the same time'], 'glob']]
+      .forEach(([x, y, c, t, l, mark]) => show(infoCard(p, x, y, 640, 200, c, t, l, 40), m(mark)));
+    text(p, 'the currency affects the price more than the place of issue', 800, 690, m('note'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    show(pill(p, 'Sukuk: returns from real assets, no interest (Islamic law)', COL.good, 800, 790, 0, 28), m('sukuk'));
+  }],
+
+  ['tax', 'Taxes', (m) => {
+    const p = panel(0);
+    [['Interest income', 'usually taxed as ordinary income', COL.good, 'int'], ['Capital gain', 'sold above cost: often a different tax rate', COL.task, 'gain'],
+     ['Government bonds', 'special rules: US Treasuries, municipal bonds', COL.whole, 'exempt'], ['Issuer', 'interest is usually tax deductible', COL.rat, 'issuer'],
+     ['Bought below par', 'the discount often accrues as taxable interest', COL.bad, 'oid']].forEach(([a, b, c, mark], i) => {
+      const y = 200 + i * 130;
+      show(pill(p, a, c, 400, y, 0, 32), m(mark)); text(p, b, 720, y + 11, m(mark, .4), { size: 32, fill: COL.chalk, weight: 500 });
+    });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Bullet, amortizing, floating, zero and deferred: the main shapes.', 'w1'], ['Amortizing lowers credit risk but adds reinvestment risk.', 'w2'],
+     ['Calls help issuers; puts and conversion help investors.', 'w3'], ['Place of issue and taxes also affect cash flows.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
