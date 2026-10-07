@@ -76,11 +76,11 @@ const BEATS = [
 
   ['capex', 'Capital spending and funding', (m) => {
     const p = panel(0), base = 740, k = 2.4;
-    axisLine(p, 140, 1300, base);
-    stackBar(p, 330, base, k, [[100, COL.task, 'maintenance'], [80, COL.good, 'growth']], m('maint'), 'Capital spending 180', true);
-    draw(path(p, `M230 ${base - 100 * k}H620`, { stroke: COL.task, 'stroke-width': 3, 'stroke-dasharray': '8 8' }, { d: 0 }), m('maint', .6), .6);
-    text(p, '≈ depreciation and amortization 100', 636, base - 100 * k + 8, m('maint', .9), { size: 24, fill: COL.task });
-    stackBar(p, 920, base, k, [[150, COL.whole, 'operating cash flow'], [30, COL.bad, 'new borrowing']], m('fund'), 'Funding 180');
+    axisLine(p, 140, 1500, base);
+    stackBar(p, 430, base, k, [[100, COL.task, 'maintenance'], [80, COL.good, 'growth']], m('maint'), 'Capital spending 180', true);
+    draw(path(p, `M330 ${base - 100 * k}H540`, { stroke: COL.task, 'stroke-width': 3, 'stroke-dasharray': '8 8' }, { d: 0 }), m('maint', .6), .6);
+    text(p, '≈ depreciation and amortization 100', 556, base - 100 * k + 8, m('maint', .9), { size: 24, fill: COL.task });
+    stackBar(p, 1180, base, k, [[150, COL.whole, 'operating cash flow'], [30, COL.bad, 'new borrowing']], m('fund'), 'Funding 180');
     text(p, 'Capital structure: start from historical leverage and financial strategy, then adjust for funding', 800, 860, m('note'), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
   }],
 
