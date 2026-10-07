@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Equity Valuation: Concepts and Basic Tools</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 12, title: 'Equity Valuation: Concepts and Basic Tools', minutes: 11, language: 'en' };
+
+const cardRow = (p, m, items, { x0 = 100, step = 300, w = 270, y = 250, h = 380, hs = 30, bs = 24, n = 20 } = {}) => items.forEach(([head, body, c, mk_], i) =>
+  infoCard(p, x0 + i * step, y, w, h, c, head, body, m(mk_), { hs, bs, n }));
+const GG = [['r 9%, g 4%', 41.6, COL.whole], ['r 8%', 52.0, COL.good], ['r 10%', 34.67, COL.bad], ['g 5%', 52.5, COL.task]];
+const PVS = [['D1', 2.018], ['D2', 2.037], ['D3', 2.056]], TERM = 42.76;
+const stackLab = (p, cx, base, k, segs, t0, label, left) => {
+  const g = G(p, { y: 30, o: 0 }); let y = base;
+  segs.forEach(([v, c, name]) => { const h = v * k; y -= h; mk('rect', { x: cx - 100, y: y + 1, width: 200, height: h - 2, rx: 4, fill: c, 'fill-opacity': .88 }, g);
+    T(g, `${name} ${v}`, { x: left ? cx - 116 : cx + 116, y: y + h / 2 + 8, size: 26, fill: c, anchor: left ? 'end' : 'start', weight: 600 }); });
+  T(g, label, { x: cx, y: base + 42, size: 26, fill: COL.dim, anchor: 'middle' }); tw(g, { o: 1, y: 0 }, t0, .6, out); return g;
+};
+
+const BEATS = [
+  introBeat('Equity Investments, Chapter 12', 'Equity Valuation:', 'Concepts and Basic Tools', 'putting a value on a share'),
+
+  ['mispriced', 'Value versus price', (m) => {
+    const p = panel(0), X = v => 200 + v * 50, y = 460;
+    axisLine(p, 200, 1480, y);
+    [0, 5, 10, 15, 20, 25].forEach(v => text(p, '$' + v, X(v), y + 50, .3, { size: 26, fill: COL.dim, anchor: 'middle' }));
+    const bandg = G(p, { o: 0 }); mk('rect', { x: X(7), y: y - 80, width: X(13) - X(7), height: 80, fill: COL.task, 'fill-opacity': .18 }, bandg); show(bandg, m('conf'));
+    text(p, 'low confidence: wide gap needed', X(10), y - 100, m('conf'), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+    const g = G(p, { x: X(10), y: y - 6, o: 0 }); mk('path', { d: 'M0 0L-18 -40H18Z', fill: COL.good }, g); show(g, m('val'));
+    text(p, 'Intrinsic value $10', X(10), y - 180, m('val'), { size: 34, fill: COL.good, anchor: 'middle', weight: 700 });
+    [[5, 'Price $5', 'undervalued', COL.good, 'under'], [10, 'Price $10', 'fairly valued', COL.task, 'fair'], [20, 'Price $20', 'overvalued', COL.bad, 'over']].forEach(([v, a, b, c, k]) => {
+      const d = G(p, { x: X(v), y: y + 120, o: 0 }); mk('circle', { r: 18, fill: c }, d); show(d, m(k));
+      text(p, a, X(v), y + 190, m(k), { size: 28, anchor: 'middle', weight: 600 }); text(p, b, X(v), y + 235, m(k, .3), { size: 32, fill: c, anchor: 'middle', weight: 700 });
+    });
+    text(p, '$10.00 value vs $10.05 price is not a signal', 800, 140, m('conf', 1.5), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['models', 'Three families of models', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Present value', [['discount expected dividends or free cash flow to equity'], ['+ rooted in fundamentals', COL.good], ['− sensitive to inputs', COL.bad]], COL.whole, 'pv'],
+      ['Multiplier', [['price or enterprise value against earnings, sales, EBITDA'], ['+ simple, quick', COL.good], ['− inherits mispricing of comparables', COL.bad]], COL.task, 'mult'],
+      ['Asset-based', [['market value of assets minus liabilities'], ['+ tangible, measurable assets', COL.good], ['− weak for intangibles', COL.bad]], COL.real, 'asset']], { x0: 130, step: 470, w: 430, y: 170, h: 380, hs: 40, bs: 28, n: 32 });
+    text(p, 'Analysts often use several', 800, 760, m('note'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['dividends', 'Dividends and their chronology', (m) => {
+    const p = panel(0);
+    [['Regular', COL.whole], ['Extra (one-off)', COL.task], ['Stock dividend', COL.nat], ['Stock split', COL.good], ['Reverse split', COL.real], ['Repurchase', COL.irr]].forEach(([s, c], i) =>
+      show(pill(p, s, c, 250 + (i % 3) * 400, 160 + Math.floor(i / 3) * 90, 0, 28), m('types', i * 1.3)));
+    text(p, 'splits do not change the value of the company', 800, 340, m('types', 6.5), { size: 26, fill: COL.dim, anchor: 'middle' });
+    path(p, 'M150 590H1450', { stroke: COL.chalk, 'stroke-width': 4 });
+    [['Declaration', 'board announces', 250, 'chron', COL.whole], ['Ex-dividend', 'new buyers miss it', 640, 'ex', COL.bad], ['Holder of record', 'who gets paid', 1000, 'rec', COL.task], ['Payment', 'cash is sent', 1350, 'pay', COL.good]].forEach(([n, d, x, k, c]) => {
+      const g = G(p, { x, y: 590, o: 0 }); mk('circle', { r: 16, fill: c }, g); show(g, m(k));
+      text(p, n, x, 530, m(k), { size: 30, fill: c, anchor: 'middle', weight: 700 }); text(p, d, x, 660, m(k, .3), { size: 24, fill: COL.dim, anchor: 'middle' });
+    });
+    text(p, 'price drops by about the dividend: $50 → $49', 640, 740, m('ex', .8), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+  }],
+
+  ['pv', 'Present value of dividends', (m) => {
+    const p = panel(0);
+    text(p, 'Value = present value of expected dividends', 800, 170, m('eq'), { size: 40, anchor: 'middle', weight: 700 });
+    text(p, 'V₀  =  D₁ ÷ (1 + r)  +  D₂ ÷ (1 + r)²  +  D₃ ÷ (1 + r)³  +  …', 800, 280, m('eq', 1), { size: 44, fill: COL.whole, anchor: 'middle', weight: 600 });
+    show(box(p, 380, 400, 840, 280, COL.task, m('pref'), .1), 0);
+    text(p, 'Preferred stock: a fixed dividend forever', 800, 470, m('pref'), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'V = D ÷ r  =  $5 ÷ 0.08', 800, 560, m('pref', 1), { size: 44, anchor: 'middle', weight: 600 });
+    text(p, '= $62.50', 800, 640, m('pref', 1.6), { size: 52, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'Common stock needs a growth assumption for dividends', 800, 780, m('note'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['gordon', 'The Gordon growth model', (m) => {
+    const p = panel(0), base = 640, k = 7;
+    text(p, 'V₀ = D₁ ÷ (r − g)', 800, 130, m('base'), { size: 52, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, 'D₀ = $2, g = 4%  →  D₁ = $2.08;  r = 9%:  2.08 ÷ 0.05 = $41.60', 800, 200, m('base', 1), { size: 28, fill: COL.dim, anchor: 'middle' });
+    axisLine(p, 150, 1100, base);
+    GG.forEach(([n, v, c], i) => bar(p, 260 + i * 240, base, k, [[v, c]], i ? m('sens', i * 1.2 - 1.2) : m('base', 1.4), { w: 130, label: n, top: '$' + v.toFixed(2) }));
+    text(p, 'Very sensitive to r and g', 1150, 330, m('sens'), { size: 28, fill: COL.bad, weight: 700 });
+    text(p, 'g = retention × ROE', 1180, 440, m('g'), { size: 34, fill: COL.good, weight: 700 }); text(p, '40% × 10% = 4%', 1180, 490, m('g', .5), { size: 34, fill: COL.good, weight: 700 });
+    text(p, 'Implied r = D₁ ÷ P₀ + g = 5% + 4% = 9%', 800, 810, m('impl'), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['twostage', 'Multistage dividend discount model', (m) => {
+    const p = panel(0), base = 700, k = 7;
+    axisLine(p, 150, 1130, base);
+    text(p, 'Dividends +10% for 3 years, then +4% forever; r = 9%', 700, 130, m('hi'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    PVS.forEach(([n, v], i) => { bar(p, 260 + i * 200, base, k, [[v, COL.whole]], m('pvs', i * .5), { w: 110, top: '$' + v.toFixed(2), label: 'PV of ' + n }); });
+    text(p, 'dividends 2.20, 2.42, 2.66', 360, 220, m('hi', 1.2), { size: 26, fill: COL.whole, anchor: 'middle' });
+    bar(p, 930, base, k, [[TERM, COL.task]], m('tv', 1.8), { w: 150, top: '$42.76', label: 'PV of terminal value' });
+    text(p, 'at year 3: 2.77 ÷ 0.05 = $55.37', 930, 190, m('tv'), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'Total value $48.87', 1290, 360, m('sum'), { size: 40, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'most value is in the', 1290, 450, m('note'), { size: 28, fill: COL.dim, anchor: 'middle' }); text(p, 'terminal value', 1290, 490, m('note'), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['multiples', 'Price multiples', (m) => {
+    const p = panel(0), x0 = 1000, k = 20;
+    text(p, 'P/E = price ÷ EPS = 60 ÷ 4 = 15×', 100, 200, m('pe'), { size: 34, weight: 700 });
+    text(p, 'Peers at 18×  →  18 × 4 = $72 > $60: undervalued', 100, 330, m('comp'), { size: 30, fill: COL.good, weight: 700 });
+    text(p, 'Justified P/E = payout ÷ (r − g)', 100, 470, m('just'), { size: 32, fill: COL.task, weight: 700 }); text(p, '= 0.60 ÷ 0.05 = 12×', 100, 520, m('just', .5), { size: 32, fill: COL.task, weight: 700 });
+    text(p, 'higher growth or lower r  →  higher multiple', 100, 600, m('more'), { size: 28, fill: COL.dim });
+    ['P/B', 'P/S', 'P/CF'].forEach((s, i) => show(pill(p, s, COL.whole, 160 + i * 180, 700, 0, 26), m('more', .8 + i * .5)));
+    [[15, 'Company', COL.whole, 'pe', 190], [18, 'Peers', COL.good, 'comp', 330], [12, 'Justified', COL.task, 'just', 470]].forEach(([v, n, c, k_, y]) => {
+      const g = G(p, { x: -20, o: 0 }); mk('rect', { x: x0, y: y - 45, width: v * k, height: 60, rx: 5, fill: c, 'fill-opacity': .88 }, g); T(g, `${n} ${v}×`, { x: x0 + v * k + 16, y: y - 4, size: 30, weight: 700 }); tw(g, { o: 1, x: 0 }, m(k_), .6, out); });
+  }],
+
+  ['ev', 'Enterprise value multiples', (m) => {
+    const p = panel(0), base = 640, k = .4;
+    axisLine(p, 130, 960, base);
+    const fl = (cx, from, to, c, label, top, t0) => { const g = G(p, { y: 30, o: 0 }), hi = Math.max(from, to); mk('rect', { x: cx - 70, y: base - hi * k, width: 140, height: Math.abs(to - from) * k, rx: 4, fill: c, 'fill-opacity': .88 }, g);
+      T(g, label, { x: cx, y: base + 42, size: 24, fill: COL.dim, anchor: 'middle' }); T(g, top, { x: cx, y: base - hi * k - 14, size: 28, weight: 700, anchor: 'middle' }); tw(g, { o: 1, y: 0 }, t0, .6, out); };
+    fl(240, 0, 800, COL.whole, 'Market cap', '800', m('ev'));
+    fl(430, 800, 1100, COL.bad, '+ Debt', '+300', m('ev', 1)); fl(620, 1000, 1100, COL.good, '− Cash', '−100', m('ev', 2)); fl(810, 0, 1000, COL.task, 'Enterprise value', '1,000', m('ev', 3));
+    text(p, 'EV ÷ EBITDA = 1,000 ÷ 125 = 8×', 1020, 220, m('mult'), { size: 32, fill: COL.task, weight: 700 });
+    text(p, 'Peers at 10×  →  EV 1,250', 1020, 320, m('peer'), { size: 32, fill: COL.good, weight: 700 });
+    text(p, 'Equity = 1,250 − 300 + 100 = 1,050', 1020, 420, m('eq'), { size: 30, weight: 700 }); text(p, 'vs market cap 800: undervalued', 1020, 470, m('eq', 1), { size: 30, fill: COL.good, weight: 700 });
+    text(p, 'useful when capital structures differ', 1020, 580, m('eq', 2), { size: 26, fill: COL.dim });
+  }],
+
+  ['asset', 'Asset-based valuation', (m) => {
+    const p = panel(0), base = 700, k = .4;
+    axisLine(p, 130, 1100, base);
+    stackLab(p, 520, base, k, [[1000, COL.dim, 'book'], [300, COL.good, 'revaluation']], m('assets'), 'Assets at fair value 1,300', true);
+    stackLab(p, 900, base, k, [[600, COL.bad, 'liabilities'], [700, COL.whole, 'equity']], m('liab'), 'Claims 1,300');
+    text(p, 'Equity = 1,300 − 600 = 700', 1280, 160, m('eqv'), { size: 32, fill: COL.whole, anchor: 'middle', weight: 700 }); text(p, '700 ÷ 100 shares = $7.00', 1280, 220, m('eqv', .8), { size: 36, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'Best: tangible assets, liquidation', 1280, 740, m('note'), { size: 26, fill: COL.good, anchor: 'middle' }); text(p, 'Weak: value in intangibles and future earnings', 1280, 790, m('note', 1), { size: 26, fill: COL.bad, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['Compare value with price, and demand a wider gap when confidence is low.', 'w1'],
+    ['Present value models discount cash flows; Gordon: V = D₁ ÷ (r − g).', 'w2'],
+    ['Multiples, including EV multiples, compare firms quickly but depend on comparables.', 'w3'],
+    ['Asset-based models value assets minus liabilities; they fit asset-heavy firms.', 'w4']], 29); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
