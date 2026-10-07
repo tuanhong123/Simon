@@ -18,5 +18,8 @@
     // 1 Two depreciation lines whose gap opens and closes.
     reset(P('M228 40L572 140', 'a') + P('M228 40L480 140H572') + `<path class="t" style="--k:${k++}" d="M228 40L572 140L480 140Z" fill="currentColor" fill-opacity=".18" stroke="none"/>` +
       P('M228 150H572', 'a') + Tx(250, 170, 'temporary gap', 22) + C(530, 60, 24, 'a')),
+    // 2 An order book: bids and offers around a price, with a price line.
+    reset(P('M228 140H572', 'a') + [60, 100, 140].map((w, j) => P(`M400 ${120 - j * 22}h${w}`)).join('') + [60, 100, 140].map((w, j) => P(`M390 ${120 - j * 22}h${-w}`, 'a')).join('') +
+      Tx(250, 175, 'bids and offers', 22) + P('M228 60l50 30 50-20 60 40 70-60 60 20 54-30')),
   ];
 })();

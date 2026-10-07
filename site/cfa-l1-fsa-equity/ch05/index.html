@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Organization and Structure</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 5, title: 'Market Organization and Structure', minutes: 10, language: 'en', next: '../ch06/' };
+
+/* a row of equal cards: items [head, body lines..., colour, mark] */
+const cardRow = (p, m, items, { x0 = 100, step = 300, w = 270, y = 250, h = 380, hs = 30, bs = 24, n = 20 } = {}) => items.forEach(([head, body, c, mk_], i) =>
+  infoCard(p, x0 + i * step, y, w, h, c, head, body.map(s => [s]), m(mk_), { hs, bs, n }));
+
+const FUNCS = [['Save', 'save', COL.whole], ['Borrow', 'borrow', COL.nat], ['Raise capital', 'raise', COL.task], ['Hedge risk', 'hedge', COL.good], ['Exchange assets', 'exchange', COL.real], ['Trade on information', 'info', COL.irr]];
+const PAIRS = [[['Spot', 'immediate delivery', COL.whole], ['Forward / futures', 'delivery later', COL.task], 'a'],
+  [['Primary', 'new securities from the issuer', COL.good], ['Secondary', 'existing securities change hands', COL.irr], 'b'],
+  [['Money', 'debt maturing within a year', COL.whole], ['Capital', 'longer debt and equity', COL.task], 'c'],
+  [['Traditional', 'conventional securities', COL.good], ['Alternative', 'real estate, hedge funds, private equity', COL.nat], 'd'],
+  [['Public', 'open and regulated', COL.whole], ['Private', 'negotiated directly', COL.real], 'e']];
+const ASKS = [[20.10, 300], [20.05, 600], [20.00, 400]], BIDS = [[19.95, 500], [19.90, 300], [19.85, 800]];
+const rLev = (P) => (8 + P - 20) / P * 100;
+
+const BEATS = [
+  introBeat('Equity Investments, Chapter 5', 'Market Organization', 'and Structure', 'where and how securities trade'),
+
+  ['functions', 'Functions of the financial system', (m) => {
+    const p = panel(0), cx = 800, cy = 480;
+    FUNCS.forEach(([s, k, c], i) => {
+      const a = (-90 + i * 60) * Math.PI / 180, x = cx + Math.cos(a) * 480, y = cy + Math.sin(a) * 270, t0 = m(k);
+      draw(path(p, `M${cx + Math.cos(a) * 130} ${cy + Math.sin(a) * 100}L${x - Math.cos(a) * 130} ${y - Math.sin(a) * 40}`, { stroke: c, 'stroke-width': 3 }, { d: 0 }), t0, .6);
+      show(pill(p, s, c, x, y, 0, 28), t0 + .3);
+    });
+    const hub = G(p, { x: cx, y: cy, o: 0 });
+    mk('circle', { r: 120, fill: 'none', stroke: COL.chalk, 'stroke-width': 4 }, hub);
+    T(hub, 'Financial', { y: -4, size: 32, weight: 700, anchor: 'middle' }); T(hub, 'system', { y: 34, size: 32, weight: 700, anchor: 'middle' });
+    show(hub, .3);
+  }],
+
+  ['assets', 'Kinds of assets', (m) => {
+    const p = panel(0);
+    text(p, 'Five broad kinds of tradable assets', 800, 130, .2, { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Securities', ['debt, equity,', 'pooled funds'], COL.whole, 'sec', 130, 200], ['Currencies', ['exchange of', 'one for another'], COL.task, 'cur', 590, 200], ['Contracts', ['forwards, futures,', 'swaps, options'], COL.good, 'con', 1050, 200],
+     ['Commodities', ['oil, wheat,', 'metals'], COL.nat, 'com', 360, 500], ['Real assets', ['property,', 'equipment'], COL.real, 'real', 820, 500]].forEach(([h, b, c, k, x, y]) => infoCard(p, x, y, 420, 240, c, h, b.map(s => [s]), m(k), { hs: 36, bs: 28, n: 30, hy: 80 }));
+    text(p, 'Financial assets are claims; real assets are the things themselves', 800, 850, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['markets', 'Classifying markets', (m) => {
+    const p = panel(0);
+    PAIRS.forEach(([L, R, k], i) => {
+      const y = 140 + i * 140;
+      [[L, 120], [R, 840]].forEach(([[n, d, c], x], j) => {
+        const t0 = m(k, j * .5), g = G(p, { o: 0 });
+        mk('rect', { x, y, width: 640, height: 100, rx: 16, fill: c, 'fill-opacity': .12, stroke: c, 'stroke-width': 3 }, g);
+        T(g, n, { x: x + 24, y: y + 42, size: 32, fill: c, weight: 700 }); T(g, d, { x: x + 24, y: y + 80, size: 24, fill: COL.dim });
+        show(g, t0);
+      });
+      text(p, 'vs', 800, y + 62, m(k), { size: 26, fill: COL.dim, anchor: 'middle' });
+    });
+  }],
+
+  ['intermediaries', 'Financial intermediaries', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Broker', ['An agent: finds a counterparty for a client', 'takes no position'], COL.whole, 'broker'], ['Dealer', ['A principal: trades from its own inventory', 'earns the bid-ask spread'], COL.task, 'dealer'],
+      ['Exchange', ['Provides the marketplace and its rules'], COL.good, 'exch'], ['Arbitrageur', ['Buys low in one market, sells high in another', 'keeps prices consistent'], COL.real, 'arb']], { x0: 90, step: 370, w: 340, y: 200, h: 300, hs: 36, bs: 26, n: 26 });
+    show(pill(p, 'Banks, insurers and securitizers create new instruments', COL.dim, 800, 640, 0, 28), m('more'));
+  }],
+
+  ['short', 'Long and short positions', (m) => {
+    const p = panel(0), base = 700, k = 7;
+    axisLine(p, 120, 1100, base);
+    bar(p, 300, base, k, [[50, COL.whole]], m('borrow'), { label: 'Sell borrowed shares', top: '$50' });
+    bar(p, 650, base, k, [[40, COL.irr]], m('fall'), { label: 'Buy back', top: '$40' });
+    draw(path(p, `M${300 + 100} ${base - 50 * k}H${650 - 100}`, { stroke: COL.chalk, 'stroke-width': 3, 'stroke-dasharray': '8 8' }, { d: 0 }), m('fall'), .6);
+    text(p, 'return shares', 650, base + 85, m('ret'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'profit $10 per share', 790, base - 45 * k, m('ret', .6), { size: 32, fill: COL.good, weight: 700 });
+    box(p, 1180, 200, 300, 420, COL.bad, m('risk'), .1);
+    text(p, 'If the price rises', 1330, 290, m('risk'), { size: 30, fill: COL.bad, anchor: 'middle', weight: 700 });
+    text(p, 'loss has no', 1330, 380, m('risk', .4), { size: 28, anchor: 'middle' }); text(p, 'upper limit', 1330, 420, m('risk', .4), { size: 28, anchor: 'middle' });
+    draw(path(p, 'M1330 540V470', { stroke: COL.bad, 'stroke-width': 4 }, { d: 0 }), m('risk', .8), .5); draw(path(p, 'M1316 486L1330 470L1344 486', { stroke: COL.bad, 'stroke-width': 4 }, { d: 0 }), m('risk', 1.1), .3);
+    text(p, 'Short sales need margin', 1330, 580, m('risk', 1.2), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['leverage', 'Buying on margin', (m) => {
+    const p = panel(0), base = 740, k = 20;
+    axisLine(p, 120, 640, base);
+    bar(p, 380, base, k, [[8, COL.whole], [12, COL.bad]], m('buy'), { label: 'Position $20', w: 170 });
+    text(p, 'equity $8', 510, base - 4 * k + 8, m('buy', .6), { size: 26, fill: COL.whole, weight: 600 }); text(p, 'loan $12', 510, base - 14 * k + 8, m('buy', 1), { size: 26, fill: COL.bad, weight: 600 });
+    text(p, 'Leverage ratio = 20 ÷ 8 = 2.5', 380, 190, m('ratio'), { size: 34, anchor: 'middle', weight: 700 });
+    const grp = (y0, title, a, b, mk_, c) => {
+      text(p, title, 800, y0, m(mk_), { size: 32, fill: c, weight: 700 });
+      [[a, 'Unleveraged', y0 + 40], [b, 'On margin', y0 + 130]].forEach(([v, n, y], j) => {
+        const g = G(p, { x: -20, o: 0 });
+        mk('rect', { x: 800, y, width: Math.abs(v) * 5, height: 60, rx: 5, fill: j ? COL.task : COL.dim, 'fill-opacity': .88 }, g);
+        T(g, n, { x: 800, y: y - 8, size: 24, fill: COL.dim }); T(g, (v > 0 ? '+' : '−') + Math.abs(v) + '%', { x: 800 + Math.abs(v) * 5 + 14, y: y + 42, size: 32, fill: c, weight: 700 });
+        tw(g, { o: 1, x: 0 }, m(mk_, .5 + j * .5), .6, out);
+      });
+    };
+    grp(250, 'Price rises to $25', 25, 62.5, 'up', COL.good); grp(520, 'Price falls to $15', -25, -62.5, 'down', COL.bad);
+    text(p, 'Return on margin = leverage ratio × unleveraged return', 800, 850, m('down', 2), { size: 28, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['margincall', 'Margin call price', (m) => {
+    const p = panel(0), X = P => 250 + (24 - P) * 100, Y = r => 700 - r * 11;
+    axisLine(p, 200, 1500, 700); path(p, 'M200 700V100', { stroke: COL.chalk, 'stroke-width': 3 });
+    [24, 20, 16, 12].forEach(v => text(p, '$' + v, X(v), 745, .3, { size: 24, fill: COL.dim, anchor: 'middle' }));
+    [0, 25, 50].forEach(v => text(p, v + '%', 180, Y(v) + 8, .3, { size: 24, fill: COL.dim, anchor: 'end' }));
+    text(p, 'Equity ÷ price', 140, 80, .3, { size: 26, fill: COL.dim }); text(p, 'Stock price falls →', 1500, 790, .3, { size: 26, fill: COL.dim, anchor: 'end' });
+    text(p, 'Equity per share = 8 + (P − 20)', 800, 140, m('eq'), { size: 34, weight: 700, anchor: 'middle', fill: COL.whole });
+    draw(path(p, `M200 ${Y(25)}H1500`, { stroke: COL.bad, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), m('req'), .8);
+    text(p, 'maintenance margin 25%', 1480, Y(25) - 14, m('req', .6), { size: 26, fill: COL.bad, anchor: 'end', weight: 600 });
+    const pts = Array.from({ length: 41 }, (_, i) => 24 - i * .3);
+    draw(path(p, pts.map((P, i) => (i ? 'L' : 'M') + X(P) + ' ' + Y(rLev(P))).join(''), { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('fall'), 3);
+    const dot = G(p, { x: X(16), y: Y(25), o: 0 }); mk('circle', { r: 14, fill: COL.bad }, dot); show(dot, m('call'));
+    text(p, 'Margin call below $16', X(16) - 30, Y(25) + 70, m('call', .4), { size: 34, fill: COL.bad, anchor: 'end', weight: 700 });
+    text(p, '(8 + P − 20) ÷ P = 25%  →  P = 16', X(16) - 30, Y(25) + 115, m('call', 1), { size: 26, fill: COL.dim, anchor: 'end' });
+  }],
+
+  ['orders', 'Market and limit orders', (m) => {
+    const p = panel(0), cx = 700, rowY = i => 170 + i * 72;
+    const rows = [...ASKS, ...BIDS], groups = [];
+    rows.forEach(([pr, q], i) => {
+      const ask = i < 3, y = rowY(i + (ask ? 0 : 1)), g = G(p, { o: 0 });
+      const c = ask ? COL.bad : COL.good, w = q * .4;
+      mk('rect', { x: ask ? cx + 90 : cx - 90 - w, y, width: w, height: 52, rx: 5, fill: c, 'fill-opacity': .85 }, g);
+      T(g, pr.toFixed(2), { x: cx, y: y + 38, size: 32, weight: 600, anchor: 'middle' });
+      T(g, String(q), { x: ask ? cx + 90 + w + 14 : cx - 90 - w - 14, y: y + 38, size: 26, fill: c, anchor: ask ? 'start' : 'end' });
+      show(g, .3 + i * .15); groups.push(g);
+    });
+    text(p, 'Bids (buy)', cx - 300, 140, .3, { size: 26, fill: COL.good, anchor: 'middle', weight: 600 }); text(p, 'Offers (sell)', cx + 300, 140, .3, { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'spread $0.05', cx, rowY(3) + 36, m('book'), { size: 24, fill: COL.task, anchor: 'middle', weight: 600 });
+    const fill = G(p, { o: 0 }); mk('rect', { x: cx + 90, y: rowY(2), width: 160, height: 52, rx: 5, fill: COL.task }, fill); show(fill, m('mkt', 1));
+    pulse(groups[2], m('mkt', 1), 1);
+    const q = G(p, { o: 0 }); mk('rect', { x: cx - 90 - 200 - 120, y: rowY(4), width: 120, height: 52, rx: 5, fill: COL.task }, q); show(q, m('lim', 1));
+    text(p, 'Market buy: trades now, at 20.00', 1300, 330, m('mkt'), { size: 28, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'fast, but pays the spread', 1300, 370, m('mkt', .5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Limit buy at 19.95: joins the queue', 1300, 520, m('lim'), { size: 28, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'better price, but may never fill', 1300, 560, m('lim', .5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Stop instruction: waits for a trigger price; no price guarantee', 800, 850, m('stop'), { size: 28, fill: COL.nat, anchor: 'middle', weight: 600 });
+  }],
+
+  ['primary', 'Primary and secondary markets', (m) => {
+    const p = panel(0), y = 200;
+    [['Issuer', 130, COL.whole], ['Investment bank', 620, COL.task], ['Investors', 1110, COL.good]].forEach(([s, x, c], i) => { show(box(p, x, y, 360, 120, c, .3 + i * .3, .1), 0); text(p, s, x + 180, y + 72, .3 + i * .3, { size: 34, fill: c, anchor: 'middle', weight: 700 }); });
+    arrowRight(p, 490, 620, y + 40, COL.dim, .9); arrowRight(p, 980, 1110, y + 40, COL.dim, 1.1);
+    text(p, 'Primary market: new securities', 800, 150, .5, { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Underwritten', 'bank buys the whole issue', 'uw', COL.task], ['Best efforts', 'bank only tries to sell', 'best', COL.whole], ['Private placement', 'a small group of investors', 'priv', COL.real], ['Shelf registration', 'register once, sell in pieces', 'shelf', COL.irr]].forEach(([n, d, k, c], i) => {
+      const x = 330 + (i % 2) * 560, yy = 410 + Math.floor(i / 2) * 120;
+      show(pill(p, n, c, x, yy, 0, 28), m(k)); text(p, d, x, yy + 52, m(k, .3), { size: 22, fill: COL.dim, anchor: 'middle' });
+    });
+    draw(path(p, 'M200 650H1400', { stroke: COL.faint, 'stroke-width': 2 }, { d: 0 }), m('sec'), .6);
+    text(p, 'Secondary market:', 300, 740, m('sec'), { size: 30, fill: COL.dim, weight: 600 });
+    show(pill(p, 'Investor', COL.good, 720, 730, 0, 28), m('sec', .4)); show(pill(p, 'Investor', COL.good, 1000, 730, 0, 28), m('sec', .6));
+    arrowRight(p, 800, 920, 730, COL.dim, m('sec', .8));
+    text(p, 'liquidity makes investors pay more', 800, 820, m('sec', 1.6), { size: 28, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['structures', 'Market structures', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Call market', ['Orders collected, then traded together at one price at set times'], COL.whole, 'call'], ['Continuous order-driven', ['Standing limit orders matched by price, then size, then time'], COL.good, 'cont'],
+      ['Quote-driven', ['Dealers post prices; investors trade against them'], COL.task, 'quote'], ['Brokered', ['A broker searches for a counterparty to a unique instrument'], COL.real, 'broker']], { x0: 90, step: 370, w: 340, y: 180, h: 330, hs: 30, bs: 26, n: 24 });
+    text(p, 'Transparent markets generally have lower trading costs', 800, 650, m('note'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['quality', 'A well-functioning financial system', (m) => {
+    const p = panel(0);
+    cardRow(p, m, [['Complete', ['the instruments people need are available'], COL.whole, 'comp'], ['Liquid', ['trade when you want, at low cost'], COL.good, 'liq'],
+      ['Operationally efficient', ['low costs of trading and raising capital'], COL.task, 'ops'], ['Informationally efficient', ['prices reflect available information'], COL.real, 'info']], { x0: 90, step: 370, w: 340, y: 200, h: 270, hs: 30, bs: 26, n: 24 });
+    show(pill(p, 'Regulators aim for fair and orderly markets', COL.dim, 800, 620, 0, 30), m('reg'));
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['The financial system moves money through time, shifts risk and swaps assets.', 'w1'],
+    ['Brokers are agents, dealers are principals, arbitrageurs link markets.', 'w2'],
+    ['Leverage ratio = position ÷ equity; it multiplies gains and losses.', 'w3'],
+    ['Market orders trade fast; limit orders trade at your price, if at all.', 'w4']], 29); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
