@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixed-Income Issuance and Trading</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 3, title: 'Fixed-Income Issuance and Trading', minutes: 8, language: 'en' };
+
+const RATINGS = [['AAA', 'Aaa'], ['AA', 'Aa'], ['A', 'A'], ['BBB', 'Baa'], ['BB', 'Ba'], ['B', 'B'], ['CCC', 'Caa'], ['CC', 'Ca'], ['C', 'C'], ['D', '']];
+
+const BEATS = [
+  ['intro', 'Issuance and trading', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 3', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Fixed-Income Issuance', { x: 800, y: 400, size: 80, weight: 600, anchor: 'middle' });
+    T(g, 'and Trading', { x: 800, y: 495, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'who issues, who buys, and how bonds trade', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['dims', 'Three dimensions', (m) => {
+    const p = panel(0);
+    [[290, COL.task, 'Issuer type', 'the sector', 'd1'], [800, COL.good, 'Credit quality', 'ratings', 'd2'], [1310, COL.whole, 'Time to maturity', 'short to long', 'd3']].forEach(([x, c, t, s, k]) => {
+      const g = card1(p, x, 230, 440, 150, c);
+      T(g, t, { y: -6, size: 38, fill: c, weight: 600, anchor: 'middle' }); T(g, s, { y: 40, size: 28, fill: COL.dim, anchor: 'middle' });
+      show(g, m(k));
+    });
+    text(p, 'sometimes also geography or ESG', 800, 355, m('d3', 1.5), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Equity: 1', 150, 520, m('cmp'), { size: 32, fill: COL.rat, weight: 600 });
+    const sq = (x, y, c, t) => { const r = mk('rect', { x, y, width: 22, height: 22, rx: 4, fill: c, opacity: 0 }, p); put(r, { o: 0 }); show(r, t, .3); };
+    sq(480, 498, COL.rat, m('cmp', .3));
+    text(p, 'Fixed income: 80+', 150, 650, m('cmp', 1), { size: 32, fill: COL.good, weight: 600 });
+    for (let i = 0; i < 80; i++) sq(480 + (i % 40) * 26, 600 + Math.floor(i / 40) * 30, COL.good, m('cmp', 1.2 + i * .04));
+    text(p, 'one large issuer: more than eighty debt instruments, one stock', 800, 790, m('cmp', 4.5), { size: 30, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['ratings', 'Credit ratings', (m) => {
+    const p = panel(0), x = i => 170 + i * 140, hue = i => mix(COL.good, COL.bad, i / 9);
+    text(p, 'S&P credit ratings', 800, 170, m('a'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    RATINGS.forEach(([s, mo], i) => {
+      const g = G(p, { o: 0, y: 20 }); mk('rect', { x: x(i) - 56, y: 340, width: 112, height: 90, rx: 14, fill: 'none', stroke: hue(i), 'stroke-width': 3 }, g);
+      T(g, s, { x: x(i), y: 398, size: 40, fill: hue(i), weight: 700, anchor: 'middle' });
+      if (mo) T(g, mo, { x: x(i), y: 470, size: 26, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, i < 4 ? m('b', .3 + i * .6) : m('a', 1 + i * .15), .5, out);
+    });
+    text(p, "Moody's", 90, 470, m('a', 1.2), { size: 24, fill: COL.dim, anchor: 'middle' });
+    const br = (x0, x1, y, c, lab, t) => { draw(path(p, `M${x0} ${y}H${x1}`, { stroke: c, 'stroke-width': 5 }, { d: 0 }), t, .8); text(p, lab, (x0 + x1) / 2, y - 18, t + .3, { size: 32, fill: c, anchor: 'middle', weight: 700 }); };
+    br(x(0) - 56, x(3) + 56, 300, COL.good, 'investment grade', m('ig'));
+    br(x(4) - 56, x(9) + 56, 300, COL.bad, 'high yield · speculative · "junk"', m('hy'));
+    show(pill(p, 'BBB− / Baa3: lowest investment grade', COL.good, 470, 600, 0, 28), m('ig', 1.2));
+    show(pill(p, 'developed-market governments: often AAA', COL.whole, 1190, 600, 0, 28), m('sov'));
+    show(pill(p, 'fallen angel: investment grade → high yield', COL.task, 800, 720, 0, 28), m('fa'));
+  }],
+
+  ['issuers', 'Two corporate issuers', (m) => {
+    const p = panel(0);
+    const c1 = infoCard(p, 410, 300, 700, 330, COL.good, 'BRWA · investment grade', ['unsecured borrowing', 'commercial paper: seasonal needs', 'medium-term notes', 'long-term bonds: factories, equipment', 'bank credit facilities back the paper'], 38);
+    const c2 = infoCard(p, 1190, 300, 700, 330, COL.bad, 'VIVU · high yield', ['secured borrowing', 'bank credit lines, floating term loan', '7-year callable notes', 'no commercial paper market'], 38);
+    show(c1, m('brwa')); show(c2, m('vivu'));
+    show(pill(p, 'governments: lowest credit risk in their market — power to tax', COL.whole, 800, 600, 0, 28), m('sov'));
+  }],
+
+  ['investors', 'Matching investors to bonds', (m) => {
+    const p = panel(0);
+    axes2(p, 200, 780, 1500, 160, null, null);
+    text(p, 'time to maturity  →', 1500, 830, .3, { size: 26, fill: COL.dim, anchor: 'end' }); text(p, 'higher credit quality  ↑', 130, 140, .3, { size: 26, fill: COL.dim, anchor: 'start' });
+    draw(path(p, 'M200 520H1500', { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), .3, .8);
+    text(p, 'investment grade ↑   high yield ↓', 1500, 555, .6, { size: 24, fill: COL.dim, anchor: 'end' });
+    [['Short-term bond fund', 440, 290, COL.whole, 'mm'], ['Core bond fund', 960, 400, COL.good, 'core'], ['Pension funds & insurers', 1250, 260, COL.task, 'pen'], ['High-yield & opportunistic investors', 860, 660, COL.bad, 'hy']]
+      .forEach(([s, x, y, c, k]) => show(pill(p, s, c, x, y, 0, 28), m(k)));
+    text(p, 'a fund limited to investment grade can\'t buy VIVU\'s notes', 800, 885, m('note'), { size: 28, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['indexdiff', 'Bond indexes vs stock indexes', (m) => {
+    const p = panel(0), X = [290, 800, 1310];
+    const c1 = card1(p, X[0], 350, 440, 380, COL.whole), c2 = card1(p, X[1], 350, 440, 380, COL.task), c3 = card1(p, X[2], 350, 440, 380, COL.good);
+    T(c1, '10,000+', { y: -110, size: 56, fill: COL.whole, weight: 700, anchor: 'middle' }); T(c1, 'constituents', { y: -62, size: 30, fill: COL.dim, anchor: 'middle' });
+    T(c2, 'Monthly', { y: -110, size: 56, fill: COL.task, weight: 700, anchor: 'middle' }); T(c2, 'rebalancing, high turnover', { y: -62, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(c3, 'Market value', { y: -110, size: 50, fill: COL.good, weight: 700, anchor: 'middle' }); T(c3, 'of debt outstanding', { y: -62, size: 30, fill: COL.dim, anchor: 'middle' });
+    for (let i = 0; i < 60; i++) { const r = mk('circle', { cx: -175 + (i % 15) * 25, cy: 10 + Math.floor(i / 15) * 30, r: 8, fill: COL.whole, opacity: .85 }, c1); }
+    T(c2, '−  bonds mature and leave', { y: 30, size: 28, fill: COL.dim, anchor: 'middle' }); T(c2, '+  new issues join', { y: 90, size: 28, fill: COL.task, anchor: 'middle', weight: 600 });
+    [['Government', 190, COL.good], ['Corporate', 110, COL.whole], ['Other', 60, COL.rat]].reduce((x0, [s, w, c]) => { mk('rect', { x: x0, y: 20, width: w, height: 70, fill: c, 'fill-opacity': .88 }, c3); T(c3, s, { x: x0 + w / 2, y: 62, size: 20, fill: COL.board, weight: 700, anchor: 'middle' }); return x0 + w; }, -180);
+    T(c3, 'illustrative weights', { y: 140, size: 22, fill: COL.faint, anchor: 'middle' });
+    show(c1, m('a')); show(c2, m('b')); show(c3, m('c'));
+    show(pill(p, 'index funds hold a sample of bonds, not all of them', COL.rat, 800, 700, 0, 30), m('d'));
+  }],
+
+  ['indexes', 'Choosing the right index', (m) => {
+    const p = panel(0);
+    [[290, COL.whole, 'Global Aggregate', ['investment-grade bonds', 'all major issuer types', 'developed & emerging markets', 'suits a core bond fund'], 'g'],
+     [800, COL.bad, 'EMBI+', ['US-dollar bonds of emerging', 'market governments', 'lower credit, narrower universe', 'higher expected return'], 'e'],
+     [1310, COL.good, 'Euro corporate SRI', ['euro investment-grade bonds', 'screened for ESG criteria', 'excludes some business lines', 'e.g. alcohol, tobacco, coal'], 's']]
+      .forEach(([x, c, t, l, k]) => show(infoCard(p, x, 300, 480, 330, c, t, l, 40), m(k)));
+    show(pill(p, 'match the benchmark to the fund\'s strategy', COL.rat, 800, 600, 0, 32), m('r'));
+  }],
+
+  ['primary', 'Primary and secondary markets', (m) => {
+    const p = panel(0);
+    const iss = card1(p, 260, 280, 260, 110, COL.task), inv = card1(p, 740, 280, 260, 110, COL.good), inv2 = card1(p, 1220, 280, 260, 110, COL.good);
+    T(iss, 'Issuer', { y: 12, size: 38, fill: COL.task, weight: 600, anchor: 'middle' }); T(inv, 'Investors', { y: 12, size: 38, fill: COL.good, weight: 600, anchor: 'middle' }); T(inv2, 'Investors', { y: 12, size: 38, fill: COL.good, weight: 600, anchor: 'middle' });
+    show(iss, m('prim', .2)); show(inv, m('prim', .4)); show(inv2, m('prim', 3));
+    arw(p, 400, 260, 600, COL.good, m('prim', .8)); text(p, 'new bonds', 500, 212, m('prim', 1.2), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    arw(p, 600, 305, 400, COL.task, m('prim', 1.4)); text(p, 'cash', 500, 372, m('prim', 1.8), { size: 26, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'PRIMARY MARKET', 500, 170, m('prim', .3), { size: 30, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    arw(p, 890, 260, 1070, COL.whole, m('prim', 3.4)); arw(p, 1070, 305, 890, COL.whole, m('prim', 3.6));
+    text(p, 'SECONDARY MARKET', 980, 170, m('prim', 3), { size: 30, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'existing bonds', 980, 372, m('prim', 3.8), { size: 26, fill: COL.whole, anchor: 'middle', weight: 600 });
+    show(infoCard(p, 330, 590, 520, 240, COL.rat, 'Debut issuer', ['first-time bond issuer', 'often replaces a bank loan', 'roadshows for several weeks'], 38), m('debut'));
+    show(infoCard(p, 880, 590, 480, 240, COL.good, 'Offering type', ['public: open to anyone', 'private placement: selected', 'investors only'], 38), m('pub'));
+    show(infoCard(p, 1330, 590, 400, 240, COL.task, 'Repeat issuer', ['abbreviated process', 'new bond priced near par'], 38), m('rep'));
+  }],
+
+  ['issuance', 'How a bond is issued', (m) => {
+    const p = panel(0), xs = [230, 515, 800, 1085, 1370], y = 300;
+    text(p, 'Investment-grade issuance: a few hours', 800, 140, .3, { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${xs[0]} ${y}H${xs[4]}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), .2, .8);
+    [['Launch agreed', 'deal announced', 't1'], ['Investor call', 'guidance may change', 't2'], ['Launch', 'final size and pricing', 't3'], ['Priced', 'benchmark + spread', 't4'], ['Term sheet', 'free to trade', 't5']].forEach(([a, b, k], i) => {
+      const g = G(p, { x: xs[i], y: 0, o: 0 }); mk('circle', { cx: 0, cy: y, r: 14, fill: COL.task }, g);
+      T(g, a, { y: y + 62, size: 28, fill: COL.chalk, weight: 600, anchor: 'middle' }); T(g, b, { y: y + 100, size: 24, fill: COL.dim, anchor: 'middle' });
+      show(g, m(k));
+    });
+    show(infoCard(p, 420, 640, 640, 220, COL.good, 'Underwritten', ['banks guarantee the sale', 'shelf registration speeds repeat issuers'], 38), m('uw'));
+    show(infoCard(p, 1160, 640, 640, 220, COL.bad, 'Best efforts', ['lower credit quality: banks only try', 'to sell, for a commission'], 38), m('hy'));
+    show(pill(p, 'governments: public auction', COL.whole, 800, 820, 0, 28), m('sov'));
+  }],
+
+  ['secondary', 'Secondary markets', (m) => {
+    const p = panel(0);
+    const a = card1(p, 280, 230, 280, 110, COL.good), d = card1(p, 800, 230, 280, 110, COL.task), b = card1(p, 1320, 230, 280, 110, COL.good);
+    T(a, 'Investor', { y: 12, size: 38, fill: COL.good, weight: 600, anchor: 'middle' }); T(d, 'Dealer', { y: 12, size: 38, fill: COL.task, weight: 600, anchor: 'middle' }); T(b, 'Investor', { y: 12, size: 38, fill: COL.good, weight: 600, anchor: 'middle' });
+    show(a, m('otc')); show(d, m('otc', .4)); show(b, m('otc', .8));
+    arw(p, 440, 215, 640, COL.whole, m('otc', 1)); arw(p, 960, 245, 1160, COL.whole, m('otc', 1.4));
+    text(p, 'over the counter: quote-driven', 800, 120, m('otc', .2), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'bid-offer spread = price dealer charges − price dealer pays', 800, 350, m('spread'), { size: 30, fill: COL.task, anchor: 'middle', weight: 600 });
+    [['Newly issued government bond', 'fraction of a basis point', 6, COL.good], ['Recent bond, frequent high-quality issuer', 'a few basis points', 70, COL.whole], ['Seasoned bond, rare issuer', '10–20+ basis points', 260, COL.bad]].forEach(([n, s, w, c], i) => {
+      const y = 470 + i * 100, g = G(p, { o: 0 });
+      T(g, n, { x: 640, y: y + 10, size: 28, fill: c, weight: 600, anchor: 'end' });
+      mk('rect', { x: 670, y: y - 26, width: 0, height: 52, rx: 6, fill: c, 'fill-opacity': .88 }, g).setAttribute('width', w); T(g, s, { x: 690 + w, y: y + 10, size: 26, fill: COL.dim });
+      show(g, m('ladder', .2 + i * 2.4));
+    });
+    text(p, 'wider spread = less liquid · illustrative widths', 1500, 800, m('ladder', 1), { size: 22, fill: COL.faint, anchor: 'end' });
+    show(pill(p, 'illiquid bonds: prices estimated from similar bonds', COL.rat, 800, 860, 0, 28), m('nt'));
+  }],
+
+  ['distressed', 'Distressed debt', (m) => {
+    const p = panel(0), X = i => 300 + i * 250, Y = v => 760 - v * 5.2;
+    axes2(p, 240, 760, 1400, 200, 'time', 'price (% of par)');
+    [0, 50, 100].forEach(v => text(p, String(v), 224, Y(v) + 8, .3, { size: 24, fill: COL.dim, anchor: 'end' }));
+    const pts = [[X(0), Y(100)], [X(1), Y(96)], [X(1.6), Y(8)], [X(2.4), Y(8)], [X(3.3), Y(55)], [X(4.3), Y(100)]];
+    draw(path(p, polyline(pts), { stroke: COL.bad, 'stroke-width': 7 }, { d: 0 }), m('a'), 2.2);
+    text(p, 'bankruptcy filing: price under 10% of par', X(2), 808, m('a', 1.6), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'holders may not get', 300, Y(40), m('a', .3), { size: 26, fill: COL.dim }); text(p, 'all promised payments', 300, Y(40) + 34, m('a', .3), { size: 26, fill: COL.dim });
+    show(pill(p, 'forced sellers vs hedge funds seeking equity-like gains', COL.rat, 940, 150, 0, 26), m('b'));
+    text(p, 'reorganized: back to the earlier price', X(4.3), Y(100) - 24, m('c'), { size: 28, fill: COL.good, anchor: 'end', weight: 600 });
+    show(pill(p, 'bonds keep trading until liquidation or restructuring', COL.whole, 800, 868, 0, 28), m('d'));
+    text(p, 'illustrative path', 1400, 880, m('a'), { size: 22, fill: COL.faint, anchor: 'end' });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Bond markets: issuer, credit quality and maturity.', 'w1'], ['Investment grade is BBB− and above; high yield is below.', 'w2'],
+     ['Bond indexes are broad, turn over fast, and weight by debt outstanding.', 'w3'], ['New bonds sell in primary markets; trading is mostly over the counter.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 33, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
