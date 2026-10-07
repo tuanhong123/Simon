@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixed-Income Instrument Features</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 1, title: 'Fixed-Income Instrument Features', minutes: 7, language: 'en' };
+
+/* ---------- chapter drawing helpers ---------- */
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const pill = (p, str, color, x, y, t0, size = 30) => {
+  const w = uiW(str, size) + 56, g = G(p, { x, y, o: 0 });
+  mk('rect', { x: -w / 2, y: -31, width: w, height: 62, rx: 31, fill: 'none', stroke: color, 'stroke-width': 3 }, g);
+  T(g, str, { y: size / 3, size, fill: color, weight: 600, anchor: 'middle' });
+  show(g, t0);
+  return g;
+};
+const card1 = (p, x, y, w, h, color) => { const g = G(p, { x, y, o: 0 }); mk('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: 18, fill: 'none', stroke: color, 'stroke-width': 3 }, g); return g; };
+const arw = (p, x1, y, x2, color, t0, dur = .8) => {
+  const s = Math.sign(x2 - x1);
+  draw(path(p, `M${x1} ${y}H${x2}`, { stroke: color, 'stroke-width': 5 }, { d: 0 }), t0, dur);
+  draw(path(p, `M${x2 - s * 30} ${y - 26}L${x2} ${y}L${x2 - s * 30} ${y + 26}`, { stroke: color, 'stroke-width': 5 }, { d: 0 }), t0 + dur * .8, .3);
+};
+
+/* ---------- data (defined above BEATS) ---------- */
+const bondPrice = yy => { let v = 100 / (1 + yy / 200) ** 10; for (let k = 1; k <= 10; k++) v += 1.6 / (1 + yy / 200) ** k; return v; };
+const CX = yy => 300 + (yy - 1) * 190, CY = pr => 720 - (pr - 85) * 17;
+const FEATS = [['Issuer', 'who borrows', COL.task], ['Maturity', 'when the loan ends', COL.whole], ['Principal (par)', 'the amount repaid', COL.task],
+  ['Coupon rate & frequency', 'the interest paid', COL.good], ['Seniority', 'who is paid first', COL.bad], ['Contingency provisions', 'call, put, convert', COL.rat]];
+
+/* ---------- beats: [id, title, run(m, D), { ask }?] ---------- */
+const BEATS = [
+  ['intro', 'Fixed-income instruments', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 1', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Fixed-Income', { x: 800, y: 400, size: 80, weight: 600, anchor: 'middle' });
+    T(g, 'Instrument Features', { x: 800, y: 495, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'a bond is a loan that can be traded', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['loan', 'Loans and bonds', (m) => {
+    const p = panel(0);
+    const inv = card1(p, 320, 430, 320, 150, COL.good), iss = card1(p, 1280, 430, 320, 150, COL.task);
+    T(inv, 'Investors', { y: 10, size: 40, fill: COL.good, weight: 600, anchor: 'middle' }); T(iss, 'Issuer', { y: 10, size: 40, fill: COL.task, weight: 600, anchor: 'middle' });
+    show(inv, m('a')); show(iss, m('a', .3));
+    arw(p, 500, 390, 1100, COL.task, m('a', .8)); text(p, 'borrowed money', 800, 360, m('a', 1.3), { size: 30, fill: COL.task, anchor: 'middle', weight: 600 });
+    show(pill(p, 'Loan: private agreement, usually a bank', COL.whole, 520, 700, 0, 26), m('b'));
+    show(pill(p, 'Bond: standardized, easier to trade', COL.rat, 1100, 700, 0, 26), m('b', 3));
+    arw(p, 1100, 480, 500, COL.good, m('c')); text(p, 'interest + principal back', 800, 540, m('c', .5), { size: 30, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'promised payments  =  fixed income', 800, 170, m('d'), { size: 46, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['features', 'Features of a bond', (m) => {
+    const p = panel(0);
+    FEATS.forEach(([name, sub, c], i) => {
+      const x = [290, 800, 1310][i % 3], y = i < 3 ? 300 : 520, g = card1(p, x, y, 440, 150, c);
+      T(g, name, { y: -6, size: name.length > 18 ? 29 : 34, fill: c, weight: 600, anchor: 'middle' });
+      T(g, sub, { y: 38, size: 26, fill: COL.dim, anchor: 'middle' });
+      put(g, { y: y + 24 }); tw(g, { o: 1, y }, m('f' + (i + 1)), .5, out);
+    });
+    text(p, 'these features define the bond\'s cash flows', 800, 740, m('end'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['cashflows', 'A bond\'s cash flows', (m) => {
+    const p = panel(0), y = 560, xs = i => 260 + i * 108;
+    draw(path(p, `M200 ${y}H1420`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), .1, .7);
+    for (let i = 0; i <= 10; i++) {
+      path(p, `M${xs(i)} ${y - 8}V${y + 8}`, { stroke: COL.chalk, 'stroke-width': 3 });
+      if (i % 2 === 0) text(p, i ? `Year ${i / 2}` : 'Start', xs(i), y + 48, .3, { size: 24, fill: COL.dim, anchor: 'middle' });
+    }
+    text(p, 'Five-year note · par $300 million · 3.2% coupon · paid every six months', 800, 110, .3, { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const g0 = G(p, { y: 20, o: 0 });
+    mk('rect', { x: xs(0) - 34, y: y - 190, width: 68, height: 180, fill: COL.task, 'fill-opacity': .88, rx: 5 }, g0);
+    tw(g0, { o: 1, y: 0 }, m('t0'), .6, out);
+    text(p, 'investors pay $300 million', xs(0) - 40, y - 215, m('t0', .3), { size: 28, fill: COL.task, weight: 600 });
+    text(p, 'Coupon = 3.2% × $300 million = $9.6 million per year', 800, 205, m('coupons', 3.2), { size: 38, fill: COL.good, anchor: 'middle', weight: 600 });
+    for (let i = 1; i <= 10; i++) {
+      const last = i === 10, g = G(p, { y: 20, o: 0 }), t = last ? m('last', .2) : m('coupons', .1 + (i - 1) * .3);
+      mk('rect', { x: xs(i) - 24, y: y - 80, width: 48, height: 72, fill: COL.good, 'fill-opacity': .9, rx: 5 }, g);
+      if (last) mk('rect', { x: xs(i) - 24, y: y - 80 - 180, width: 48, height: 180, fill: COL.task, 'fill-opacity': .88, rx: 5 }, g);
+      T(g, last ? '$304.8m' : '$4.8m', { x: xs(i), y: y - (last ? 280 : 94), size: 22, fill: COL.chalk, weight: 600, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, t, .5, out);
+    }
+    text(p, '÷ 2 = $4.8 million each six months', 800, 275, m('half'), { size: 34, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'last coupon + principal', 1290, y - 150, m('last', .5), { size: 26, fill: COL.task, anchor: 'end', weight: 600 });
+  }],
+
+  ['seniority', 'Seniority and claims', (m) => {
+    const p = panel(0), x0 = 640, k = 6, rows = [['Senior secured', 40, COL.good, 400], ['Senior unsecured', 50, COL.whole, 520], ['Junior (subordinated)', 60, COL.bad, 640]];
+    text(p, 'Liquidation value: 100', x0 - 20, 190, m('pot'), { size: 32, fill: COL.task, anchor: 'end', weight: 600 });
+    const pot = mk('rect', { x: x0, y: 150, width: 100 * k, height: 56, rx: 8, fill: COL.task, 'fill-opacity': .88 }, p); st(pot).o = 0; render(pot); show(pot, m('pot', .3));
+    rows.forEach(([name, amt, c, y], i) => {
+      const g = G(p, { o: 0 });
+      T(g, name, { x: x0 - 20, y: y + 10, size: 30, fill: c, weight: 600, anchor: 'end' });
+      mk('rect', { x: x0, y: y - 32, width: amt * k, height: 64, rx: 8, fill: 'none', stroke: c, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, g);
+      T(g, `claim ${amt}`, { x: x0 + amt * k + 20, y: y + 10, size: 26, fill: COL.dim });
+      show(g, m('claims', 1 + i * 1.6));
+    });
+    const fills = [[40, 0, m('pay', .2), '#8fd6b0', 'paid 40 of 40', COL.good], [50, 1, m('pay', 2.6), COL.whole, 'paid 50 of 50', COL.whole], [10, 2, m('junior'), COL.bad, 'paid 10 of 60', COL.bad]];
+    let left = 100;
+    fills.forEach(([a, i, t, col, lab, lc]) => {
+      const y = rows[i][3];
+      const r = mk('rect', { x: x0, y: y - 32, width: 0, height: 64, rx: 8, fill: col, 'fill-opacity': .9 }, p);
+      tw(r, { 'a_width': a * k }, t, .9, io);
+      const pw = (left - a) * k; left -= a;
+      tw(pot, { 'a_width': pw }, t, .9, io);
+      const lt = T(p, lab, { x: x0 + rows[i][1] * k + 190, y: y + 10, size: 28, fill: lc, weight: 700, o: 0 }); show(lt, t + .8);
+    });
+    text(p, 'lower seniority  →  more loss  →  higher yield demanded', 800, 790, m('note'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['contingency', 'Contingency provisions', (m) => {
+    const p = panel(0), X = [290, 800, 1310];
+    const items = [['Callable', 'Issuer can repay early', 'likely when rates fall', 'call', COL.task], ['Putable', 'Investor can sell it back', 'likely when rates rise', 'put', COL.good], ['Convertible', 'Investor can swap for shares', 'likely when the share price rises', 'conv', COL.rat]];
+    items.forEach(([name, what, when, mark, c], i) => {
+      const g = card1(p, X[i], 400, 440, 340, c);
+      T(g, name, { y: -80, size: 50, fill: c, weight: 600, anchor: 'middle' });
+      T(g, what, { y: 0, size: 29, fill: COL.chalk, weight: 600, anchor: 'middle' });
+      T(g, 'most likely used', { y: 70, size: 24, fill: COL.dim, anchor: 'middle' });
+      T(g, when, { y: 108, size: 26, fill: c, weight: 600, anchor: 'middle' });
+      show(g, m(mark));
+    });
+    text(p, 'the holder of the option gains, so the bond\'s yield adjusts to pay for it', 800, 740, m('note'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['yield', 'Price and yield', (m) => {
+    const p = panel(0), y0 = 720;
+    path(p, `M240 ${y0}H1340`, { stroke: COL.chalk, 'stroke-width': 3 }); path(p, `M240 ${y0}V230`, { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'yield (%)', 1340, y0 + 85, .2, { size: 26, fill: COL.dim, anchor: 'end' }); text(p, 'price', 230, 215, .2, { size: 26, fill: COL.dim, anchor: 'end' });
+    [2, 3, 4, 5, 6].forEach(v => { path(p, `M${CX(v)} ${y0 - 8}V${y0 + 8}`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, v + '%', CX(v), y0 + 38, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    let d = ''; for (let v = 1; v <= 6.001; v += .1) d += (d ? 'L' : 'M') + CX(v).toFixed(1) + ' ' + CY(bondPrice(v)).toFixed(1);
+    draw(path(p, d, { stroke: COL.whole, 'stroke-width': 5 }, { d: 0 }), m('curve'), 1.4);
+    draw(path(p, `M240 ${CY(100)}H${CX(3.2)}`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), m('curve', 1.6), .6);
+    text(p, 'par 100', 232, CY(100) + 8, m('curve', 1.6), { size: 24, fill: COL.dim, anchor: 'end' });
+    show(pill(p, 'coupons', COL.good, 520, 130, 0), m('inc')); show(pill(p, 'price change', COL.task, 820, 130, 0), m('chg'));
+    const dot = G(p, { x: CX(3.2), y: CY(100), o: 0 }); mk('circle', { r: 13, fill: COL.task }, dot); show(dot, m('curve', 1.8));
+    const rd = T(p, 'Yield 3.20%    Price 100.00', { x: 1330, y: 300, size: 34, fill: COL.chalk, weight: 600, anchor: 'end', o: 0 }); show(rd, m('curve', 1.8));
+    const go = (a, b, t) => prog(q => { const v = a + (b - a) * q; put(dot, { x: CX(v), y: CY(bondPrice(v)) }); rd.textContent = `Yield ${v.toFixed(2)}%    Price ${bondPrice(v).toFixed(2)}`; }, t, 1.6);
+    go(3.2, 5.2, m('up')); go(5.2, 2.2, m('down', -.6)); go(2.2, 3.2, m('inv', -1.8));
+    text(p, 'price and yield move in opposite directions', 800, 820, m('inv'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['curve', 'The yield curve', (m) => {
+    const p = panel(0), x = t => 300 + t / 30 * 1000, yy = t => 2 + 2.2 * (1 - Math.exp(-t / 6)), Y = v => 740 - (v - 1.5) * 150;
+    path(p, 'M240 740H1380', { stroke: COL.chalk, 'stroke-width': 3 }); path(p, 'M240 740V260', { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'time to maturity', 1380, 840, m('a'), { size: 26, fill: COL.dim, anchor: 'end' }); text(p, 'yield', 230, 245, m('a'), { size: 26, fill: COL.dim, anchor: 'end' });
+    [2, 10, 30].forEach(t => { path(p, `M${x(t)} 732V748`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, t + ' years', x(t), 785, m('a'), { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    let d = ''; for (let t = 1; t <= 30; t += .5) d += (d ? 'L' : 'M') + x(t).toFixed(1) + ' ' + Y(yy(t)).toFixed(1);
+    draw(path(p, d, { stroke: COL.good, 'stroke-width': 6 }, { d: 0 }), m('b'), 2.2);
+    [2, 10, 30].forEach((t, i) => { const dd = G(p, { x: x(t), y: Y(yy(t)), o: 0 }); mk('circle', { r: 11, fill: COL.good }, dd); show(dd, m('b', .6 + i * .8)); });
+    text(p, 'longer bonds usually pay higher yields', 850, 330, m('c'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'illustrative shape', 1380, 230, m('a'), { size: 24, fill: COL.faint, anchor: 'end' });
+  }],
+
+  ['credit', 'Credit risk and yield', (m) => {
+    const p = panel(0), x0 = 760, k = 58, rows = [['Government (taxes)', 2.5, COL.good], ['Strong corporate', 4, COL.whole], ['Weaker corporate', 6.5, COL.task], ['Distressed', 10, COL.bad]];
+    text(p, 'credit risk: the issuer may not pay in full and on time', 800, 120, 0.3, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    rows.forEach(([name, v, c], i) => {
+      const y = 230 + i * 100, g = G(p, { o: 0 });
+      T(g, name, { x: x0 - 20, y: y + 10, size: 30, fill: c, weight: 600, anchor: 'end' });
+      const r = mk('rect', { x: x0, y: y - 30, width: 0, height: 60, rx: 8, fill: c, 'fill-opacity': .88 }, g);
+      T(g, v.toFixed(1) + '%', { x: x0 + v * k + 16, y: y + 10, size: 28, fill: COL.chalk, weight: 600 });
+      show(g, m('ladder', .2 + i * .8), .2); tw(r, { a_width: v * k }, m('ladder', .2 + i * .8), .8);
+    });
+    text(p, 'illustrative yields', 1480, 200, m('ladder'), { size: 22, fill: COL.faint, anchor: 'end' });
+    show(pill(p, 'Governments: taxes', COL.good, 270, 690, 0, 26), m('src')); show(pill(p, 'Companies: operating cash flow', COL.task, 800, 690, 0, 26), m('src', 3));
+    show(pill(p, 'Securitized: asset pool', COL.rat, 1330, 690, 0, 26), m('src', 6.5));
+    text(p, 'extra protection: collateral · seniority · willingness to pay', 800, 800, m('coll'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['indenture', 'Indenture and covenants', (m) => {
+    const p = panel(0);
+    text(p, 'Bond indenture  =  the legal contract', 800, 130, m('cov', -.5), { size: 44, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'covenants: legally enforceable terms agreed at issuance', 800, 190, m('cov', .8), { size: 28, fill: COL.dim, anchor: 'middle' });
+    show(pill(p, 'Affirmative: must do', COL.good, 430, 300, 0), m('aff')); show(pill(p, 'Negative: must not do', COL.bad, 1170, 300, 0), m('neg'));
+    [['pay interest and principal on time', 'aff', 0], ['maintain insurance', 'aff', 1.6], ['publish financial statements', 'aff', 3.2]].forEach(([s, k, o], i) => text(p, '+  ' + s, 130, 390 + i * 66, m(k, 1.2 + o), { size: 31, fill: COL.good }));
+    [['take on too much additional debt', 'neg', 0], ['sell key assets', 'neg', 2.2]].forEach(([s, k, o], i) => text(p, '−  ' + s, 880, 390 + i * 66, m(k, 1.2 + o), { size: 31, fill: COL.bad }));
+    show(pill(p, 'pari passu clause', COL.whole, 800, 680, 0), m('pari'));
+    text(p, '"equal footing" with the issuer\'s other senior debt', 800, 765, m('pari', 1.2), { size: 32, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['A bond promises coupons, and par back at maturity.', 'w1'], ['Issuer, maturity, par, coupon, seniority and options define it.', 'w2'],
+     ['Price and yield move opposite; weaker credit means higher yield.', 'w3'], ['The indenture and covenants protect the lender.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
