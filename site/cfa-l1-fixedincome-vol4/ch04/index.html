@@ -13,7 +13,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 4, title: 'Fixed-Income Markets for Corporate Issuers', minutes: 9, language: 'en' };
+const CHAPTER = { number: 4, title: 'Fixed-Income Markets for Corporate Issuers', minutes: 9, language: 'en', next: '../ch05/' };
 
 const party = (p, x, y, w, h, color, title, sub) => { const g = card1(p, x, y, w, h, color); T(g, title, { y: sub ? -8 : 12, size: 36, fill: color, weight: 600, anchor: 'middle' }); if (sub) T(g, sub, { y: 34, size: 24, fill: COL.dim, anchor: 'middle' }); return g; };
 const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });

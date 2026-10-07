@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixed-Income Markets for Government Issuers</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 5, title: 'Fixed-Income Markets for Government Issuers', minutes: 8, language: 'en' };
+
+const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });
+const BIDS = [[98.60, 300], [98.50, 400], [98.40, 300], [98.30, 500], [98.20, 400], [98.10, 450]];
+
+const BEATS = [
+  ['intro', 'Government issuers', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 5', { x: 800, y: 290, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Fixed-Income Markets', { x: 800, y: 390, size: 76, weight: 600, anchor: 'middle' });
+    T(g, 'for Government Issuers', { x: 800, y: 480, size: 76, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'sovereigns, agencies, and how government debt is sold', 800, 610, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['sovereigns', 'Sovereign issuers', (m) => {
+    const p = panel(0);
+    text(p, 'Sovereign: the right to tax  →  lowest credit risk in its own currency', 800, 110, .3, { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    show(infoCard(p, 420, 290, 640, 250, COL.good, 'Developed market', ['strong, stable, diversified economy', 'mostly domestic-currency bonds'], 40), m('dm'));
+    show(infoCard(p, 1180, 290, 640, 250, COL.task, 'Emerging market', ['higher growth, less stable economy', 'often foreign-currency external debt', 'investors face currency + default risk'], 40), m('em'));
+    text(p, 'Sri Lanka: government debt as % of GDP', 240, 560, m('sl'), { size: 28, fill: COL.dim });
+    [['before 2020', 87, COL.whole], ['2020', 101, COL.bad]].forEach(([s, v, c], i) => {
+      const y = 600 + i * 60, g = G(p, { o: 0 }); T(g, s, { x: 340, y: y + 10, size: 24, fill: COL.dim, anchor: 'end' });
+      const r = mk('rect', { x: 360, y: y - 20, width: 0, height: 40, rx: 6, fill: c, 'fill-opacity': .88 }, g); T(g, v + (i ? '%+' : '%'), { x: 360 + v * 8 + 16, y: y + 10, size: 26, fill: c, weight: 700 });
+      show(g, m('sl', .4 + i * .8)); tw(r, { a_width: v * 8 }, m('sl', .4 + i * .8), .8);
+    });
+    text(p, 'May 2022: could not pay $78 million of interest', 240, 770, m('sl', 3.2), { size: 32, fill: COL.bad, weight: 700 });
+    text(p, 'after a 30-day grace period  →  default', 240, 820, m('sl', 3.8), { size: 30, fill: COL.bad, weight: 600 });
+    show(pill(p, 'risk: currency and default', COL.rat, 800, 460, 0, 28), m('risk'));
+  }],
+
+  ['others', 'Other public issuers', (m) => {
+    const p = panel(0);
+    text(p, 'beyond the national government', 800, 120, .3, { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    show(infoCard(p, 290, 370, 440, 380, COL.whole, 'Non-sovereign', ['states, provinces, cities', 'repay from local taxes,', 'fees or project revenue', 'credit quality varies'], 40), m('non'));
+    show(infoCard(p, 800, 370, 440, 380, COL.task, 'Agencies', ['quasi-government entities', 'fund specific public services', 'yield near the sovereign\'s,', 'no full liquidity premium'], 40), m('agency'));
+    show(infoCard(p, 1310, 370, 440, 380, COL.rat, 'Supranationals', ['created by several', 'sovereign governments', 'for a shared goal', 'e.g. the World Bank'], 40), m('supra'));
+  }],
+
+  ['fiscal', 'Fiscal policy and debt management', (m) => {
+    const p = panel(0), base = 640;
+    text(p, 'Fiscal policy: the LEVEL of debt', 400, 140, m('fp'), { size: 38, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'Debt management: the COMPOSITION', 1170, 140, m('dm'), { size: 38, fill: COL.whole, anchor: 'middle', weight: 600 });
+    path(p, `M160 ${base}H640`, { stroke: COL.chalk, 'stroke-width': 3 });
+    const bar = (x, h, c, s, t) => { const g = G(p, { y: 20, o: 0 }); mk('rect', { x, y: base - h, width: 120, height: h, fill: c, 'fill-opacity': .88, rx: 5 }, g); T(g, s, { x: x + 60, y: base + 40, size: 26, fill: c, weight: 600, anchor: 'middle' }); tw(g, { o: 1, y: 0 }, t, .6, out); };
+    bar(230, 220, COL.good, 'tax receipts', m('fp', .8)); bar(430, 330, COL.task, 'spending', m('fp', 1.6));
+    draw(path(p, `M570 ${base - 220}V${base - 330}`, { stroke: COL.bad, 'stroke-width': 5 }, { d: 0 }), m('fp', 2.6), .6);
+    text(p, 'deficit → borrow', 590, base - 262, m('fp', 3.1), { size: 28, fill: COL.bad, weight: 700 });
+    text(p, 'surplus → less borrowing', 400, 760, m('fp', 4.2), { size: 28, fill: COL.dim, anchor: 'middle' });
+    show(infoCard(p, 1170, 340, 640, 270, COL.whole, 'Short-term bills', ['1–12 months', 'usually zero-coupon, sold at a discount'], 36), m('dm', 1)); 
+    show(infoCard(p, 1170, 600, 640, 230, COL.task, 'Notes and bonds', ['mostly fixed-rate, domestic currency', 'also floating, inflation-linked, foreign'], 36), m('dm', 4));
+    text(p, 'OECD: ≈ 85% long-term', 1170, 760, m('oecd'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 700 });
+  }],
+
+  ['maturity', 'Choosing maturities', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 430, 230, 640, 240, COL.good, 'Short-term funding: cheaper', ['liquidity premium → lower yield', 'safe, like a bank deposit'], 36), m('cheap'));
+    show(infoCard(p, 1170, 230, 640, 240, COL.bad, 'Short-term funding: riskier', ['rollover risk', 'unstable budget costs and taxes'], 36), m('risk'));
+    show(pill(p, 'so governments spread debt across maturities, on a regular schedule', COL.chalk, 800, 430, 0, 32), m('mix'));
+    [['risk-free benchmark for pricing other debt', 430, 540, COL.whole, 0], ['hedging interest rate risk', 1170, 540, COL.rat, 2.2], ['repo and derivative collateral', 430, 640, COL.task, 4.2], ['monetary policy and FX reserves', 1170, 640, COL.good, 6]].forEach(([s, x, y, c, o]) => show(pill(p, s, c, x, y, 0, 26), m('ben', o)));
+    text(p, 'benefits of regular longer-term issuance', 800, 750, m('ben'), { size: 30, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['auction', 'Government bond auctions', (m) => {
+    const p = panel(0), x0 = 480, ord = [3, 0, 5, 2, 1, 4], Y = i => 330 + i * 78;
+    text(p, 'Auction announced: amount, dates, maturity', 800, 120, m('ann'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'offering: 1,000', 1500, 160, m('ann', 1.2), { size: 26, fill: COL.dim, anchor: 'end' });
+    const nc = G(p, { o: 0 }); mk('rect', { x: x0, y: 200, width: 100, height: 46, rx: 6, fill: COL.whole, 'fill-opacity': .88 }, nc); T(nc, 'non-competitive: accept the price, always filled', { x: x0 + 120, y: 233, size: 26, fill: COL.whole, weight: 600 });
+    show(nc, m('bid', 4));
+    BIDS.forEach(([pr, q], i) => {
+      const g = G(p, { y: Y(ord.indexOf(i)), o: 0 });
+      T(g, pr.toFixed(2), { x: x0 - 20, y: 10, size: 30, fill: COL.chalk, weight: 600, anchor: 'end' });
+      const r = mk('rect', { x: x0, y: -26, width: q * .8, height: 52, rx: 6, fill: COL.dim, 'fill-opacity': .85 }, g);
+      T(g, String(q), { x: x0 + q * .8 + 14, y: 10, size: 26, fill: COL.dim });
+      show(g, m('bid', .3 + i * .5)); tw(g, { y: Y(i) }, m('rank'), 1.4);
+      if (i < 3) tw(r, { c_fill: COL.good, a_opacity: 1 }, m('cut'), .6); else tw(r, { c_fill: COL.bad, 'a_fill-opacity': .35 }, m('cut'), .6);
+    });
+    text(p, 'bid price', x0 - 20, 285, m('bid'), { size: 24, fill: COL.dim, anchor: 'end' });
+    text(p, 'amount', x0, 285, m('bid'), { size: 24, fill: COL.dim });
+    draw(path(p, `M300 ${Y(2) + 39}H1380`, { stroke: COL.task, 'stroke-width': 4, 'stroke-dasharray': '10 8' }, { d: 0 }), m('cut', .3), .8);
+    text(p, 'cut-off: 98.40', 1380, Y(2) + 70, m('cut', .8), { size: 32, fill: COL.task, anchor: 'end', weight: 700 });
+    text(p, 'bids below the cut-off get nothing · illustrative numbers', 800, 840, m('cut', 1.5), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['price', 'Single vs multiple price', (m) => {
+    const p = panel(0), rows = [98.60, 98.50, 98.40];
+    [[420, 'Single-price auction', COL.good, 'single', rows.map(() => 98.40)], [1180, 'Multiple-price auction', COL.task, 'multi', rows]].forEach(([x, t, c, k, pays]) => {
+      const g = card1(p, x, 280, 640, 300, c); T(g, t, { y: -95, size: 38, fill: c, weight: 600, anchor: 'middle' });
+      rows.forEach((b, i) => T(g, `bid ${b.toFixed(2)}  →  pays ${pays[i].toFixed(2)}`, { y: -25 + i * 55, size: 32, fill: COL.chalk, weight: 600, anchor: 'middle' }));
+      show(g, m(k));
+    });
+    text(p, 'may lower funding cost, broader participation', 420, 640, m('single', 3), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    show(pill(p, 'India (2021): most auctions moved to single price', COL.whole, 1180, 640, 0, 26), m('multi', 4));
+    text(p, 'Singapore 30-year auction: cut-off yield 1.95% · price 98.303% of par', 800, 740, m('sg'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'coupon = cut-off yield rounded down to the nearest 0.125%  →  1.875%', 800, 800, m('sg', 2.4), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['dealers', 'Primary dealers and trading', (m) => {
+    const p = panel(0), x = yr => 300 + (yr - 2000) * 140, y = 680;
+    show(infoCard(p, 800, 250, 1100, 220, COL.rat, 'Primary dealers', ['must bid in every auction · central bank counterparties', 'help foreign central banks and other investors buy and sell'], 40), m('pd'));
+    show(pill(p, 'after issue: over-the-counter trading, like corporate bonds', COL.whole, 800, 450, 0, 30), m('otc'));
+    draw(path(p, `M${x(2000)} ${y}H${x(2007)}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('thirty'), .8);
+    [2001, 2006].forEach(yr => { path(p, `M${x(yr)} ${y - 10}V${y + 10}`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, String(yr), x(yr), y + 50, m('thirty'), { size: 26, fill: COL.dim, anchor: 'middle' }); });
+    draw(path(p, `M${x(2001)} ${y}H${x(2006)}`, { stroke: COL.bad, 'stroke-width': 9 }, { d: 0 }), m('thirty', 2), 1.2);
+    text(p, 'Oct 2001: 30-year issuance stopped', x(2001), y - 105, m('thirty', 1.5), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, '(budget surplus) · 10-year becomes the benchmark', x(2001) + 150, y - 70, m('thirty', 3), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Feb 2006: 30-year issuance resumes (deficits)', x(2006), y - 105, m('resume'), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Sovereigns tax; emerging-market ones often borrow in foreign currency.', 'w1'], ['Fiscal policy sets the level of debt; debt management the mix.', 'w2'],
+     ['Auctions: competitive and non-competitive bids, single or multiple price.', 'w3'], ['Primary dealers support auctions; bonds then trade over the counter.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 32, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 2 | Fixed-Income Cash Flows and Types | Bond Features and Markets | 9 | ready
 3 | Fixed-Income Issuance and Trading | Bond Features and Markets | 8 | ready
 4 | Fixed-Income Markets for Corporate Issuers | Bond Features and Markets | 9 | ready
-5 | Fixed-Income Markets for Government Issuers | Bond Features and Markets | | planned
+5 | Fixed-Income Markets for Government Issuers | Bond Features and Markets | 8 | ready
 6 | Fixed-Income Bond Valuation: Prices and Yields | Valuation, Yields and Curves | | planned
 7 | Yield and Yield Spread Measures for Fixed-Rate Bonds | Valuation, Yields and Curves | | planned
 8 | Yield and Yield Spread Measures for Floating-Rate Instruments | Valuation, Yields and Curves | | planned
