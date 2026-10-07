@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Analysis for Government Issuers</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 15, title: 'Credit Analysis for Government Issuers', minutes: 8, language: 'en' };
+
+const item = (p, x, y, w, name, sub, c, t) => { const g = card1(p, x, y, w, 112, c); T(g, name, { x: -w / 2 + 28, y: -6, size: 34, fill: c, weight: 700 }); T(g, sub, { x: -w / 2 + 28, y: 34, size: 25, fill: COL.dim }); show(g, t); return g; };
+
+const BEATS = [
+  ['intro', 'Government credit analysis', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 15', { x: 800, y: 290, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Credit Analysis for', 'Government Issuers'].forEach((s, i) => T(g, s, { x: 800, y: 400 + i * 100, size: 84, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'ability and willingness to pay', 800, 650, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['differ', 'Sovereign vs corporate credit', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 420, 260, 640, 240, COL.task, 'Corporate', ['debt builds profits', 'repaid from operating cash flow'], 40), m('use'));
+    show(infoCard(p, 1180, 260, 640, 240, COL.good, 'Government', ['debt funds fiscal policy, public services', 'repaid from taxes and other revenue'], 40), m('use', 2.5));
+    show(pill(p, 'right to tax → lowest credit risk in its own country', COL.whole, 800, 450, 0, 32), m('tax'));
+    show(pill(p, 'ability to pay', COL.good, 520, 540, 0, 30), m('abil')); show(pill(p, 'willingness to pay', COL.rat, 1000, 540, 0, 30), m('abil', 1.5));
+    show(infoCard(p, 420, 720, 640, 200, COL.bad, 'Sovereign immunity', ['cannot force bankruptcy or', 'liquidation of a government'], 36), m('imm'));
+    show(infoCard(p, 1180, 720, 640, 200, COL.whole, 'Restructuring', ['with IMF help; maturities extended', 'Uruguay 2003: +5 years, a default in substance'], 36), m('restr'));
+  }],
+
+  ['qual', 'Qualitative factors', (m) => {
+    const p = panel(0);
+    text(p, 'Qualitative factors in sovereign creditworthiness', 800, 110, .3, { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    [['Institutions & policy', 'rule of law · property rights · transparency · stability', COL.good, 'inst'], ['Fiscal flexibility', 'tax and spending discipline · e.g. Romania outlook, 2021', COL.whole, 'fisc'], ['Monetary effectiveness', 'central bank independent of the treasury', COL.task, 'mon'], ['Economic flexibility', 'size, diversification · emerging: one commodity', COL.rat, 'eco'], ['External status', 'reserve currency? capital controls? IMF support', COL.bad, 'ext']]
+      .forEach(([n, s, c, k], i) => item(p, 800, 250 + i * 130, 1200, n, s, c, m(k)));
+  }],
+
+  ['quant', 'Quantitative factors', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 290, 330, 440, 340, COL.bad, 'Debt burden', ['debt ÷ GDP', 'debt ÷ revenue', 'deficit ÷ GDP', 'like leverage'], 40), m('burden'));
+    show(infoCard(p, 800, 330, 440, 340, COL.task, 'Debt affordability', ['interest ÷ GDP', 'interest ÷ revenue', 'like coverage'], 40), m('afford'));
+    show(infoCard(p, 1310, 330, 440, 340, COL.good, 'Growth & stability', ['size of the economy', 'income per person', 'steadiness of real growth'], 40), m('growth'));
+    show(pill(p, 'higher burden or lower affordability → lower credit quality', COL.rat, 800, 640, 0, 30), m('rule'));
+    text(p, 'European debt crisis: high debt ÷ GDP + rising deficits → spreads over Germany widened sharply', 800, 760, m('euro'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['nonsov', 'Non-sovereign government issuers', (m) => {
+    const p = panel(0);
+    item(p, 800, 180, 1300, 'Agencies', 'quasi-government · public mission · rating often equals the sovereign\'s (e.g. an airport authority)', COL.task, m('agency'));
+    item(p, 800, 320, 1300, 'Development banks', 'created or supported by government · may carry an explicit guarantee', COL.whole, m('dev'));
+    item(p, 800, 460, 1300, 'Regional and local governments', 'own taxes and revenues · credit quality can differ from the sovereign\'s', COL.rat, m('reg'));
+    show(infoCard(p, 420, 700, 640, 220, COL.good, 'General obligation bonds', ['backed by general taxing power', 'analyzed like sovereign debt'], 36), m('go'));
+    show(infoCard(p, 1180, 700, 640, 220, COL.bad, 'Revenue bonds', ['backed by one project\'s cash flows', 'analyzed like a corporate project'], 36), m('rev'));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Sovereigns repay from taxes; willingness to pay matters too.', 'w1'], ['Qualitative: institutions, fiscal, monetary, economic, external.', 'w2'],
+     ['Quantitative: debt burden, affordability, growth, stability.', 'w3'], ['Agencies track the sovereign; local debt: GO vs revenue bonds.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 33, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
