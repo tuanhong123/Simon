@@ -13,7 +13,7 @@
 12 | Yield-Based Bond Convexity and Portfolio Properties | Interest Rate Risk | 8 | ready
 13 | Curve-Based and Empirical Fixed-Income Risk Measures | Interest Rate Risk | 9 | ready
 14 | Credit Risk | Credit and Securitization | 9 | ready
-15 | Credit Analysis for Government Issuers | Credit and Securitization | | planned
+15 | Credit Analysis for Government Issuers | Credit and Securitization | 8 | ready
 16 | Credit Analysis for Corporate Issuers | Credit and Securitization | | planned
 17 | Fixed-Income Securitization | Credit and Securitization | | planned
 18 | Asset-Backed Security (ABS) Instrument and Market Features | Credit and Securitization | | planned
