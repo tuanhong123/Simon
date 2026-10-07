@@ -13,7 +13,7 @@ CH = sys.argv[1] if len(sys.argv) > 1 else "ch01"
 SITE = ROOT / f"site/econ/{CH}"
 URL = f"http://localhost:8765/econ/{CH}/index.html?beat=0&t=0"
 WORK = Path(f"/tmp/claude-0/vid_{CH}"); OUT = ROOT / f"video/econ-{CH}.mp4"
-FPS = 24
+FPS = 15
 ANS = {}   # quiz beats are left out of the video
 
 def ff(*a):
@@ -23,7 +23,7 @@ VF = "scale=1920:1080:flags=lanczos,format=yuv420p"
 ENC = ["-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-ac", "2"]
 
 async def main():
-    shutil.rmtree(WORK, ignore_errors=True); WORK.mkdir(parents=True)
+    WORK.mkdir(parents=True, exist_ok=True)   # resumable: finished beat clips are kept
     clips = []
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -40,6 +40,7 @@ async def main():
             clip = dict(x=box["x"], y=box["y"], width=box["width"], height=box["height"])
             shot = lambda path: pg.screenshot(path=str(path), type="jpeg", quality=92, clip=clip)
             out = WORK / f"{id_}.mp4"
+            if out.exists() and out.stat().st_size > 1000: clips.append(out); print('cached', id_, flush=True); continue
             if id_ in ANS:
                 dur = float(subprocess.check_output(["ffprobe","-v","error","-show_entries","format=duration","-of","csv=p=0",str(mp3)]))
                 await shot(WORK / f"{id_}_a.jpg")
