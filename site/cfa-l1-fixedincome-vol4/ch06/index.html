@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixed-Income Bond Valuation: Prices and Yields</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 6, title: 'Fixed-Income Bond Valuation: Prices and Yields', minutes: 9, language: 'en' };
+
+const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });
+const pv = (r, c = 1.6, n = 10) => { let v = 100 / (1 + r) ** n; for (let k = 1; k <= n; k++) v += c / (1 + r) ** k; return v; };
+const pctMove = (yy, c, n, d) => bondPrice(yy + d, c, n) / bondPrice(yy, c, n) - 1;
+
+const BEATS = [
+  ['intro', 'Prices and yields', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 6', { x: 800, y: 290, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Bond Valuation:', { x: 800, y: 390, size: 80, weight: 600, anchor: 'middle' });
+    T(g, 'Prices and Yields', { x: 800, y: 485, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'price a bond from its yield, and see what moves it', 800, 610, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['dcf', 'Bond price = present value', (m) => {
+    const p = panel(0), xs = i => 330 + i * 130, df = k => 1 / 1.02 ** k;
+    text(p, '5-year bond · 3.2% coupon paid every six months · discount rate 2% per six months', 800, 120, m('cf'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['period', 220, COL.dim], ['cash flow', 320, COL.task], ['÷ 1.02^period', 420, COL.bad], ['present value', 520, COL.good]].forEach(([s, y, c], i) => text(p, s, 30, y + 10, m('cf', .3 + i * .15), { size: 24, fill: c, weight: 600 }));
+    const pvs = [];
+    for (let i = 0; i < 10; i++) {
+      const k = i + 1, cfv = k === 10 ? 101.6 : 1.6, v = cfv * df(k); pvs.push(v);
+      text(p, String(k), xs(i), 230, m('cf', .3 + i * .1), { size: 26, fill: COL.dim, anchor: 'middle' });
+      text(p, cfv.toFixed(1), xs(i), 330, m('cf', 1 + i * .25), { size: 32, fill: COL.task, anchor: 'middle', weight: 600 });
+      text(p, df(k).toFixed(3), xs(i), 430, m('disc', .2 + i * .2), { size: 28, fill: COL.bad, anchor: 'middle' });
+      text(p, v.toFixed(2), xs(i), 530, m('pv', .2 + i * .25), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+    }
+    draw(path(p, `M${xs(0) - 50} 580H${xs(9) + 50}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('sum'), .6);
+    const tot = T(p, 'Price = 0.00', { x: 800, y: 690, size: 64, fill: COL.good, weight: 700, anchor: 'middle', o: 0 }); show(tot, m('sum'));
+    const total = pvs.reduce((a, b) => a + b, 0);
+    prog(q => { tot.textContent = 'Price = ' + (total * q).toFixed(2); }, m('sum', .3), 1.5);
+    text(p, 'later cash flows are worth the least today', 800, 780, m('pv', 3.5), { size: 30, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['premium', 'Discount, par and premium', (m) => {
+    const p = panel(0), base = 720, H = v => (v - 90) * 26, xs = [430, 800, 1170];
+    path(p, `M200 ${base}H1400`, { stroke: COL.chalk, 'stroke-width': 3 });
+    draw(path(p, `M200 ${base - H(100)}H1400`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), .3, .8);
+    text(p, 'par 100', 1400, base - H(100) - 14, .6, { size: 26, fill: COL.dim, anchor: 'end' });
+    [['Discount', 96.41, COL.bad, 'market rate 2.0% > coupon 1.6%', 'disc'], ['Par', 100, COL.whole, 'market rate = coupon rate', 'par'], ['Premium', 103.75, COL.good, 'market rate 1.2% < coupon 1.6%', 'prem']].forEach(([s, v, c, why, k], i) => {
+      const g = G(p, { x: xs[i], y: 30, o: 0 });
+      mk('rect', { x: -110, y: base - H(v), width: 220, height: H(v), fill: c, 'fill-opacity': .88, rx: 6 }, g);
+      T(g, v.toFixed(2), { y: base - H(v) - 16, size: 44, fill: COL.chalk, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m(k), .7, out);
+      text(p, s, xs[i], base + 50, m(k, .4), { size: 36, fill: c, anchor: 'middle', weight: 700 });
+      text(p, why, xs[i], base + 92, m(k, .8), { size: 24, fill: COL.dim, anchor: 'middle' });
+    });
+    text(p, 'rates per six months · axis starts at 90', 200, 880, m('disc'), { size: 24, fill: COL.faint });
+    text(p, 'discount rate ↑  →  price ↓          discount rate ↓  →  price ↑', 800, 130, m('end'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['ytm', 'Yield to maturity', (m) => {
+    const p = panel(0), X = r => 300 + (r - .5) * 500, Y = v => 720 - (v - 94) * 24;
+    axes2(p, 240, 720, 1380, 240, 'discount rate per six months (%)', 'price');
+    [.5, 1, 1.5, 2, 2.5].forEach(r => { path(p, `M${X(r)} 712V728`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, r.toFixed(1), X(r), 760, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    const pts = []; for (let r = .5; r <= 2.5001; r += .05) pts.push([X(r), Y(pv(r / 100))]);
+    draw(path(p, polyline(pts), { stroke: COL.whole, 'stroke-width': 5 }, { d: 0 }), m('def'), 1.4);
+    text(p, 'YTM: the one rate where PV of cash flows = price', 800, 130, m('def'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    draw(path(p, `M240 ${Y(108.15)}H${X(2.5)}`, { stroke: COL.task, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), m('ex'), .8);
+    text(p, 'market price 108.15', 250, Y(108.15) - 14, m('ex', .3), { size: 28, fill: COL.task, weight: 700 });
+    const dot = G(p, { x: X(2), y: Y(pv(.02)), o: 0 }); mk('circle', { r: 13, fill: COL.good }, dot); show(dot, m('solve'));
+    const rd = T(p, 'r = 2.00%    PV = 96.41', { x: 1380, y: 330, size: 34, fill: COL.chalk, weight: 600, anchor: 'end', o: 0 }); show(rd, m('solve'));
+    prog(q => { const r = 2 - 1.25 * q; put(dot, { x: X(r), y: Y(pv(r / 100)) }); rd.textContent = `r = ${r.toFixed(2)}%    PV = ${pv(r / 100).toFixed(2)}`; }, m('solve', .6), 3, io);
+    text(p, 'YTM ≈ 0.75% per six months = 1.50% a year', 1380, 470, m('solve', 4.2), { size: 32, fill: COL.good, anchor: 'end', weight: 700 });
+    [['hold to maturity', 330, 'assume'], ['paid in full, on time', 800, 'assume'], ['coupons reinvested at the YTM', 1270, 'assume']].forEach(([s, x, k], i) => show(pill(p, s, COL.rat, x, 870, 0, 24), m(k, i * 1.5)));
+    text(p, 'yields can be negative', 1380, 520, m('neg'), { size: 28, fill: COL.bad, anchor: 'end', weight: 600 });
+  }],
+
+  ['flat', 'Flat price and accrued interest', (m) => {
+    const p = panel(0), X = i => 300 + i * 500, Y = v => 720 - (v - 99) * 300;
+    text(p, 'Full price = flat price + accrued interest', 800, 120, m('acc'), { size: 42, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    axes2(p, 240, 720, 1380, 250, 'time', 'price');
+    [0, 1, 2].forEach(i => { path(p, `M${X(i)} 712V728`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, 'coupon', X(i), 764, m('acc', .5), { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    draw(path(p, polyline([[X(0), Y(99.343)], [X(1), Y(100.093)], [X(1), Y(99.343)], [X(2) - 20, Y(100.07)]]), { stroke: COL.task, 'stroke-width': 6 }, { d: 0 }), m('saw'), 2.2);
+    text(p, 'full (dirty) price: rises each day, drops at the coupon', 330, 300, m('saw', .4), { size: 26, fill: COL.task, weight: 600 });
+    draw(path(p, `M${X(0)} ${Y(99.343)}H${X(2)}`, { stroke: COL.good, 'stroke-width': 5, 'stroke-dasharray': '12 8' }, { d: 0 }), m('flat'), 1);
+    text(p, 'flat (clean) price: the quote', X(1.15), Y(99.343) + 44, m('flat', .4), { size: 28, fill: COL.good, weight: 700 });
+    const d = G(p, { x: X(0) + 500 * 60 / 184, y: Y(99.343 + .75 * 60 / 184), o: 0 }); mk('circle', { r: 11, fill: COL.chalk }, d); show(d, m('ex', 4));
+    text(p, 'settlement: 60 of 184 days', X(0) + 500 * 60 / 184 + 20, Y(99.343 + .75 * 60 / 184) - 20, m('ex', 4.3), { size: 24, fill: COL.chalk });
+    text(p, 'full 99.587  ·  accrued = 0.75 × 60/184 = 0.245', 800, 828, m('ex', 6), { size: 30, fill: COL.dim, anchor: 'middle' });
+    text(p, 'flat = 99.587 − 0.245 = 99.343', 800, 880, m('res'), { size: 36, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['features', 'What drives price changes', (m) => {
+    const p = panel(0), base = 480, k = 11;
+    path(p, `M160 ${base}H1480`, { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'price change if yield falls (↑) or rises (↓) by 1 point', 800, 110, .3, { size: 28, fill: COL.dim, anchor: 'middle' });
+    const group = (title, items, t0, tcol) => {
+      text(p, title, (items[0][2] + items[2][2]) / 2, 170, t0, { size: 32, fill: tcol, anchor: 'middle', weight: 700 });
+      items.forEach(([lbl, [c, n], x], i) => {
+        const up = pctMove(3.2, c, n, -1) * 100, dn = pctMove(3.2, c, n, 1) * 100, g = G(p, { x, y: 20, o: 0 });
+        mk('rect', { x: -52, y: base - up * k, width: 48, height: up * k, fill: COL.good, 'fill-opacity': .9, rx: 4 }, g); mk('rect', { x: 4, y: base, width: 48, height: -dn * k, fill: COL.bad, 'fill-opacity': .9, rx: 4 }, g);
+        T(g, '+' + up.toFixed(1) + '%', { x: -28, y: base - up * k - 12, size: 22, fill: COL.chalk, weight: 600, anchor: 'middle' }); T(g, dn.toFixed(1) + '%', { x: 28, y: base - dn * k + 30, size: 22, fill: COL.chalk, weight: 600, anchor: 'middle' });
+        T(g, lbl, { y: 740, size: 26, fill: COL.dim, anchor: 'middle' });
+        tw(g, { o: 1, y: 0 }, t0 + .4 + i * .6, .6, out);
+      });
+    };
+    group('Longer maturity → bigger change', [['5-year', [3.2, 10], 280], ['10-year', [3.2, 20], 480], ['30-year', [3.2, 60], 680]], m('mat'), COL.whole);
+    group('Lower coupon → bigger change', [['1% coupon', [1, 20], 1000], ['3.2% coupon', [3.2, 20], 1200], ['6% coupon', [6, 20], 1400]], m('cpn'), COL.task);
+    text(p, '(coupon groups: 10-year bonds · all at a 3.2% yield)', 1200, 790, m('cpn', 3), { size: 22, fill: COL.faint, anchor: 'middle' });
+    text(p, 'a fall in yield lifts the price by more than a rise in yield lowers it', 800, 850, m('sym'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['matrix', 'Matrix pricing', (m) => {
+    const p = panel(0), cx = [520, 880, 1240], ry = [330, 440, 550];
+    show(pill(p, 'thinly traded bond: 4-year, BBB', COL.rat, 800, 130, 0, 34), m('prob'));
+    text(p, 'liquid bonds with known yields', 800, 215, m('comp'), { size: 30, fill: COL.dim, anchor: 'middle' });
+    [['A', 710], ['BBB', 1070]].forEach(([s, x]) => text(p, s, x, 285, m('comp', .3), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 700 }));
+    [['3-year', 330], ['4-year', 440], ['5-year', 550]].forEach(([s, y]) => text(p, s, 530, y + 12, m('comp', .3), { size: 32, fill: COL.chalk, anchor: 'end', weight: 700 }));
+    const cell = (x, y, s, c, t, big) => { const g = G(p, { x, y, o: 0 }); mk('rect', { x: -150, y: -42, width: 300, height: 84, rx: 12, fill: 'none', stroke: c, 'stroke-width': 3 }, g); T(g, s, { y: 12, size: big ? 40 : 34, fill: c, weight: 700, anchor: 'middle' }); show(g, t); return g; };
+    cell(710, 330, '2.80%', COL.dim, m('comp', .6)); cell(1070, 330, '3.20%', COL.good, m('comp', 1)); cell(710, 440, '—', COL.dim, m('comp', 1.4)); cell(710, 550, '3.20%', COL.dim, m('comp', 1.8)); cell(1070, 550, '3.60%', COL.good, m('comp', 2.2));
+    cell(1070, 440, '≈ 3.40%', COL.task, m('interp', .8), true);
+    draw(path(p, 'M1070 372V398', { stroke: COL.task, 'stroke-width': 4 }, { d: 0 }), m('interp'), .5); draw(path(p, 'M1070 508V482', { stroke: COL.task, 'stroke-width': 4 }, { d: 0 }), m('interp'), .5);
+    text(p, 'interpolate: halfway between 3.20% and 3.60%', 800, 650, m('interp', 1.4), { size: 30, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, 'illustrative yields', 1500, 250, m('comp'), { size: 22, fill: COL.faint, anchor: 'end' });
+    text(p, 'price = present value of its cash flows at the estimated 3.40%', 800, 720, m('price'), { size: 36, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Price is the present value of cash flows at the market rate.', 'w1'], ['Coupon below the discount rate: discount. Above: premium.', 'w2'],
+     ['YTM is the rate that makes present value equal to price.', 'w3'], ['Quoted price excludes accrued interest; long, low-coupon bonds swing most.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 32, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
