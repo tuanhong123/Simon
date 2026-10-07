@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alternative Investment Performance and Returns</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 12, title: 'Alternative Investment Performance and Returns', minutes: 8, language: 'en', next: '../ch13/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+// smooth path through points [[x, y], ...] (Catmull-Rom to cubic Bezier)
+const smooth = pts => {
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    d += `C${p1[0] + (p2[0] - p0[0]) / 6} ${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6} ${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]} ${p2[1]}`;
+  }
+  return d;
+};
+
+const BEATS = [
+  ['intro', 'Measuring performance', introBeat('Alternative Investments', 2, 'Performance', 'and Returns', 'illiquid, leveraged, and paid through complex fees')],
+
+  ['why', 'Why appraisal is hard', (m) => {
+    const p = panel(0);
+    text(p, 'Public stocks and bonds', 110, 170, m('a'), { size: 36, fill: C_UND, weight: 700 });
+    bullets(p, ['standardized claims', 'priced continuously', 'peer groups and indexes'], 110, 250, 60, [m('a', 1), m('a', 2.5), m('a', 4)], { size: 28 });
+    text(p, 'Alternatives', 900, 170, m('alt'), { size: 36, fill: C_PRICE, weight: 700 });
+    bullets(p, ['uneven cash flows', 'borrowed funds', 'hard-to-observe values', 'complex fees and taxes'], 900, 250, 60, [m('alt', .5), m('alt', 1.5), m('alt', 2.5), m('alt', 3.5)], { size: 28 });
+    path(p, 'M110 540H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'Four areas to scrutinize', 800, 610, m('four'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['life cycle', 'leverage', 'valuation', 'fees'].forEach((s, i) => pill(p, s, [C_GAIN, C_RISK, C_UND, C_PRICE][i], 280 + i * 350, 700, m('four', 1 + i * .8), 30));
+    text(p, 'returns are also less normally distributed', 800, 810, m('four', 6), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['jcurve', 'The J-curve', (m) => {
+    const p = panel(0);
+    const ch = chart(p, { x: 120, y: 190, w: 1260, h: 520, x0: 0, x1: 10, y0: -30, y1: 70, xl: 'years', yl: 'cumulative net return (illustrative)' });
+    [[0, 2, 'Commitment', C_RISK, 'commit'], [2, 5, 'Deployment', C_PRICE, 'deploy'], [5, 10, 'Distribution', C_GAIN, 'dist']].forEach(([a, b, s, c, k]) => {
+      const g = G(p, { o: 0 }); mk('rect', { x: ch.X(a) + 3, y: ch.y, width: ch.X(b) - ch.X(a) - 6, height: ch.h, fill: c, 'fill-opacity': .1 }, g); T(g, s, { x: (ch.X(a) + ch.X(b)) / 2, y: ch.y + 40, size: 26, fill: c, weight: 700, anchor: 'middle' }); show(g, m(k));
+    });
+    const pts = [[0, 0], [1, -12], [2, -18], [3, -14], [4, -4], [5, 10], [6, 26], [7, 40], [8, 50], [9, 54], [10, 55]].map(([x, y]) => [ch.X(x), ch.Y(y)]);
+    draw(path(p, smooth(pts), { stroke: C_UND, 'stroke-width': 7 }, { d: 0 }), m('commit'), 20);
+    text(p, 'negative: fees, little income', ch.X(2), ch.Y(-18) + 52, m('commit', 3), { size: 24, fill: C_RISK, anchor: 'middle' });
+    text(p, 'sales and exits: returns accelerate', ch.X(8.2), ch.Y(40) + 70, m('dist', 2), { size: 24, fill: C_GAIN, anchor: 'middle' });
+    text(p, 'the J-curve → use IRR (cash-flow timing)', 800, 820, m('pt'), { size: 32, anchor: 'middle', weight: 700 });
+  }],
+
+  ['irr', 'IRR and MOIC', (m) => {
+    const p = panel(0), cf = [-2.5, -4.0, -1.7, -0.5, 1.0, 3.0, 12.5];
+    const ch = chart(p, { x: 110, y: 190, w: 820, h: 520, x0: 0, x1: 7, y0: -6, y1: 14, xl: 'year', yl: 'net cash flow ($m)' });
+    cf.forEach((_, i) => text(p, String(i), ch.X(i + .5), ch.Y(-6) + 36, m('a'), { size: 24, fill: COL.dim, anchor: 'middle' }));
+    cf.forEach((v, i) => {
+      const g = G(p, { y: 20, o: 0 }), x = ch.X(i + .5);
+      mk('rect', { x: x - 38, y: Math.min(ch.Y(0), ch.Y(v)), width: 76, height: Math.abs(ch.Y(v) - ch.Y(0)), fill: v < 0 ? C_RISK : C_GAIN, 'fill-opacity': .85, rx: 3 }, g);
+      T(g, String(v), { x, y: v < 0 ? ch.Y(v) + 34 : ch.Y(v) - 12, size: 24, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, i < 4 ? m('out', i * .7) : m('in', (i - 4) * .8), .5, out);
+    });
+    text(p, 'IRR ≈ 14.6%', 1010, 270, m('res'), { size: 56, fill: C_GAIN, weight: 700 });
+    text(p, 'the rate that makes the cash flows sum to zero', 1010, 320, m('res', 1), { size: 24, fill: COL.dim });
+    path(p, 'M1010 400H1490', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'MOIC = (realized + unrealized) ÷ invested', 1010, 470, m('moic'), { size: 26, fill: C_PRICE, weight: 700 });
+    text(p, '8.5 ÷ (3.8 + 1.2 + 0.2) = 1.63×', 1010, 530, m('moic', 3), { size: 32, weight: 700 });
+    text(p, 'but ignores timing: 2× in 2 years ≠ 2× in 15', 1010, 620, m('caveat'), { size: 26, fill: C_RISK, weight: 600 });
+  }],
+
+  ['lever', 'Leverage', (m) => {
+    const p = panel(0);
+    text(p, 'r_L = r + (V_b ÷ V_c)(r − r_b)', 800, 150, m('a'), { size: 52, anchor: 'middle', weight: 700 });
+    text(p, 'Fund with $100m, borrows $50m at 4%', 800, 235, m('s1'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Positions return +8%', '0.08 + 0.5 × (0.08 − 0.04)', '+10%', C_GAIN, 's1'], ['Positions return −2%', '−0.02 + 0.5 × (−0.02 − 0.04)', '−5%', C_RISK, 's2'], ['Positions return = 4% (the borrowing rate)', 'r_L = r', 'no benefit', C_PRICE, 's3']].forEach(([a, b, c, col, k], i) => {
+      const y = 360 + i * 130;
+      text(p, a, 110, y, m(k), { size: 30, weight: 700 }); text(p, b, 110, y + 48, m(k, .6), { size: 26, fill: COL.dim });
+      text(p, c, 1300, y + 20, m(k, 1.2), { size: 56, fill: col, anchor: 'middle', weight: 700 });
+    });
+    text(p, 'helps only if assets earn more than the cost of debt · margin calls force sales', 800, 800, m('risk'), { size: 28, fill: C_RISK, anchor: 'middle', weight: 600 });
+  }],
+
+  ['fair', 'Fair value hierarchy', (m) => {
+    const p = panel(0);
+    [['Level 1', 'quoted prices in active markets', 'listed shares', C_GAIN, 'l1'], ['Level 2', 'observable inputs, directly or indirectly', 'OTC derivatives priced by models', C_PRICE, 'l2'], ['Level 3', 'unobservable inputs', 'private equity, real estate', C_RISK, 'l3']].forEach(([a, b, c, col, k], i) => {
+      const y = 200 + i * 170, g = G(p, { o: 0 }); mk('rect', { x: 110, y, width: 1380, height: 130, rx: 16, fill: col, 'fill-opacity': .12, stroke: col, 'stroke-width': 3 }, g);
+      T(g, a, { x: 150, y: y + 78, size: 40, fill: col, weight: 700 }); T(g, b, { x: 380, y: y + 58, size: 30, weight: 600 }); T(g, c, { x: 380, y: y + 100, size: 26, fill: COL.dim }); show(g, m(k));
+    });
+    text(p, 'Level 3 is mark-to-model: values stay near cost, smoothing returns and understating volatility', 800, 760, m('risk'), { size: 28, fill: C_RISK, anchor: 'middle', weight: 700 });
+    text(p, 'extra due diligence needed', 800, 810, m('risk', 4), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['terms', 'Redemption and fee terms', (m) => {
+    const p = panel(0);
+    text(p, 'Liquidity terms', 110, 150, m('a'), { size: 34, fill: C_UND, weight: 700 }); text(p, 'Custom fee arrangements', 860, 150, m('custom'), { size: 34, fill: C_PRICE, weight: 700 });
+    [['Notice period', '30–90 days to redeem', 'notice'], ['Lockup', 'minimum holding period', 'lock'], ['Gate', 'limits redemptions for a time', 'gate'], ['Redemption fee', 'compensates remaining investors', 'fee']].forEach(([a, b, k], i) => { text(p, a, 110, 250 + i * 110, m(k), { size: 32, weight: 700 }); text(p, b, 110, 290 + i * 110, m(k, .5), { size: 26, fill: COL.dim }); });
+    bullets(p, ['longer lockup or larger size → lower fees', 'founders shares: 1.5% + 10% vs 2% + 20%', 'either/or: higher of 1% fee and 30% incentive'], 860, 260, 120, [m('custom', 1.2), m('custom', 3.8), m('custom', 6.5)], { size: 26 });
+  }],
+
+  ['kettle', 'Net returns after fees', (m) => {
+    const p = panel(0), cx = [110, 960, 1340];
+    text(p, 'Kettleside: $100m → $130m (+30%) · 1% management fee on year-end AUM · 20% performance fee', 800, 130, m('a'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['Fee method', 'Manager fees', 'Investor return'].forEach((s, i) => text(p, s, cx[i], 230, m('a', 1), { size: 28, fill: COL.dim, weight: 700, anchor: i ? 'middle' : 'start' }));
+    path(p, 'M110 255H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    [['Independent fees', '1.3 + 6.0 = $7.30m', '22.70%', 'ind'], ['Performance fee net of mgmt fee', '1.3 + 5.74 = $7.04m', '22.96%', 'net'], ['6% hurdle, net of mgmt fee', '1.3 + 4.54 = $5.84m', '24.16%', 'hurdle']].forEach(([a, b, c, k], i) => {
+      const y = 360 + i * 120;
+      text(p, a, cx[0], y, m(k), { size: 28 }); text(p, b, cx[1], y, m(k, .5), { size: 28, fill: C_PRICE, anchor: 'middle', weight: 600 }); text(p, c, cx[2], y, m(k, 1), { size: 40, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    });
+    text(p, 'a hurdle cuts the performance fee, so investors keep more', 800, 800, m('hurdle', 3), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['hwm', 'High-water mark', (m) => {
+    const p = panel(0);
+    const ch = chart(p, { x: 110, y: 190, w: 700, h: 520, x0: 0, x1: 3.4, y0: 90, y1: 135, xl: 'year', yl: 'fund value after fees ($m)', ticks: [[0, '0'], [1, '1'], [2, '2'], [3, '3']] });
+    curve(ch, p, () => 122.7, C_PRICE, m('a', 1), .8, 4, '12 10'); text(p, 'high-water mark $122.7m', ch.X(1.55), ch.Y(122.7) - 16, m('a', 1), { size: 24, fill: C_PRICE, weight: 700 });
+    const v = [[0, 100], [1, 122.7], [2, 108.9], [3, 125.66]];
+    draw(path(p, v.map(([x, y], i) => (i ? 'L' : 'M') + ch.X(x) + ' ' + ch.Y(y)).join(''), { stroke: C_UND, 'stroke-width': 6 }, { d: 0 }), m('a'), 9);
+    v.forEach(([x, y], i) => { const g = G(p, { x: ch.X(x), y: ch.Y(y), o: 0 }); mk('circle', { r: 9, fill: C_UND }, g); T(g, '$' + y + 'm', { x: i === 0 ? 50 : 0, y: i === 2 ? 40 : i === 0 ? 8 : -20, size: 22, weight: 700, anchor: 'middle' }); show(g, i < 2 ? m('a', 2 + i) : i === 2 ? m('y2') : m('y3')); });
+    text(p, 'Year 2: fund falls to $110m', 880, 240, m('y2'), { size: 28, weight: 700 }); text(p, 'fee = $1.1m (management only) → −11.247%', 880, 285, m('y2', .8), { size: 24, fill: C_RISK });
+    text(p, 'Year 3: fund rises to $128m', 880, 380, m('y3'), { size: 28, weight: 700 }); text(p, 'fee = 1.28 + (128 − 122.7) × 20% = $2.34m', 880, 425, m('y3', .8), { size: 24, fill: COL.dim }); text(p, 'investor return 15.39%', 880, 470, m('y3', 1.6), { size: 30, fill: C_GAIN, weight: 700 });
+    text(p, 'New investor, bought at $108.9m', 880, 580, m('new'), { size: 28, fill: C_PRICE, weight: 700 }); text(p, 'fee = 1.28 + (128 − 108.9) × 20% = $5.10m', 880, 625, m('new', .8), { size: 24, fill: COL.dim }); text(p, 'investor return 12.856%', 880, 670, m('new', 1.6), { size: 30, fill: C_RISK, weight: 700 });
+  }],
+
+  ['claw', 'Clawback', (m) => {
+    const p = panel(0);
+    text(p, 'Tenderledge invests $10m in a buyout and $10m in an early-stage venture', 800, 130, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ledger(p, 110, 250, 1380, [['Year 1: buyout sold for $22m → profit', '+$12m', C_GAIN], ['20% performance fee accrued (in escrow)', '$2.4m', C_PRICE], '-', ['Year 2: venture fails', '−$10m', C_RISK], ['aggregate profit', '$2m', COL.chalk], ['performance fee on $2m', '$0.4m', C_PRICE], '-', ['Clawback: GP returns', '$2.0m', C_RISK, true]], [m('win'), m('win', 3), m('win', 3), m('loss'), m('res'), m('res', 1.5), m('res', 2), m('res', 3)], { size: 30, dy: 76 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'Appraisal is hard: uneven cash flows, leverage, level 3 values and complex fees.',
+    'The J-curve and IRR reflect the life cycle; MOIC is simple but ignores timing.',
+    'Leverage adds return only when assets earn more than the cost of debt.',
+    'Hurdles, high-water marks and clawbacks change net returns, and can differ by investor.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

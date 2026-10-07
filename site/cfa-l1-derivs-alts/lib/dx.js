@@ -95,3 +95,12 @@ const rdot = (p, X, v, y, color, label, t0, { up = true, size = 26, dx = 0, ly }
   T(g, label, { x: dx, y: ly !== undefined ? ly : up ? -30 : 52, size, fill: color, weight: 700, anchor: 'middle' });
   tw(g, { o: 1, s: 1 }, t0, .5, back); return g;
 };
+// a rounded card with a coloured title and wrapped lines (grid cards)
+const card3 = (p, x, y, w, h, title, color, lines, t0, size = 26, ty = 58) => {
+  const g = G(p, { x, y, o: 0, s: .94 });
+  mk('rect', { width: w, height: h, rx: 18, fill: color, 'fill-opacity': .1, stroke: color, 'stroke-width': 3 }, g);
+  T(g, title, { x: 26, y: ty, size: 32, fill: color, weight: 700 });
+  lines.forEach((s, i) => T(g, s, { x: 26, y: ty + 54 + i * (size + 14), size }));
+  tw(g, { o: 1, s: 1 }, t0, .6, out);
+  return g;
+};

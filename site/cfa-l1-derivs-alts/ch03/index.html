@@ -17,14 +17,6 @@ const CHAPTER = { number: 3, title: 'Derivative Benefits, Risks, and Issuer and 
 const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
 
 // a card with a coloured title and wrapped lines, appearing at t0
-const card3 = (p, x, y, w, h, title, color, lines, t0, size = 26) => {
-  const g = G(p, { x, y, o: 0, s: .94 });
-  mk('rect', { width: w, height: h, rx: 18, fill: color, 'fill-opacity': .1, stroke: color, 'stroke-width': 3 }, g);
-  T(g, title, { x: 26, y: 58, size: 32, fill: color, weight: 700 });
-  lines.forEach((s, i) => T(g, s, { x: 26, y: 112 + i * (size + 14), size }));
-  tw(g, { o: 1, s: 1 }, t0, .6, out);
-  return g;
-};
 
 const BEATS = [
   ['intro', 'Benefits, risks and uses', introBeat('Derivatives', 3, 'Derivative Benefits, Risks,', 'and Uses', 'why use them, what can go wrong')],

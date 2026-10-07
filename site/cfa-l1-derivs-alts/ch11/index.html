@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alternative Investment Features, Methods, and Structures</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 11, title: 'Alternative Investment Features, Methods, and Structures', minutes: 8, language: 'en', next: '../ch12/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad, C_PC = COL.nat, C_RA = COL.irr, C_HF = COL.real;
+
+const BEATS = [
+  ['intro', 'Alternative investments', introBeat('Alternative Investments', 1, 'Features, Methods', 'and Structures', 'what makes an investment alternative')],
+
+  ['what', 'What makes them alternative', (m) => {
+    const p = panel(0);
+    text(p, 'Everything other than public equity, public fixed income and cash', 800, 130, m('a'), { size: 34, anchor: 'middle', weight: 700 });
+    text(p, 'Features', 110, 250, m('f1', -1), { size: 30, fill: C_PRICE, weight: 700 }); text(p, 'Leads to', 900, 250, m('res'), { size: 30, fill: C_GAIN, weight: 700 });
+    [['specialized knowledge to value', 'f1'], ['low correlation with traditional assets', 'f2'], ['illiquid · long horizon · large outlays', 'f3']].forEach(([s, k], i) => pill(p, s, C_PRICE, 110 + uiW(s, 28) / 2 + 24, 330 + i * 100, m(k)));
+    bullets(p, ['special investment structures', 'incentive-based fees', 'performance appraisal challenges'], 900, 345, 100, [m('res', .5), m('res', 2), m('res', 3.5)], { size: 30 });
+    text(p, 'Longest horizons hold the most: pensions, sovereign wealth funds, endowments', 800, 760, m('who'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['cats', 'Three categories', (m) => {
+    const p = panel(0), w = 450, h = 470, gap = 50, x0 = 75;
+    card3(p, x0, 220, w, h, 'Private capital', C_PC, ['funding from neither public', 'equity nor public debt', '', '• private equity (incl. venture', '  capital, buyouts)', '• private debt (incl. venture', '  debt, distressed debt)'], m('pc'), 26);
+    card3(p, x0 + w + gap, 220, w, h, 'Real assets', C_RA, ['generally tangible', '', '• real estate', '• infrastructure', '• natural resources: farmland,', '  timberland, commodities', '• collectibles, intangibles', '• digital assets'], m('ra'), 26);
+    card3(p, x0 + 2 * (w + gap), 220, w, h, 'Hedge funds', C_HF, ['defined by how they invest,', 'not what they hold', '', '• leverage', '• derivatives', '• short selling', '', 'fund of funds: a portfolio of', 'hedge funds'], m('hf'), 26);
+  }],
+
+  ['life', 'Private capital over a company’s life', (m) => {
+    const p = panel(0), y = 470, xs = [110, 560, 1010, 1490];
+    ['Startup', 'Mature', 'Decline'].forEach((s, i) => {
+      const g = G(p, { o: 0 }); mk('rect', { x: xs[i] + 6, y: y - 60, width: xs[i + 1] - xs[i] - 12, height: 120, rx: 14, fill: [C_GAIN, C_PRICE, C_RISK][i], 'fill-opacity': .15, stroke: [C_GAIN, C_PRICE, C_RISK][i], 'stroke-width': 3 }, g);
+      T(g, s, { x: (xs[i] + xs[i + 1]) / 2, y: y + 12, size: 40, fill: [C_GAIN, C_PRICE, C_RISK][i], weight: 700, anchor: 'middle' }); show(g, m('a', i * .8));
+    });
+    text(p, 'company life cycle →', 110, 590, m('a', 2.5), { size: 26, fill: COL.dim });
+    text(p, 'Venture capital', 335, 330, m('vc'), { size: 34, fill: C_GAIN, anchor: 'middle', weight: 700 }); text(p, 'early-stage, high growth', 335, 375, m('vc', .6), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Venture debt', 335, 700, m('vc', 2.5), { size: 34, fill: C_GAIN, anchor: 'middle', weight: 700 }); text(p, 'little or no cash flow', 335, 745, m('vc', 3), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Private equity', 785, 330, m('pe'), { size: 34, fill: C_PRICE, anchor: 'middle', weight: 700 }); text(p, 'buyouts · restructure · sell or relist', 785, 375, m('pe', .6), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'turnaround', 1250, 330, m('pe', 4), { size: 34, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'Distressed debt', 1250, 700, m('dd'), { size: 34, fill: C_RISK, anchor: 'middle', weight: 700 }); text(p, 'near bankruptcy: restructuring skills', 1250, 745, m('dd', .6), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['methods', 'Three ways to invest', (m) => {
+    const p = panel(0), cx = [290, 800, 1310];
+    const inv = (x, y, t0) => lbox(p, '', COL.dim, x, y, 84, 50, t0, 20);
+    ['Fund investment', 'Co-investment', 'Direct investment'].forEach((s, i) => text(p, s, cx[i], 150, m(['fund', 'co', 'dir'][i]), { size: 34, fill: [C_PRICE, C_UND, C_GAIN][i], anchor: 'middle', weight: 700 }));
+    [0, 1].forEach(i => { const t = m(['fund', 'co'][i]); lbox(p, 'Investor', COL.chalk, cx[i], 250, 200, 60, t, 28); lbox(p, 'Fund', C_PRICE, cx[i], 410, 200, 60, t + .4, 28); varrow(p, cx[i], 280, 380, COL.dim, t + .6, .5, 3); [-100, 0, 100].forEach((d, k) => { inv(cx[i] + d, 580, t + .8); varrow(p, cx[i] + d * .8, 440, 555, COL.dim, t + .9, .5, 3); }); });
+    path(p, `M${cx[1] + 100} 280V300Q${cx[1] + 190} 400 ${cx[1] + 100} 552`, { stroke: C_UND, 'stroke-width': 4, 'stroke-dasharray': '10 8' }, { d: 0 }); draw(p.lastChild, m('co', 2), 1);
+    lbox(p, 'Investor', COL.chalk, cx[2], 250, 200, 60, m('dir'), 28); lbox(p, 'Investment X', COL.dim, cx[2], 580, 200, 60, m('dir'), 24); varrow(p, cx[2], 280, 550, C_GAIN, m('dir', .6), .8, 4);
+    text(p, 'outsourced · management + performance fees', cx[0], 700, m('fund', 3), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'alongside the fund · lower fees', cx[1], 700, m('co', 3), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'no intermediary · most control and effort', cx[2], 700, m('dir', 3), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'Fund limit $1bn per deal, deal needs $1.5bn → $0.5bn offered as co-investment, reduced fee, no carry', 800, 810, m('ex'), { size: 26, fill: C_UND, anchor: 'middle', weight: 600 });
+  }],
+
+  ['lp', 'Limited partnership', (m) => {
+    const p = panel(0);
+    lbox(p, 'General partner (GP)\nmanages · unlimited liability', C_PRICE, 800, 190, 560, 110, m('gp'), 28);
+    lbox(p, 'Fund (limited partnership)', COL.chalk, 800, 420, 480, 80, m('gp', 1), 30);
+    varrow(p, 740, 250, 380, COL.dim, m('gp', 1.2), .6, 3); varrow(p, 860, 380, 250, C_PRICE, m('gp', 1.8), .6, 3); text(p, 'manages', 640, 320, m('gp', 1.4), { size: 22, fill: COL.dim, anchor: 'middle' }); text(p, 'fees', 930, 320, m('gp', 2), { size: 22, fill: C_PRICE, anchor: 'start' });
+    [450, 800, 1150].forEach((x, i) => { lbox(p, 'LP', C_UND, x, 680, 200, 70, m('lp', i * .4), 28); varrow(p, x, 640, 465, C_UND, m('lp', .4 + i * .4), .6, 3); });
+    text(p, 'limited liability · passive · commit capital over time', 800, 780, m('lp', 2), { size: 26, fill: C_UND, anchor: 'middle', weight: 600 });
+    [350, 420, 490].forEach((y, i) => { lbox(p, '', COL.dim, 1330, y, 100, 50, m('gp', 3 + i * .3), 20); harrow(p, 1045, 1275, y, COL.dim, m('gp', 3.2 + i * .3), .4, 2); });
+    text(p, 'LPA: profit sharing · roles · transfers', 110, 840, m('lpa'), { size: 24, fill: COL.dim }); text(p, 'Side letter: terms for one investor', 600, 840, m('side'), { size: 24, fill: COL.dim });
+    text(p, 'MFN: matches better terms', 1100, 840, m('side', 3), { size: 24, fill: C_GAIN });
+  }],
+
+  ['other', 'Other structures', (m) => {
+    const p = panel(0);
+    text(p, 'Infrastructure PPP: a plan to spend $150bn', 800, 130, m('ppp'), { size: 32, anchor: 'middle', weight: 700 });
+    const g = G(p, { o: 0 }); mk('rect', { x: 200, y: 170, width: 1200 * .3, height: 70, fill: C_PRICE, 'fill-opacity': .85 }, g); mk('rect', { x: 200 + 360, y: 170, width: 1200 * .7, height: 70, fill: C_UND, 'fill-opacity': .85 }, g);
+    T(g, 'government 30% · $45bn', { x: 200 + 180, y: 215, size: 24, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, 'private investors 70% · $105bn', { x: 200 + 360 + 420, y: 215, size: 24, fill: COL.board, weight: 700, anchor: 'middle' }); show(g, m('ppp', 3));
+    lbox(p, 'Public sector', C_PRICE, 260, 470, 320, 80, m('ppp', 5), 28); lbox(p, 'Special purpose entity\n(concession agreement)', COL.chalk, 800, 470, 400, 110, m('ppp', 5.6), 26); lbox(p, 'Equity holders\nand debtholders', C_UND, 1340, 470, 340, 100, m('ppp', 6.2), 26);
+    harrow(p, 420, 600, 470, COL.dim, m('ppp', 6), .5, 3); harrow(p, 1000, 1170, 470, COL.dim, m('ppp', 6.6), .5, 3);
+    text(p, 'exclusive operating rights for a fixed period', 800, 580, m('ppp', 7), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'More liquid vehicles', 110, 690, m('liq'), { size: 30, fill: COL.dim, weight: 700 });
+    ['MLPs', 'REITs', 'commodity funds', 'ETFs'].forEach((s, i) => pill(p, s, C_RA, 300 + i * 300, 770, m('liq', .6 + i * .5)));
+  }],
+
+  ['fees', 'Compensation', (m) => {
+    const p = panel(0), x0 = 130, k = 52;
+    text(p, 'Management fee 1–2%:  private equity on committed capital · hedge funds on AUM', 110, 130, m('a'), { size: 28, fill: C_PRICE, weight: 700 });
+    text(p, 'Performance fee 20% of returns above the hurdle  ·  fund return 18%, hurdle 8%', 110, 190, m('hurdle'), { size: 28, fill: COL.dim, weight: 600 });
+    const bar = (y, segs, t0, label) => {
+      text(p, label, x0, y - 25, t0, { size: 28, weight: 700 });
+      let x = x0; segs.forEach(([v, c, s, tx], i) => {
+        const g = G(p, { o: 0 }); mk('rect', { x, y, width: v * k - 4, height: 80, rx: 6, fill: c, 'fill-opacity': .85 }, g); T(g, s, { x: x + v * k / 2 - 2, y: y + 50, size: 26, fill: COL.board, weight: 700, anchor: 'middle' }); show(g, t0 + .3 + i * .4); x += v * k;
+      });
+    };
+    bar(330, [[8, C_UND, 'LP 8%'], [8, C_UND, 'LP 8%'], [2, C_PRICE, 'GP 2']], m('ex'), 'Hard hurdle, no catch-up');
+    text(p, 'GP: 20% × (18 − 8) = 2%   ·   LP keeps 16%', x0, 460, m('ex', 2.5), { size: 28, fill: C_GAIN, weight: 700 });
+    bar(560, [[8, C_UND, 'LP 8%'], [2, C_PRICE, 'GP 2'], [6.4, C_UND, 'LP 6.4%'], [1.6, C_PRICE, 'GP 1.6']], m('cu'), 'With a catch-up clause');
+    text(p, 'GP: 2.0 + 1.6 = 3.6%   ·   LP keeps 14.4%', x0, 690, m('cu', 4), { size: 28, fill: C_PRICE, weight: 700 });
+    text(p, 'investors get 100% to 8%; GP gets 100% until it holds 20% of profit; the rest splits 80/20', 110, 790, m('cu', 1.5), { size: 24, fill: COL.dim });
+  }],
+
+  ['protect', 'Protections and waterfalls', (m) => {
+    const p = panel(0), w = 690, h = 250;
+    card3(p, 70, 150, w, h, 'High-water mark', C_UND, ['no performance fee until the fund', 'passes its previous peak value', '(common in hedge funds)'], m('hwm'), 26);
+    card3(p, 70 + w + 100, 150, w, h, 'Clawback', C_RISK, ['investors reclaim performance fees', 'paid earlier if later deals lose', '(common in PE, real estate)'], m('claw'), 26);
+    card3(p, 70, 440, w, h, 'Deal-by-deal (American)', C_PRICE, ['GP is paid as each deal is sold,', 'before LPs recover capital and', 'hurdle across the whole fund'], m('wf'), 26);
+    card3(p, 70 + w + 100, 440, w, h, 'Whole-of-fund (European)', C_GAIN, ['LPs receive everything until capital', 'and hurdle are returned; then', 'the GP shares in profit'], m('wf', 6), 26);
+    text(p, 'GP paid $2m + $3m + $8m on early wins; fund breaks even → clawback of $13m', 800, 800, m('cb'), { size: 28, fill: C_RISK, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'Alternatives are illiquid, long-term, specialized and often low-correlation.',
+    'Categories: private capital, real assets and hedge funds.',
+    'Fund, co-investment or direct: more control and lower fees as you move toward direct.',
+    'Limited partnerships use fees, hurdles, high-water marks, clawbacks and waterfalls.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

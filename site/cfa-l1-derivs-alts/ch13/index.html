@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investments in Private Capital: Equity and Debt</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/dx.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 13, title: 'Investments in Private Capital: Equity and Debt', minutes: 9, language: 'en', next: '../ch14/' };
+const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
+
+const BEATS = [
+  ['intro', 'Private capital', introBeat('Alternative Investments', 3, 'Private Capital:', 'Equity and Debt', 'funding from outside the public markets')],
+
+  ['pe', 'Private equity strategies', (m) => {
+    const p = panel(0), w = 450, h = 400, gap = 50, x0 = 75;
+    card3(p, x0, 170, w, h, 'Leveraged buyout', C_PRICE, ['acquire a company, financed', 'largely with debt', 'secured on target assets', 'going private', 'MBO: managers take part', 'MBI: buyer’s team replaces'], m('lbo'), 25);
+    card3(p, x0 + w + gap, 170, w, h, 'Venture capital', C_GAIN, ['young firms with high', 'growth potential', '', 'earlier stage →', 'higher required return'], m('vc'), 25);
+    card3(p, x0 + 2 * (w + gap), 170, w, h, 'Growth capital', C_UND, ['minority stake in a', 'mature company', 'to expand or restructure', '', 'PIPE: private investment', 'in a public company'], m('gc'), 25);
+    text(p, 'owners vote and share residual cash flows, with more direct control than public shareholders', 800, 680, m('own'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['vc', 'Venture capital stages', (m) => {
+    const p = panel(0), steps = [['Pre-seed', 'founders, friends,\nangels · $5k–$500k', C_GAIN, 'pre'], ['Seed', 'seed funds, angels\n$25k–$5m', C_UND, 'seed'], ['Early stage', 'VC funds, corporate\nVC · $5m+', C_PRICE, 'early'], ['Later stage', 'VC, PE, strategic\ninvestors', COL.rat, 'later'], ['Mezzanine\nstage', 'bridge to IPO\nor sale', C_RISK, 'mezz']];
+    steps.forEach(([a, b, c, k], i) => {
+      const x = 110 + i * 290, top = 600 - i * 70, g = G(p, { o: 0, y: 30 });
+      mk('rect', { x, y: top, width: 270, height: 840 - top - 20, rx: 14, fill: c, 'fill-opacity': .14, stroke: c, 'stroke-width': 3 }, g);
+      a.split('\n').forEach((s, j, arr) => T(g, s, { x: x + 20, y: top + 50 + j * 36, size: 30, fill: c, weight: 700 }));
+      b.split('\n').forEach((s, j) => T(g, s, { x: x + 20, y: top + 50 + (a.split('\n').length) * 36 + 24 + j * 30, size: 22 }));
+      tw(g, { o: 1, y: 0 }, m(k), .6, out);
+    });
+    text(p, 'IPO →', 1480, 200, m('mezz', 1), { size: 34, fill: C_RISK, anchor: 'end', weight: 700 });
+    text(p, 'convertible preferred: converts to common; repaid before common holders in a liquidation', 800, 130, m('pref'), { size: 28, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'earlier stage = more risk = higher required return', 800, 880, m('pref', 4), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['deals', 'Buyouts and PIPEs', (m) => {
+    const p = panel(0);
+    path(p, 'M800 150V800', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Buyout of a struggling manufacturer', 400, 180, m('a'), { size: 32, anchor: 'middle', weight: 700 });
+    bullets(p, ['bring capital and take control', 'replace management, new board', 'restructure; cut costs', 'buy competitors for scale', 'exit at a much higher price'], 110, 280, 80, [m('a', 1.5), m('a', 3.5), m('a', 5.5), m('a', 7.5), m('a', 9.5)], { size: 28 });
+    text(p, 'PIPE: Expedia, March 2020', 1200, 180, m('pipe'), { size: 32, anchor: 'middle', weight: 700 });
+    bullets(p, ['$1.2bn preferred, 9.5% fixed', 'warrants: 8.4m shares at $72'], 860, 280, 70, [m('pipe', 1), m('pipe', 3)], { size: 26 });
+    text(p, 'redeemed after 2 years at 102%:', 860, 470, m('cost'), { size: 26, fill: COL.dim });
+    text(p, '(1.02 + 0.095 × 2) × $1.2bn', 860, 520, m('cost', 1), { size: 30, weight: 600 });
+    text(p, '≈ $1.45bn', 860, 600, m('cost', 2), { size: 56, fill: C_RISK, weight: 700 });
+    text(p, 'vs ~5.6% yield on a preferred ETF', 860, 670, m('cost', 4), { size: 26, fill: COL.dim });
+  }],
+
+  ['exits', 'Exit strategies', (m) => {
+    const p = panel(0), w = 450, h = 360, gap = 50, x0 = 75;
+    card3(p, x0, 170, w, h, 'Trade sale', C_UND, ['+ premium for synergies', '+ fast, private', '− management may resist', '− few buyers'], m('trade'), 26);
+    card3(p, x0 + w + gap, 170, w, h, 'IPO / direct listing', C_GAIN, ['+ highest potential price', '+ management support,', '   keeps a stake', '− costly, slow, disclosure', '− lockup freezes capital'], m('ipo'), 26);
+    card3(p, x0 + 2 * (w + gap), 170, w, h, 'SPAC', C_PRICE, ['+ fixed valuation', '+ flexible terms, guidance', '− dilution and warrants', '− deal risk'], m('spac'), 26);
+    text(p, 'Other exits', 110, 640, m('other'), { size: 28, fill: COL.dim, weight: 700 });
+    ['recapitalization (not a true exit)', 'secondary sale', 'write-off / liquidation'].forEach((s, i) => pill(p, s, COL.rat, [420, 960, 1330][i] + (i === 0 ? 0 : 0), 720, m('other', 1 + i * 2), 24));
+  }],
+
+  ['returns', 'Risk and return', (m) => {
+    const p = panel(0);
+    path(p, 'M800 150V800', { stroke: COL.faint, 'stroke-width': 2, 'stroke-dasharray': '8 10' });
+    text(p, 'Higher expected return from…', 400, 180, m('a'), { size: 32, fill: C_GAIN, anchor: 'middle', weight: 700 });
+    bullets(p, ['access to private companies', 'influence over management', 'leverage'], 110, 280, 80, [m('why'), m('why', 1.5), m('why', 3)], { size: 30 });
+    text(p, '…at higher risk: illiquidity, leverage', 400, 600, m('risk'), { size: 28, fill: C_RISK, anchor: 'middle', weight: 600 });
+    text(p, 'Hard to measure', 1200, 180, m('data'), { size: 32, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    bullets(p, ['self-reported indexes', 'survivorship, backfill bias → overstated', 'infrequent marks → understated risk', 'need regular, independent valuation'], 860, 280, 80, [m('data', 1), m('data', 3), m('data', 7), m('data', 11)], { size: 26 });
+  }],
+
+  ['debt', 'Private debt', (m) => {
+    const p = panel(0);
+    const rungs = [['Senior direct lending', 'secured · fixed schedule · covenants', C_GAIN, 'senior'], ['Unitranche', 'one blended loan, one rate', C_UND, 'uni'], ['Mezzanine', 'subordinated, unsecured · warrants or conversion', C_PRICE, 'mezz']];
+    text(p, 'lower risk and return', 110, 240, m('a'), { size: 24, fill: COL.dim }); text(p, 'higher risk and return', 110, 590, m('mezz', 4), { size: 24, fill: COL.dim });
+    varrow(p, 90, 540, 260, COL.dim, m('a', 1), 1, 3);
+    rungs.forEach(([a, b, c, k], i) => { const y = 310 + i * 100; lbox(p, '', c, 760, y, 1180, 84, m(k), 26); text(p, a, 190, y + 10, m(k), { size: 32, fill: c, weight: 700 }); text(p, b, 560, y + 8, m(k, .3), { size: 26 }); });
+    text(p, 'Venture debt', 110, 650, m('vd'), { size: 30, fill: COL.rat, weight: 700 }); text(p, 'line of credit or term loan for early-stage firms: no dilution', 330, 650, m('vd'), { size: 26 });
+    text(p, 'Distressed debt', 110, 720, m('dist'), { size: 30, fill: C_RISK, weight: 700 }); text(p, 'buy troubled debt · DIP financing (Hertz: $1.65bn at MRR + 725 bps)', 400, 720, m('dist'), { size: 26 });
+    text(p, 'return includes an illiquidity premium; risk exceeds traditional bonds', 800, 820, m('ret'), { size: 28, fill: C_GAIN, anchor: 'middle', weight: 700 });
+  }],
+
+  ['ltv', 'Loan to value', (m) => {
+    const p = panel(0), x0 = 200, W = 1200;
+    text(p, 'Six properties worth £100m', 800, 150, m('a'), { size: 34, anchor: 'middle', weight: 700 });
+    const g = G(p, { o: 0 }); mk('rect', { x: x0, y: 260, width: W * .75, height: 110, fill: C_PRICE, 'fill-opacity': .8 }, g); mk('rect', { x: x0 + W * .75, y: 260, width: W * .25, height: 110, fill: C_GAIN, 'fill-opacity': .6 }, g);
+    T(g, 'mortgages £75m', { x: x0 + W * .375, y: 330, size: 34, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, 'excess £25m', { x: x0 + W * .875, y: 330, size: 28, fill: COL.board, weight: 700, anchor: 'middle' }); show(g, m('loan'));
+    text(p, 'LTV = 75 ÷ 100 = 0.75', 800, 520, m('ltv'), { size: 56, fill: C_PRICE, anchor: 'middle', weight: 700 });
+    text(p, 'amortization: principal falls → LTV falls', 800, 650, m('chg'), { size: 30, fill: C_GAIN, anchor: 'middle', weight: 600 });
+    text(p, 'property value falls → LTV rises → post more collateral', 800, 720, m('chg', 3), { size: 30, fill: C_RISK, anchor: 'middle', weight: 600 });
+  }],
+
+  ['vintage', 'Vintage year', (m) => {
+    const p = panel(0), x0 = 120, k = 1260 / 12;
+    [['Investment period', 0, 5, C_UND, 'inv'], ['Harvesting period', 5, 12, C_GAIN, 'harv']].forEach(([s, a, b, c, mk_]) => { const g = G(p, { o: 0 }); mk('rect', { x: x0 + a * k + 3, y: 150, width: (b - a) * k - 6, height: 90, rx: 12, fill: c, 'fill-opacity': .18, stroke: c, 'stroke-width': 3 }, g); T(g, s, { x: x0 + (a + b) / 2 * k, y: 207, size: 30, fill: c, weight: 700, anchor: 'middle' }); show(g, m(mk_)); });
+    text(p, 'fund life 10–12 years · vintage year = year of first investment', 800, 120, m('a'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    const vals = [['2007', 10.3], ['2011', 14.7], ['2012', 24.8], ['2013', 29.6], ['2014', 29.0], ['2015', 33.9], ['2016', 40.4], ['2017', 29.7], ['2018', 43.5]];
+    const ch = chart(p, { x: 120, y: 330, w: 1260, h: 420, x0: 0, x1: 9, y0: 0, y1: 50, yl: 'net return to 2020 (%) by vintage year, US private equity' });
+    vals.forEach(([y, v], i) => {
+      const g = G(p, { y: 20, o: 0 }), x = ch.X(i + .5);
+      mk('rect', { x: x - 50, y: ch.Y(v), width: 100, height: ch.Y(0) - ch.Y(v), fill: C_UND, 'fill-opacity': .85, rx: 4 }, g); T(g, v + '%', { x, y: ch.Y(v) - 12, size: 26, weight: 700, anchor: 'middle' }); T(g, y, { x, y: ch.Y(0) + 38, size: 24, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('vy', .3 + i * .5), .5, out);
+    });
+    text(p, 'diversify across vintage years · source: Cambridge Associates, Dec 2020', 800, 850, m('div'), { size: 26, fill: C_PRICE, anchor: 'middle', weight: 600 });
+  }],
+
+  ['divers', 'Diversification', (m) => {
+    const p = panel(0), cx = [110, 760, 1030, 1300], rows = [['Private equity', .80, .76, .81], ['Venture, all stage', .65, .67, .63], ['Buyout', .82, .76, .83], ['Private debt', .82, .77, .86]];
+    text(p, 'Average correlation with public indexes, March 2008 – June 2021', 800, 130, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['', 'S&P 500', 'Russell 2000', 'MSCI World'].forEach((s, i) => text(p, s, cx[i], 220, m('a', 1), { size: 26, fill: COL.dim, weight: 700, anchor: i ? 'middle' : 'start' }));
+    path(p, 'M110 245H1500', { stroke: COL.chalk, 'stroke-width': 3 });
+    rows.forEach(([n, ...v], i) => {
+      const y = 330 + i * 100, t0 = m('corr', i * .8);
+      text(p, n, cx[0], y, t0, { size: 32, weight: 700 });
+      v.forEach((c, j) => { const g = G(p, { o: 0 }); mk('rect', { x: cx[j + 1] - 110, y: y - 52, width: 220, height: 76, rx: 10, fill: C_RISK, 'fill-opacity': (c - .55) * 2.2 }, g); T(g, c.toFixed(2), { x: cx[j + 1], y: y + 6, size: 40, weight: 700, anchor: 'middle' }); show(g, t0 + .2 + j * .15); });
+    });
+    text(p, 'moderate diversification, with extra leverage, market and liquidity risk', 800, 800, m('pt'), { size: 30, fill: C_PRICE, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => wrapList(m, [
+    'Private equity: buyouts, venture and growth capital; exits by trade sale, IPO or SPAC.',
+    'Private debt: direct lending, unitranche, mezzanine, venture and distressed debt.',
+    'Self-reported, smoothed data flatter returns; vintage year matters.',
+    'Correlation with public markets is moderate (0.63–0.86), not low.'])],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
