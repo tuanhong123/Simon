@@ -191,7 +191,7 @@ main#contents { padding-bottom: 80px; }
   <div class="chalk" aria-hidden="true"><!-- a few faint formulas or phrases from the book, drawn in chalk -->
     <span style="left:7%;top:13%;--d:1.6">F₀(T) = S₀(1 + r)ᵀ</span>
     <span style="right:8%;top:17%;--d:1.9">c₀ + PV(X) = p₀ + S₀</span>
-    <span style="left:5%;bottom:20%;--d:2.2">max(0, S_T − X)</span>
+    <span style="left:5%;bottom:20%;--d:2.2">max(0, S − X)</span>
     <span style="right:6%;bottom:15%;--d:2.5">π = (1 + r − d) ÷ (u − d)</span>
   </div>
   <svg class="mascot draw" id="guide" width="210" height="147"></svg>
@@ -217,7 +217,7 @@ main#contents { padding-bottom: 80px; }
 'use strict';
 // Chapters are numbered in order through the units. Add a chapter here when its lesson is ready.
 const UNITS = [   // [unit title, [[chapter title, minutes], ...]]; chapters are numbered in order. Add a chapter when its lesson is ready.
-  ['Derivatives', [['Derivative Instrument and Derivative Market Features', 8], ['Forward Commitment and Contingent Claim Features and Instruments', 10], ['Derivative Benefits, Risks, and Issuer and Investor Uses', 9], ['Arbitrage, Replication, and the Cost of Carry in Pricing Derivatives', 9], ['Pricing and Valuation of Forward Contracts and for an Underlying with Varying Maturities', 10]]],
+  ['Derivatives', [['Derivative Instrument and Derivative Market Features', 7], ['Forward Commitment and Contingent Claim Features and Instruments', 9], ['Derivative Benefits, Risks, and Issuer and Investor Uses', 7], ['Arbitrage, Replication, and the Cost of Carry in Pricing Derivatives', 8], ['Pricing and Valuation of Forward Contracts and for an Underlying with Varying Maturities', 7], ['Pricing and Valuation of Futures Contracts', 6], ['Pricing and Valuation of Interest Rates and Other Swaps', 6], ['Pricing and Valuation of Options', 6], ['Option Replication Using Put–Call Parity', 5], ['Valuing a Derivative Using a One-Period Binomial Model', 5]]],
 ];
 const HUES = ['#f4a48c', '#86c9e8', '#f3c95c', '#e8a0c8', '#8fd6b0', '#bba8ee', '#f0b45a'];
 const id = n => 'ch' + String(n).padStart(2, '0');
@@ -245,7 +245,7 @@ const seen = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecti
 document.querySelectorAll('.unit').forEach(u => seen.observe(u));
 const finished = [...done].filter(k => k <= total).length;
 document.getElementById('prog').innerHTML = finished ? `<b>${finished}</b> of ${total} finished` : `${total} chapter${total === 1 ? '' : 's'}`;
-document.getElementById('meta').textContent = `${total} chapters · ${UNITS.length} units · with sound`;
+document.getElementById('meta').textContent = `${total} chapters · ${UNITS.length} unit${UNITS.length > 1 ? 's' : ''} · with sound`;
 const last = Number.isInteger(P.last) && document.getElementById(id(P.last));
 if (last) {
   const r = document.getElementById('resume');

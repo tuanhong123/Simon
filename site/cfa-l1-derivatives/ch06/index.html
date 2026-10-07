@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Futures Contracts</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 6, title: 'Pricing and Valuation of Futures Contracts', minutes: 6, language: 'en', next: '../ch07/' };
+
+/* ---------- data ---------- */
+const S0 = ['S', Sb('0')], f0T = ['f', Sb('0'), '(', 'T', ')'];
+const L2 = (p, parts, x, y, t0, fill = COL.chalk, size = 34) => mline(p, parts, x, y, t0, fill, size, 'start');
+const FRA = [[2.01, 497.50, 500], [2.11, 248.69, 250], [2.21, 0, 0], [2.31, -248.56, -250], [2.41, -497.01, -500]];   // short FRA (receive 2.21%) PV vs long futures, $1m, 3 months
+const usd = v => (v < 0 ? '−$' : '$') + Math.abs(v).toFixed(2);
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Futures pricing', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 6', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Pricing and Valuation of', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'Futures Contracts', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'priced like forwards, but settled every day', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['inception', 'Futures price at inception', (m) => {
+    const p = panel(0), c = growChart(p, m('head'), { w: 600, lo: 92, hi: 112 });
+    mline(p, S0, 140, c.Y(100) + 12, m('head', .3), COL.task, 32, 'end');
+    c.curve(q => 100 * 1.06 ** q, COL.whole, m('eq'), { label: f0T });
+    mline(p, ['V', Sb('0'), '(', 'T', ') = 0'], 1180, 180, m('head'), COL.task, 44);
+    mline(p, [...f0T, ' = ', ...S0, '(1 + r)', E('T')], 1180, 270, m('eq'), COL.chalk, 44);
+    text(p, 'gold: spot $1,770 · r = 2% · 91 days', 1180, 370, m('gold'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    mline(p, ['1,770 × 1.02', E('91/365'), ' = $1,778.76'], 1180, 450, m('ans'), COL.good, 40);
+    text(p, 'with $2 storage paid at T:', 1180, 560, m('storage'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    mline(p, ['PV(C) = 2 × 1.02', E('−91/365'), ' = $1.99'], 1180, 630, m('storage', 2), COL.bad, 34);
+    mline(p, ['(1,770 + 1.99) × 1.02', E('91/365'), ' = $1,780.78'], 1180, 710, m('storage', 4.5), COL.task, 38);
+  }],
+
+  ['mtm', 'Forward vs. futures value', (m) => {
+    const p = panel(0), x0 = 220, x1 = 1380, yF = 300, yU = 720;
+    const tl = (y, t0, label, c) => {
+      draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.whole, 'stroke-width': 3 }, { d: 0 }), t0, .6);
+      text(p, label, x0, y - 120, t0, { size: 32, fill: c, weight: 700 });
+      text(p, '0', x0, y + 36, t0, { size: 22, fill: COL.dim, anchor: 'middle' }); text(p, 'T', x1, y + 36, t0, { size: 22, fill: COL.dim, anchor: 'middle' });
+    };
+    tl(yF, m('fwd'), 'Forward: value builds up, paid at maturity', COL.whole);
+    const acc = mk('path', { d: '', fill: COL.bad, 'fill-opacity': .55, stroke: COL.bad, 'stroke-width': 2 }, p);
+    prog(q => { const xe = x0 + (x1 - x0) * .78 * q; acc.setAttribute('d', `M${x0} ${yF}L${xe} ${yF}L${xe} ${yF + 90 * q}Z`); }, m('ex'), 2.5, io);
+    text(p, '71 days: gold falls to $1,720', x0 + 420, yF - 50, m('ex'), { size: 26, fill: COL.task, weight: 600 });
+    mline(p, ['1,720 − 1,778.76 × 1.02', E('−20/365'), ' = −$56.83 an ounce'], 800, yF + 150, m('calc'), COL.bad, 32);
+    text(p, '× 100 oz = −$5,683, not yet paid', 800, yF + 200, m('calc', 5), { size: 26, fill: COL.dim, anchor: 'middle', weight: 600 });
+    tl(yU, m('fut'), 'Futures: settled daily, value resets to 0', COL.good);
+    const bars = [-14, 9, -18, -6, 12, -10, -16, 7, -12, -8, 5, -15];
+    bars.forEach((h, i) => {
+      const x = x0 + 40 + i * 90, g = G(p, { o: 0 });
+      mk('rect', { x: x - 18, y: h < 0 ? yU : yU - h * 3, width: 36, height: Math.abs(h) * 3, rx: 3, fill: h < 0 ? COL.bad : COL.good }, g);
+      tw(g, { o: 1 }, m('fut', 1 + i * .25), .2); tw(g, { o: .25 }, m('fut', 1.5 + i * .25), .4);
+    });
+  }],
+
+  ['days', 'Day by day', (m) => {
+    const p = panel(0), cx = [170, 420, 660, 900, 1170, 1420];
+    title(p, 'Procam: 100 oz of gold at $1,778.76', m('head'), 90);
+    ['', 'futures price', 'futures paid', 'margin', 'forward value', 'forward paid'].forEach((s, i) => text(p, s, cx[i], 190, m('head', .5), { size: 24, fill: i >= 4 ? COL.whole : COL.good, weight: 700, anchor: 'middle' }));
+    path(p, 'M90 215H1510', { stroke: COL.faint, 'stroke-width': 2 });
+    const row = (y, cells, t0) => cells.forEach(([s, c], i) => text(p, s, cx[i], y, t0 + (i ? .2 : 0), { size: 28, fill: c || COL.chalk, anchor: 'middle', weight: i ? 600 : 700 }));
+    row(270, [['start'], ['$1,778.76'], ['—'], ['$4,950'], ['$0'], ['—']], m('head', 1));
+    row(350, [['day 1'], ['$1,773.76'], ['−$500', COL.bad], ['$4,450', COL.bad], ['', COL.bad], ['$0']], m('d1'));
+    const call = text(p, '+$500 call → $4,950', cx[3], 395, m('call'), { size: 22, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, '−$498', cx[4], 350, m('f1'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, '(−$4.98/oz)', cx[4], 385, m('f1', .3), { size: 20, fill: COL.dim, anchor: 'middle' });
+    row(460, [['day 2'], ['$1,769.76'], ['−$400', COL.bad], ['$4,550'], ['', COL.bad], ['$0']], m('d2'));
+    text(p, '−$895', cx[4], 460, m('f2'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, '(−$8.95/oz)', cx[4], 495, m('f2', .3), { size: 20, fill: COL.dim, anchor: 'middle' });
+    void call;
+    path(p, 'M90 540H1510', { stroke: COL.faint, 'stroke-width': 2 });
+    text(p, 'futures: −$900 paid as it happens', 500, 620, m('sum'), { size: 30, fill: COL.good, weight: 700, anchor: 'middle' });
+    text(p, 'forward: −$895 owed, unpaid', 1170, 620, m('sum', 1), { size: 30, fill: COL.whole, weight: 700, anchor: 'middle' });
+    pill(p, 'unpaid forward value = counterparty credit risk', COL.bad, 800, 740, m('sum', 5), 28);
+  }],
+
+  ['irfut', 'Interest rate futures', (m) => {
+    const p = panel(0);
+    title(p, 'Interest rate futures', m('head'), 100);
+    mline(p, ['futures price = 100 − 100 × MRR'], 800, 200, m('eq'), COL.chalk, 42);
+    mline(p, ['98.25 = 100 − 100 × MRR   →   MRR', Sb('3m,3m'), ' = 1.75%'], 800, 290, m('ex'), COL.task, 38);
+    icard6(p, 150, 360, 600, 200, COL.good, 'Long futures (like lending)', ['gains when the price rises', 'i.e. when MRR falls'], m('long'));
+    icard6(p, 850, 360, 600, 200, COL.bad, 'Short futures (like borrowing)', ['gains when the price falls', 'i.e. when MRR rises'], m('short'));
+    pill(p, 'short futures ≈ long FRA (pay fixed)', COL.real, 800, 660, m('fra'), 30);
+  }],
+
+  ['bpv', 'Basis point value', (m) => {
+    const p = panel(0), x = 180;
+    title(p, 'Basis point value (BPV)', m('head'), 110);
+    mline(p, ['BPV = notional × 0.01% × period'], 800, 210, m('eq'), COL.chalk, 40);
+    mline(p, ['$1,000,000 × 0.0001 × ¼ = $25'], 800, 300, m('ex'), COL.good, 40);
+    L2(p, ['MRR 2.21%:   $1,000,000 × (1 + 0.0221/4) = $1,005,525'], x, 430, m('dep'));
+    L2(p, ['MRR 2.22%:   $1,005,550   (+$25)'], x, 510, m('up'), COL.good);
+    L2(p, ['MRR 2.20%:   $1,005,500   (−$25)'], x, 590, m('down'), COL.bad);
+    pill(p, 'fixed, linear: $25 per basis point', COL.whole, 800, 710, m('down', 2.5), 30);
+  }],
+
+  ['baywhite', 'Hedging with rate futures', (m) => {
+    const p = panel(0), x0 = 220, x1 = 1380, y = 260, X = q => x0 + q * (x1 - x0);
+    title(p, 'Baywhite Financial', m('head'), 90);
+    draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.whole, 'stroke-width': 3 }, { d: 0 }), m('head', .5), .6);
+    [[0, 't = 0'], [.5, '1 month'], [1, '2 months']].forEach(([q, s]) => { show(path(p, `M${X(q)} ${y - 10}V${y + 10}`, { stroke: COL.whole, 'stroke-width': 3 }, { o: 0 }), m('head', .6)); text(p, s, X(q), y + 44, m('head', .6), { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    draw(path(p, `M${X(0)} ${y - 60}H${X(1)}`, { stroke: COL.good, 'stroke-width': 6 }, { d: 0 }), m('head', 1.5), .8);
+    text(p, 'receives fixed on 60-day loans', X(.5), y - 76, m('head', 1.8), { size: 24, fill: COL.good, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${X(0)} ${y + 80}H${X(.5)}`, { stroke: COL.task, 'stroke-width': 6 }, { d: 0 }), m('head', 3), .5);
+    text(p, 'pays 1-month MRR (known)', X(.25), y + 112, m('head', 3), { size: 24, fill: COL.task, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${X(.5)} ${y + 80}H${X(1)}`, { stroke: COL.bad, 'stroke-width': 6, 'stroke-dasharray': '12 8' }, { d: 0 }), m('risk'), .5);
+    text(p, 'next MRR unknown: risk!', X(.75), y + 112, m('risk', .3), { size: 24, fill: COL.bad, anchor: 'middle', weight: 700 });
+    pill(p, 'hedge: sell 1-month MRR futures on $50 million', COL.real, 800, 470, m('sell'), 28);
+    mline(p, ['BPV = 50,000,000 × 0.0001 × ', F('1', '12'), ' = $416.67'], 800, 580, m('bpv'), COL.chalk, 36);
+    mline(p, ['sell at 98.75, settle at 97.75: +100 bp × $416.67 = $41,667'], 800, 690, m('gain'), COL.good, 34);
+    text(p, 'the futures gain offsets the higher funding cost', 800, 760, m('gain', 6), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['diff', 'Forward vs. futures prices', (m) => {
+    const p = panel(0);
+    title(p, 'When do forward and futures prices differ?', m('head'), 110);
+    icard6(p, 110, 200, 440, 300, COL.whole, 'Same price', ['rates constant, or', 'futures prices and rates', 'uncorrelated'], m('same'));
+    icard6(p, 580, 200, 440, 300, COL.good, 'Futures higher', ['positive correlation:', 'gains reinvested at high rates,', 'losses financed at low rates'], m('pos'));
+    icard6(p, 1050, 200, 440, 300, COL.task, 'Forward higher', ['negative correlation:', 'the long forward', 'is preferred'], m('neg'));
+    text(p, 'the more desirable contract tends to have the higher price', 800, 600, m('pos', 6), { size: 28, fill: COL.dim, anchor: 'middle' });
+    pill(p, 'short maturities: the difference is usually tiny', COL.dim, 800, 700, m('small'), 28);
+  }],
+
+  ['convexity', 'Convexity bias', (m) => {
+    const p = panel(0), cx = [230, 500, 760];
+    text(p, '$1 million, 3-month MRR, rate 2.21%', 500, 110, m('head'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['MRR', 'long futures', 'FRA (receive fixed), PV'].forEach((s, i) => text(p, s, cx[i], 180, m('head', .5), { size: 24, fill: [COL.dim, COL.good, COL.real][i], weight: 700, anchor: 'middle' }));
+    FRA.forEach(([r, fra, fut], i) => {
+      const y = 240 + i * 60;
+      text(p, r.toFixed(2) + '%', cx[0], y, m('head', 1 + i * .2), { size: 28, anchor: 'middle' });
+      text(p, usd(fut), cx[1], y, m('fut', i * .3), { size: 28, fill: COL.good, anchor: 'middle', weight: 600 });
+      text(p, usd(fra), cx[2], y, m('fra', i * .3), { size: 28, fill: COL.real, anchor: 'middle', weight: 600 });
+    });
+    text(p, '−20 bp: FRA +$497.50   vs   +20 bp: FRA −$497.01', 500, 590, m('fra', 6), { size: 26, fill: COL.task, anchor: 'middle', weight: 700 });
+    // sketch of the shapes (curvature exaggerated)
+    const gx = 1000, gy = 640, w = 460, h = 420, g = G(p, { o: 0 });
+    path(g, `M${gx} ${gy}H${gx + w}M${gx} ${gy}V${gy - h}`, { stroke: COL.dim, 'stroke-width': 3 });
+    T(g, 'rate', { x: gx + w, y: gy + 34, size: 22, fill: COL.dim, anchor: 'end' });
+    T(g, 'price', { x: gx + 10, y: gy - h - 10, size: 22, fill: COL.dim });
+    T(g, 'shape exaggerated', { x: gx + w / 2, y: gy + 70, size: 20, fill: COL.dim, anchor: 'middle' });
+    show(g, m('chart'));
+    draw(path(p, `M${gx + 30} ${gy - h + 40}L${gx + w - 20} ${gy - 40}`, { stroke: COL.good, 'stroke-width': 5 }, { d: 0 }), m('chart', .3), .8);
+    text(p, 'futures: linear', gx + w * .55, gy - 235, m('chart', .8), { size: 22, fill: COL.good, weight: 600 });
+    draw(path(p, `M${gx + 30} ${gy - h + 10}Q${gx + 120} ${gy - 90} ${gx + w - 20} ${gy - 60}`, { stroke: COL.real, 'stroke-width': 5 }, { d: 0 }), m('chart', 2), .8);
+    text(p, 'FRA: curved (convex)', gx + 60, gy - h + 20, m('chart', 2.5), { size: 22, fill: COL.real, weight: 600 });
+    pill(p, 'convexity bias grows with the discounting period', COL.real, 500, 700, m('chart', 6), 26);
+  }],
+
+  ['clearing', 'Central clearing', (m) => {
+    const p = panel(0);
+    title(p, 'Central clearing brings futures-like margin to OTC', m('head'), 100);
+    const ccp = cbox(p, 'CCP', COL.rat, 1260, 420, m('ccp'), { w: 200, h: 100, fillO: .9 });
+    const dl = cbox(p, 'Dealer', COL.rat, 800, 420, m('ccp', .3), { w: 220, h: 100 });
+    void ccp; void dl;
+    flow(p, 910, 420, 1160, 420, COL.task, m('ccp', 1), 'margin', { size: 26, ly: 400 });
+    [250, 420, 590].forEach((y, i) => {
+      cbox(p, 'End user', COL.chalk, 300, y, m('users', i * .3), { w: 200, h: 80, size: 26 });
+      flow(p, 400, y, 690, 420 + (i - 1) * 30, COL.task, m('users', 1 + i * .3), i === 0 ? 'margin' : '', { size: 24, ly: 300 });
+    });
+    pill(p, 'OTC forwards now have futures-like cash flows', COL.good, 800, 720, m('eff'), 28);
+    text(p, 'keep cash or eligible collateral; count financing and admin costs', 800, 800, m('eff', 3), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['At inception, futures and forward prices: spot grown at the carry rate.', 'w1'],
+      ['Forward value builds until maturity; futures are settled daily.', 'w2'],
+      ['Rate futures: price = 100 − rate, with a fixed BPV.', 'w3'],
+      ['Price gaps: rate correlation and convexity; central clearing narrows them.', 'w4']], m, { y0: 250, gap: 120, size: 31 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+function icard6(p, x, y, w, h, c, head, lines, t0) {
+  const g = G(p, { o: 0, y: 20 });
+  mk('rect', { x, y, width: w, height: h, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g);
+  T(g, head, { x: x + 26, y: y + 52, size: 32, fill: c, weight: 700 });
+  lines.forEach((s, i) => T(g, s, { x: x + 26, y: y + 104 + i * 40, size: 27 }));
+  tw(g, { o: 1, y: 0 }, t0, .6, out);
+}
+
+boot();
+</script>
+</body>
+</html>

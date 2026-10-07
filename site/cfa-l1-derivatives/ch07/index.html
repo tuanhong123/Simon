@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Interest Rate Swaps</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 7, title: 'Pricing and Valuation of Interest Rates and Other Swaps', minutes: 6, language: 'en', next: '../ch08/' };
+
+/* ---------- data ---------- */
+const L2 = (p, parts, x, y, t0, fill = COL.chalk, size = 34) => mline(p, parts, x, y, t0, fill, size, 'start');
+const IFR3 = [2.396, 4.4536, 5.1719], SWAP3 = 3.9641;
+const FWD14 = [0.50, 0.74, 0.98, 1.22, 1.46, 1.70, 1.94, 2.18, 2.43, 2.67, 2.91, 3.15, 3.39, 3.78], SR = 2.05;   // Esterr's quarterly forward curve and swap rate
+// rate chart: periods 1..n across, rates 0..hi up
+const rateChart = (p, t0, { n = 14, hi = 4, x0 = 150, y0 = 170, w = 900, h = 520, label = 'quarterly period' } = {}) => {
+  const bw = w / n, X = i => x0 + (i + .5) * bw, Y = r => y0 + h - r / hi * h, g = G(p, { o: 0 });
+  path(g, `M${x0} ${y0 + h}H${x0 + w + 20}M${x0} ${y0 + h}V${y0 - 20}`, { stroke: COL.dim, 'stroke-width': 3 });
+  for (let r = 1; r <= hi; r++) { T(g, r + '%', { x: x0 - 12, y: Y(r) + 8, size: 22, fill: COL.dim, anchor: 'end' }); path(g, `M${x0} ${Y(r)}H${x0 + w}`, { stroke: COL.faint, 'stroke-width': 1 }); }
+  for (let i = 0; i < n; i++) T(g, String(i + 1), { x: X(i), y: y0 + h + 30, size: 20, fill: COL.dim, anchor: 'middle' });
+  T(g, label, { x: x0 + w / 2, y: y0 + h + 66, size: 22, fill: COL.dim, anchor: 'middle' });
+  show(g, t0);
+  return { X, Y, bw, x0, w, y0, h };
+};
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Swaps', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 7', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Pricing and Valuation of', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'Interest Rate Swaps', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'one fixed rate for many periods', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['fra', 'Swap period = FRA', (m) => {
+    const p = panel(0);
+    cbox(p, 'Fixed-rate payer', COL.whole, 330, 220, m('pair'), { w: 320, h: 90, size: 28 });
+    cbox(p, 'Floating-rate payer', COL.int, 1270, 220, m('pair'), { w: 320, h: 90, size: 28 });
+    flow(p, 500, 200, 1100, 200, COL.whole, m('pair', 2), 'fixed rate × notional × period', { size: 26, ly: 180 });
+    flow(p, 1100, 242, 500, 242, COL.int, m('pair', 4), 'MRR × notional × period', { size: 26, ly: 292 });
+    pill(p, 'MRR > fixed rate → fixed payer receives the net amount', COL.good, 800, 400, m('gain'), 28);
+    icard7(p, 130, 480, 640, 200, COL.real, 'FRA', ['one settlement, at the START', 'of the period, as a present value'], m('diff'));
+    icard7(p, 830, 480, 640, 200, COL.whole, 'Swap', ['a settlement at the END', 'of every period'], m('diff', 3));
+    text(p, 'both: symmetric payoff · no cash upfront · counterparty credit risk', 800, 760, m('same'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['series', 'Series of FRAs vs. swap', (m) => {
+    const p = panel(0), c = rateChart(p, m('head'), { n: 3, hi: 6, x0: 180, w: 780, label: 'year' });
+    title(p, 'Three FRAs or one swap?', m('head'), 100);
+    IFR3.forEach((r, i) => {
+      const g = G(p, { o: 0, y: 20 });
+      mk('rect', { x: c.X(i) - 90, y: c.Y(r), width: 180, height: c.Y(0) - c.Y(r), rx: 6, fill: COL.int, 'fill-opacity': .8 }, g);
+      T(g, r.toFixed(i ? 2 : 3) + '%', { x: c.X(i), y: c.Y(r) - 14, size: 26, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('fras', 2 + i * 1.8), .6, out);
+    });
+    text(p, 'FRA fixed rates = forward rates', 1020, 300, m('fras', 6), { size: 28, fill: COL.int, weight: 700 });
+    draw(path(p, `M${c.x0} ${c.Y(SWAP3)}H${c.x0 + c.w}`, { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('swap'), 1);
+    text(p, 'swap rate 3.9641%', 1020, 380, m('swap', .6), { size: 30, fill: COL.whole, weight: 700 });
+    text(p, 'one rate for every year', 1020, 420, m('swap', 1), { size: 26, fill: COL.dim });
+    text(p, 'year 1: fixed above forward', 1020, 520, m('vals'), { size: 26, fill: COL.good, weight: 600 });
+    text(p, 'years 2–3: fixed below forward', 1020, 560, m('vals', 1), { size: 26, fill: COL.bad, weight: 600 });
+    pill(p, 'total value at t = 0: zero', COL.task, 1200, 650, m('vals', 4), 28);
+  }],
+
+  ['par', 'The par swap rate', (m) => {
+    const p = panel(0), x = 140;
+    mline(p, ['Σ PV(floating) = Σ PV(fixed)'], 800, 120, m('eq'), COL.chalk, 44);
+    L2(p, [F('2.396%', '1.02396'), ' + ', F('4.4536%', '1.034197²'), ' + ', F('5.1719%', '1.040005³'), ' = 0.111017'], x, 280, m('float'), COL.int, 36);
+    L2(p, ['s', Sb('3'), ' × (0.976601 + 0.934961 + 0.888982) = 2.800545 × s', Sb('3')], x, 400, m('fixed'), COL.whole, 34);
+    L2(p, ['s', Sb('3'), ' = 0.111017 ÷ 2.800545 = 3.9641%'], x + 200, 500, m('ans'), COL.good, 44);
+    pill(p, 'the swap rate is an IRR of the forward rates', COL.real, 800, 610, m('irr'), 28);
+    L2(p, ['year 1, fixed receiver: 3.9641% − 2.396% = +1.5681% net'], x, 730, m('net'), COL.task, 32);
+  }],
+
+  ['esterr', 'Esterr swaps to fixed', (m) => {
+    const p = panel(0);
+    cbox(p, 'Lender', COL.chalk, 250, 230, m('setup'), { w: 220, h: 90 });
+    cbox(p, 'Esterr', COL.task, 800, 230, m('setup', .3), { w: 220, h: 90 });
+    cbox(p, 'Dealer', COL.rat, 1350, 230, m('setup', .6), { w: 220, h: 90 });
+    flow(p, 690, 230, 360, 230, COL.bad, m('setup', 1), 'MRR + 1.50%', { size: 26, ly: 210 });
+    flow(p, 910, 210, 1240, 210, COL.bad, m('setup', 4), '2.05% fixed', { size: 26, ly: 190 });
+    flow(p, 1240, 252, 910, 252, COL.good, m('setup', 6), 'MRR', { size: 26, ly: 302 });
+    const cx = [380, 700, 960, 1250];
+    ['MRR', 'net swap', 'loan', 'all-in cost'].forEach((s, i) => text(p, s, cx[i], 410, m('s1'), { size: 26, fill: COL.dim, anchor: 'middle', weight: 700 }));
+    [[['3.75%'], ['+1.70% received', COL.good], ['5.25% paid', COL.bad], ['3.55%', COL.task]], [['1.25%'], ['−0.80% paid', COL.bad], ['2.75% paid', COL.bad], ['3.55%', COL.task]]].forEach((r, j) =>
+      r.forEach(([s, c], i) => text(p, s, cx[i], 480 + j * 70, m(j ? 's2' : 's1', .5 + i * 1.2), { size: 30, fill: c || COL.chalk, anchor: 'middle', weight: 600 })));
+    mline(p, ['3.55% × CAD 250,000,000 × 0.25 = CAD 2,218,750 per quarter'], 800, 700, m('q'), COL.task, 32);
+  }],
+
+  ['bond', 'Swaps as bonds', (m) => {
+    const p = panel(0);
+    title(p, 'A swap is like a pair of bonds', m('head'), 100);
+    icard7(p, 130, 190, 640, 300, COL.good, 'Receive fixed', ['= long fixed-rate bond', '   + short floating-rate note', 'gains when rates fall'], m('recv'));
+    icard7(p, 830, 190, 640, 300, COL.bad, 'Pay fixed', ['= short fixed-rate bond', '   + long floating-rate note', 'gains when rates rise'], m('pay'));
+    pill(p, 'expect falling rates? receive fixed instead of buying bonds', COL.whole, 800, 620, m('why'), 28);
+  }],
+
+  ['settle', 'Periodic settlement', (m) => {
+    const p = panel(0), c = rateChart(p, m('curve'), { x0: 150, w: 760 });
+    mline(p, ['(MRR − s', Sb('N'), ') × notional × period'], 800, 100, m('eq'), COL.chalk, 38);
+    draw(path(p, FWD14.map((r, i) => `${i ? 'L' : 'M'}${c.X(i)} ${c.Y(r)}`).join(''), { stroke: COL.int, 'stroke-width': 5 }, { d: 0 }), m('curve', .5), 1.5);
+    text(p, 'forward curve', c.X(13) + 10, c.Y(3.78) - 16, m('curve', 1.5), { size: 24, fill: COL.int, weight: 600, anchor: 'end' });
+    draw(path(p, `M${c.x0} ${c.Y(SR)}H${c.x0 + c.w}`, { stroke: COL.whole, 'stroke-width': 4, 'stroke-dasharray': '12 8' }, { d: 0 }), m('curve', 4), .8);
+    text(p, 'swap rate 2.05%', c.x0 + 14, c.Y(SR) - 12, m('curve', 4.5), { size: 24, fill: COL.whole, weight: 600 });
+    FWD14.forEach((r, i) => { const dd = G(p, { x: c.X(i), y: c.Y(r), s: 0, o: 0 }); mk('circle', { r: 8, fill: r < SR ? COL.bad : COL.good }, dd); pop(dd, m(i === 0 ? 'p1' : i === 1 ? 'p2' : 'later', i > 1 ? (i - 2) * .25 : 0)); });
+    L2(p, ['period 1: (0.50% − 2.05%)'], 960, 270, m('p1'), COL.bad, 26);
+    L2(p, ['× 250,000,000 × 0.25 = −CAD 968,750'], 990, 310, m('p1', .5), COL.bad, 26);
+    L2(p, ['period 2: (0.74% − 2.05%)'], 960, 380, m('p2'), COL.bad, 26);
+    L2(p, ['× 250,000,000 × 0.25 = −CAD 818,750'], 990, 420, m('p2', .5), COL.bad, 26);
+    text(p, 'periods 1–7: Esterr pays', 960, 540, m('later'), { size: 26, fill: COL.bad, weight: 700 });
+    text(p, 'periods 8–14: Esterr receives', 960, 585, m('later', 1.5), { size: 26, fill: COL.good, weight: 700 });
+  }],
+
+  ['time', 'Value with the passage of time', (m) => {
+    const p = panel(0), c = rateChart(p, 0, { x0: 150, w: 880 });
+    draw(path(p, `M${c.x0} ${c.Y(SR)}H${c.x0 + c.w}`, { stroke: COL.whole, 'stroke-width': 4, 'stroke-dasharray': '12 8' }, { d: 0 }), .2, .6);
+    draw(path(p, FWD14.map((r, i) => `${i ? 'L' : 'M'}${c.X(i)} ${c.Y(r)}`).join(''), { stroke: COL.int, 'stroke-width': 5 }, { d: 0 }), .3, .8);
+    text(p, 'after two settlements, forward rates unchanged', 800, 110, m('head'), { size: 30, weight: 700, anchor: 'middle' });
+    const done = mk('rect', { x: c.x0, y: c.y0, width: c.bw * 2, height: c.h, fill: COL.board, opacity: 0 }, p);
+    tw(put(done, { o: 0 }), { o: .75 }, m('pv'), .6);
+    text(p, 'paid', c.x0 + c.bw, c.y0 + 40, m('pv', .3), { size: 22, fill: COL.dim, anchor: 'middle' });
+    FWD14.forEach((r, i) => {
+      if (i < 2) return;
+      const g = G(p, { o: 0 }), up = r > SR;
+      mk('rect', { x: c.X(i) - c.bw * .4, y: up ? c.Y(r) : c.Y(SR), width: c.bw * .8, height: Math.abs(c.Y(r) - c.Y(SR)), fill: up ? COL.good : COL.bad, 'fill-opacity': .7 }, g);
+      show(g, m('pv', 1 + i * .15));
+    });
+    text(p, 'PV(floating received) > PV(fixed paid)', 1080, 300, m('gain'), { size: 26, fill: COL.good, weight: 700 });
+    pill(p, 'MTM gain for Esterr', COL.good, 1280, 380, m('gain', 2), 28);
+    text(p, 'because the curve slopes upward', 1080, 460, m('gain', 7), { size: 24, fill: COL.dim });
+  }],
+
+  ['shift', 'Value when rates change', (m) => {
+    const p = panel(0), c = rateChart(p, 0, { x0: 150, w: 880, hi: 5 }), up = .8;
+    text(p, 'forward rates rise right after the trade (illustrative +0.80%)', 800, 110, m('head'), { size: 28, weight: 700, anchor: 'middle' });
+    draw(path(p, `M${c.x0} ${c.Y(SR)}H${c.x0 + c.w}`, { stroke: COL.whole, 'stroke-width': 4, 'stroke-dasharray': '12 8' }, { d: 0 }), .2, .6);
+    text(p, 'Esterr pays 2.05%', c.x0 + c.w + 16, c.Y(SR) + 8, .4, { size: 22, fill: COL.whole, weight: 600 });
+    path(p, FWD14.map((r, i) => `${i ? 'L' : 'M'}${c.X(i)} ${c.Y(r)}`).join(''), { stroke: COL.int, 'stroke-width': 4, 'stroke-dasharray': '6 6', opacity: .6 });
+    const nw = path(p, FWD14.map((r, i) => `${i ? 'L' : 'M'}${c.X(i)} ${c.Y(r)}`).join(''), { stroke: COL.good, 'stroke-width': 5 });
+    put(nw, { o: 0 });
+    show(nw, m('up'), .3); tw(nw, { y: c.Y(up) - c.Y(0) }, m('up', .2), 1.2);
+    text(p, 'new forward curve', c.X(13), c.Y(3.78 + up) - 18, m('up', 1.4), { size: 22, fill: COL.good, weight: 600, anchor: 'end' });
+    pill(p, 'PV(floating) > PV(fixed): gain for the fixed payer', COL.good, 800, 820, m('gain'), 26);
+    const nsr = path(p, `M${c.x0} ${c.Y(SR + .7)}H${c.x0 + c.w}`, { stroke: COL.task, 'stroke-width': 3, 'stroke-dasharray': '4 6' }, { o: 0 });
+    show(nsr, m('newrate'));
+    text(p, 'a new swap: higher fixed rate', c.x0 + c.w + 16, c.Y(SR + .7) + 8, m('newrate', .3), { size: 22, fill: COL.task, weight: 600 });
+    text(p, 'rates fall → the fixed payer loses', c.x0 + c.w + 16, c.Y(1) , m('loss'), { size: 22, fill: COL.bad, weight: 600 });
+  }],
+
+  ['fyleton', 'Fyleton receives fixed', (m) => {
+    const p = panel(0);
+    title(p, 'Fyleton: receive 2.38% fixed on £200 million, pay 6-month MRR', m('head'), 100);
+    mline(p, ['first settlement: (2.38% − 0.71%) × £200,000,000 × 0.5 = +£1,670,000'], 800, 220, m('first'), COL.good, 34);
+    icard7(p, 130, 300, 640, 260, COL.bad, 'Time passes (upward curve)', ['remaining floating > fixed', '→ MTM loss for the receiver'], m('time'));
+    icard7(p, 830, 300, 640, 260, COL.good, 'Forward rates fall', ['PV(fixed) > PV(floating)', '→ MTM gain, like a bondholder'], m('fall'));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['A swap is a series of forward exchanges at one fixed rate.', 'w1'],
+      ['The swap rate equates PV of fixed and expected floating; value starts at 0.', 'w2'],
+      ['Each period settles (MRR − swap rate) × notional × period.', 'w3'],
+      ['Rising rates help the fixed payer; falling rates help the receiver.', 'w4']], m, { y0: 250, gap: 120, size: 31 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+function icard7(p, x, y, w, h, c, head, lines, t0) {
+  const g = G(p, { o: 0, y: 20 });
+  mk('rect', { x, y, width: w, height: h, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g);
+  T(g, head, { x: x + 28, y: y + 54, size: 34, fill: c, weight: 700 });
+  lines.forEach((s, i) => T(g, s, { x: x + 28, y: y + 110 + i * 46, size: 30 }));
+  tw(g, { o: 1, y: 0 }, t0, .6, out);
+}
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing and Valuation of Options</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 8, title: 'Pricing and Valuation of Options', minutes: 6, language: 'en', next: '../ch09/' };
+
+/* ---------- data ---------- */
+const St = ['S', Sb('t')], PVX = ['X(1 + r)', E('−(T − t)')];
+const L2 = (p, parts, x, y, t0, fill = COL.chalk, size = 34) => mline(p, parts, x, y, t0, fill, size, 'start');
+// Black–Scholes call value (r = 0), used only to draw the smooth "value before maturity" curve
+const Ncdf = x => { const t = 1 / (1 + .2316419 * Math.abs(x)), d = .3989423 * Math.exp(-x * x / 2), q = d * t * (.3193815 + t * (-.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return x > 0 ? 1 - q : q; };
+const bsCall = (S, X, sig, T) => { if (S <= 0) return 0; const d1 = (Math.log(S / X) + sig * sig * T / 2) / (sig * Math.sqrt(T)); return S * Ncdf(d1) - X * Ncdf(d1 - sig * Math.sqrt(T)); };
+const sample = (f, a, b, n = 60) => Array.from({ length: n + 1 }, (_, i) => { const s = a + (b - a) * i / n; return [s, f(s)]; });
+const GEN = { x0: 140, y0: 160, w: 700, h: 480, xmin: 0, xmax: 60, ymin: -5, ymax: 35, yl: 'value' };
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Option value', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 8', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Pricing and Valuation', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'of Options', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'exercise value, time value, and the factors behind them', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['exercise', 'Exercise value', (m) => {
+    const p = panel(0), x0 = 200, x1 = 1400, lo = 900, hi = 1050, X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0), y = 560;
+    title(p, 'Exercise value: as if exercised today', m('head'), 100);
+    L2(p, ['call:  max(0, ', ...St, ' − ', ...PVX, ')'], 300, 200, m('call'), COL.good, 36);
+    L2(p, ['put:  max(0, ', ...PVX, ' − ', ...St, ')'], 300, 270, m('put'), COL.real, 36);
+    text(p, 'put: X = €1,000, r = 1%, six months left', 800, 380, m('ex'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('ex', 1), .6);
+    [900, 950, 1000, 1050].forEach(v => text(p, '€' + v.toLocaleString('en-US'), X(v), y + 44, m('ex', 1.2), { size: 22, fill: COL.dim, anchor: 'middle' }));
+    const mk1 = (v, lab, c, t0, up = true) => { const d = G(p, { x: X(v), y, s: 0, o: 0 }); mk('circle', { r: 11, fill: c }, d); pop(d, t0); mline(p, lab, X(v), up ? y - 30 : y + 84, t0, c, 28); };
+    mk1(950, [...St, ' = 950'], COL.task, m('ex', 4));
+    mk1(1000, ['X = 1,000'], COL.whole, m('ex', 1.5));
+    mk1(995.04, ['PV(X) = 995.04'], COL.real, m('calc'), false);
+    draw(path(p, `M${X(950)} ${y + 120}V${y + 134}H${X(995.04)}V${y + 120}`, { stroke: COL.good, 'stroke-width': 3 }, { d: 0 }), m('calc', 3), .5);
+    text(p, 'exercise value €45.04', (X(950) + X(995.04)) / 2, y + 174, m('calc', 3.3), { size: 28, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['money', 'Moneyness', (m) => {
+    const p = panel(0), x0 = 140, x1 = 760, Xp = 450;
+    const rowM = (y, name, c, left, right, k) => {
+      text(p, name, x0, y - 60, m(k), { size: 30, fill: c, weight: 700 });
+      draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m(k, .2), .5);
+      show(path(p, `M${Xp} ${y - 14}V${y + 14}`, { stroke: COL.whole, 'stroke-width': 4 }, { o: 0 }), m(k, .3));
+      text(p, 'X', Xp, y + 44, m(k, .3), { size: 26, fill: COL.whole, anchor: 'middle', weight: 700 });
+      text(p, left[0], (x0 + Xp) / 2, y - 18, m(k, 1), { size: 24, fill: left[1], anchor: 'middle', weight: 600 });
+      text(p, right[0], (Xp + x1) / 2, y - 18, m(k, 1.5), { size: 24, fill: right[1], anchor: 'middle', weight: 600 });
+      text(p, 'at the money: S = X', Xp, y + 80, m(k, 2), { size: 22, fill: COL.dim, anchor: 'middle' });
+    };
+    rowM(260, 'Call', COL.good, ['out of the money', COL.bad], ['in the money', COL.good], 'call');
+    rowM(520, 'Put', COL.real, ['in the money', COL.good], ['out of the money', COL.bad], 'put');
+    text(p, 'our put: S = 950 < X = 1,000 → €50 in the money', x0, 680, m('put', 4), { size: 26, fill: COL.task, weight: 600 });
+    const ax = payAxes(p, { x0: 900, y0: 200, w: 560, h: 420, xmin: 0, xmax: 60, ymin: -2, ymax: 32, yl: 'call value', ticks: [[30, 'X', COL.whole]] }, m('deep'));
+    payLine(p, ax, [[0, 0], [30, 0], [60, 30]], COL.dim, m('deep'), .01, { dash: '8 8' });
+    payLine(p, ax, sample(s => bsCall(s, 30, .35, 1), 0.5, 60), COL.good, m('deep', .3), 1.2);
+    text(p, 'deep OTM: flat', ax.px(8), ax.py(0) - 20, m('deep', 2), { size: 22, fill: COL.dim, weight: 600 });
+    text(p, 'deep ITM: ≈ 1 for 1', ax.px(36), ax.py(26), m('deep', 3), { size: 22, fill: COL.good, weight: 600, anchor: 'end' });
+    text(p, 'value before maturity (illustrative)', 900, 720, m('deep', 1), { size: 22, fill: COL.dim });
+  }],
+
+  ['timevalue', 'Time value', (m) => {
+    const p = panel(0), k = 9, x0 = 200, y = 300;
+    mline(p, ['option price = exercise value + time value'], 800, 120, m('eq'), COL.chalk, 40);
+    const r1 = mk('rect', { x: x0, y: y - 40, width: 45.04 * k, height: 80, rx: 6, fill: COL.good }, p), r2 = mk('rect', { x: x0 + 45.04 * k, y: y - 40, width: 4.96 * k, height: 80, rx: 6, fill: COL.whole }, p);
+    tw(put(r1, { o: 0 }), { o: 1 }, m('ex'), .5); tw(put(r2, { o: 0 }), { o: 1 }, m('ex', 2.5), .5);
+    text(p, 'exercise value €45.04', x0 + 20, y + 10, m('ex', .3), { size: 26, fill: COL.board, weight: 700 });
+    text(p, 'time value €4.96', x0 + 50 * k + 20, y + 10, m('ex', 2.8), { size: 26, fill: COL.whole, weight: 700 });
+    text(p, 'put price €50', x0, y - 60, m('ex'), { size: 26, fill: COL.dim, weight: 600 });
+    text(p, 'more time or more volatility → more possible outcomes → more time value', 800, 470, m('why'), { size: 28, anchor: 'middle', weight: 600 });
+    const gx = 400, gy = 800, w = 800, h = 220, g = G(p, { o: 0 });
+    path(g, `M${gx} ${gy}H${gx + w + 20}M${gx} ${gy}V${gy - h - 20}`, { stroke: COL.dim, 'stroke-width': 3 });
+    T(g, 'time value', { x: gx + 10, y: gy - h - 26, size: 22, fill: COL.dim });
+    T(g, 'T', { x: gx + w, y: gy + 32, size: 24, fill: COL.dim, anchor: 'middle', font: MATH });
+    T(g, 'time (illustrative)', { x: gx + w / 2, y: gy + 32, size: 22, fill: COL.dim, anchor: 'middle' });
+    show(g, m('decay'));
+    draw(path(p, sample(q => Math.sqrt(1 - q), 0, 1, 40).map(([q, v], i) => `${i ? 'L' : 'M'}${gx + q * w} ${gy - v * h}`).join(''), { stroke: COL.whole, 'stroke-width': 5 }, { d: 0 }), m('decay', .4), 2);
+    text(p, '→ 0 at maturity', gx + w + 20, gy - 10, m('decay', 2.4), { size: 24, fill: COL.whole, weight: 600 });
+  }],
+
+  ['bounds', 'No-arbitrage bounds', (m) => {
+    const p = panel(0), x0 = 160, x1 = 1440, X = v => x0 + v / 1100 * (x1 - x0), y = 520;
+    L2(p, ['max(0, ', ...St, ' − PV(X)) ≤ c', Sb('t'), ' ≤ ', ...St], 260, 140, m('clow'), COL.good, 40);
+    text(p, 'the call is worth at least its exercise value…', 260, 200, m('clow', 1), { size: 26, fill: COL.dim });
+    text(p, '…and never more than the underlying', 260, 240, m('cup'), { size: 26, fill: COL.dim });
+    text(p, 'call: X = €1,000, r = 1%, six months left, spot €1,050', 800, 360, m('ex'), { size: 28, anchor: 'middle', weight: 600 });
+    draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), m('ex', 1), .6);
+    [0, 200, 400, 600, 800, 1000].forEach(v => text(p, '€' + v.toLocaleString('en-US'), X(v), y + 44, m('ex', 1.2), { size: 20, fill: COL.dim, anchor: 'middle' }));
+    const band = mk('rect', { x: X(54.96), y: y - 22, width: X(1050) - X(54.96), height: 44, rx: 6, fill: COL.good, opacity: 0 }, p);
+    tw(put(band, { o: 0 }), { o: .35 }, m('exans', 3), .6);
+    const tick = (v, lab, c, t0) => { show(path(p, `M${X(v)} ${y - 34}V${y + 34}`, { stroke: c, 'stroke-width': 5 }, { o: 0 }), t0); text(p, lab, X(v), y - 50, t0, { size: 26, fill: c, anchor: 'middle', weight: 700 }); };
+    tick(54.96, 'lower €54.96', COL.good, m('exans'));
+    tick(1050, 'upper €1,050', COL.task, m('exans', 3));
+    text(p, 'no-arbitrage range for the call price', (X(54.96) + X(1050)) / 2, y + 100, m('exans', 3.5), { size: 26, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    L2(p, ['put:  max(0, PV(X) − ', ...St, ') ≤ p', Sb('t'), ' ≤ X'], 260, 720, m('put'), COL.real, 40);
+  }],
+
+  ['replicate', 'Replicating options', (m) => {
+    const p = panel(0);
+    title(p, 'Replication: forward vs. option', m('call'), 100);
+    const card = (x, c, head, lines, t0) => { const g = G(p, { o: 0, y: 20 }); mk('rect', { x, y: 180, width: 440, height: 300, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g); T(g, head, { x: x + 24, y: 232, size: 32, fill: c, weight: 700 }); lines.forEach((s, i) => T(g, s, { x: x + 24, y: 290 + i * 42, size: 26 })); tw(g, { o: 1, y: 0 }, t0, .6, out); };
+    card(110, COL.whole, 'Long forward', ['borrow PV(F₀(T))', 'buy 1 unit', 'hold: never adjust'], m('fwd'));
+    card(580, COL.good, 'Long call', ['borrow part of PV(X)', 'buy part of a unit', 'part = likelihood of exercise'], m('part'));
+    card(1050, COL.real, 'Long put', ['short part of a unit', 'lend the proceeds', 'part = likelihood of exercise'], m('put'));
+    text(p, 'likelihood of exercise', 580, 590, m('adjust'), { size: 26, fill: COL.dim });
+    const tr = mk('rect', { x: 580, y: 610, width: 440, height: 28, rx: 14, fill: 'none', stroke: COL.dim, 'stroke-width': 2 }, p);
+    tw(put(tr, { o: 0 }), { o: 1 }, m('adjust'), .4);
+    const fill = mk('rect', { x: 580, y: 610, width: 0, height: 28, rx: 14, fill: COL.good }, p);
+    prog(q => fill.setAttribute('width', 440 * (.3 + .4 * Math.sin(q * Math.PI * 2) ** 2)), m('adjust', .5), 5, lin);
+    pill(p, 'option replication must be adjusted over time', COL.task, 800, 730, m('adjust', 2), 28);
+  }],
+
+  ['underlying', 'Underlying and exercise price', (m) => {
+    const p = panel(0), cfg = { y0: 190, w: 560, h: 400, xmin: 0, xmax: 60, ymin: -2, ymax: 32, yl: 'call value' };
+    title(p, 'Underlying price and exercise price', m('head'), 100);
+    const a = payAxes(p, { ...cfg, x0: 130, ticks: [[30, 'X', COL.whole]] }, m('s'));
+    payLine(p, a, sample(s => bsCall(s, 30, .35, 1), 0.5, 60), COL.good, m('s', .3), 1);
+    const dot = G(p, { x: a.px(25), y: a.py(bsCall(25, 30, .35, 1)), s: 0, o: 0 }); mk('circle', { r: 10, fill: COL.task }, dot); pop(dot, m('s', 1.5));
+    prog(q => { const s = 25 + 15 * q; put(dot, { x: a.px(s), y: a.py(bsCall(s, 30, .35, 1)) }); }, m('s', 2.5), 2.5);
+    text(p, 'S ↑ → call ↑, put ↓', 140, 700, m('s', 3), { size: 28, fill: COL.good, weight: 700 });
+    text(p, 'not one for one: depends on moneyness', 140, 745, m('sens'), { size: 24, fill: COL.dim });
+    const b = payAxes(p, { ...cfg, x0: 880, ticks: [[25, ['X', E('−')], COL.good], [35, ['X', E('+')], COL.bad]] }, m('x'));
+    payLine(p, b, [[0, 0], [25, 0], [60, 35]], COL.good, m('x', .3), 1);
+    payLine(p, b, [[0, 0], [35, 0], [60, 25]], COL.bad, m('x', 1), 1);
+    text(p, 'lower X → call worth more', 890, 700, m('x', 1.5), { size: 28, fill: COL.good, weight: 700 });
+    text(p, 'higher X → put worth more', 890, 745, m('xp'), { size: 28, fill: COL.real, weight: 700 });
+  }],
+
+  ['others', 'Time, rates and volatility', (m) => {
+    const p = panel(0);
+    const card = (x, c, head, lines, t0) => { const g = G(p, { o: 0, y: 20 }); mk('rect', { x, y: 120, width: 440, height: 300, rx: 16, fill: COL.board, stroke: c, 'stroke-width': 3 }, g); T(g, head, { x: x + 24, y: 172, size: 32, fill: c, weight: 700 }); lines.forEach((s, i) => T(g, s, { x: x + 24, y: 230 + i * 42, size: 26, fill: i % 2 ? COL.dim : COL.chalk })); tw(g, { o: 1, y: 0 }, t0, .6, out); };
+    card(110, COL.whole, 'Time to expiry ↑', ['call ↑', 'unlimited upside, capped loss', 'put: usually ↑', 'deep ITM put can fall'], m('t'));
+    card(580, COL.task, 'Risk-free rate ↑', ['PV(X) ↓', 'exercise value', 'call ↑', 'put ↓'], m('r'));
+    card(1050, COL.real, 'Volatility ↑', ['call ↑ and put ↑', 'wider range of outcomes,', 'loss still capped', ''], m('vol'));
+    // volatility: two distributions of S_T over a call payoff
+    const gx = 500, gy = 800, w = 600, Xx = gx + w / 2, g = G(p, { o: 0 });
+    path(g, `M${gx} ${gy}H${gx + w}`, { stroke: COL.dim, 'stroke-width': 2 });
+    path(g, `M${gx} ${gy - 4}H${Xx}L${gx + w} ${gy - 150}`, { stroke: COL.good, 'stroke-width': 3, 'stroke-dasharray': '8 6' });
+    T(g, 'X', { x: Xx, y: gy + 30, size: 24, fill: COL.whole, anchor: 'middle', font: MATH });
+    show(g, m('vol', 1));
+    const bell = (sd, c, t0) => draw(path(p, sample(s => Math.exp(-((s - .5) ** 2) / (2 * sd * sd)), 0, 1, 60).map(([s, v], i) => `${i ? 'L' : 'M'}${gx + s * w} ${gy - v * 110 * (.12 / sd) ** .5}`).join(''), { stroke: c, 'stroke-width': 4 }, { d: 0 }), t0, 1);
+    bell(.08, COL.dim, m('vol', 1.5)); bell(.2, COL.real, m('vol', 3));
+    text(p, 'low vs. high volatility', gx - 20, gy - 60, m('vol', 3.5), { size: 22, fill: COL.real, weight: 600, anchor: 'end' });
+  }],
+
+  ['carry', 'All the factors', (m) => {
+    const p = panel(0), cx = [460, 900, 1140];
+    text(p, 'income (dividends, convenience yield) → call ↓, put ↑', 800, 100, m('inc'), { size: 30, fill: COL.good, weight: 700, anchor: 'middle' });
+    text(p, 'carrying costs (storage) → call ↑, put ↓', 800, 150, m('cost'), { size: 30, fill: COL.task, weight: 700, anchor: 'middle' });
+    ['an increase in…', 'call', 'put'].forEach((s, i) => text(p, s, cx[i], 230, m('table'), { size: 26, fill: COL.dim, weight: 700, anchor: 'middle' }));
+    path(p, 'M260 250H1340', { stroke: COL.faint, 'stroke-width': 2 });
+    [['underlying price', '+', '−'], ['exercise price', '−', '+'], ['time to expiry', '+', '+ / −'], ['risk-free rate', '+', '−'], ['volatility', '+', '+'], ['income', '−', '+'], ['carrying cost', '+', '−']].forEach(([f, c, pv], i) => {
+      const y = 300 + i * 66, t0 = m('table', .6 + i * .5);
+      text(p, f, cx[0], y, t0, { size: 28, anchor: 'middle', weight: 600 });
+      text(p, c, cx[1], y, t0, { size: 34, fill: c === '+' ? COL.good : COL.bad, anchor: 'middle', weight: 700 });
+      text(p, pv, cx[2], y, t0, { size: 34, fill: pv === '+' ? COL.good : pv === '−' ? COL.bad : COL.task, anchor: 'middle', weight: 700 });
+    });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['Exercise value: spot vs. the present value of the exercise price.', 'w1'],
+      ['Option price = exercise value + time value; time value decays to 0.', 'w2'],
+      ['Bounds: exercise value ≤ call ≤ spot; exercise value ≤ put ≤ X.', 'w3'],
+      ['Time and volatility raise value; other factors split calls and puts.', 'w4']], m, { y0: 250, gap: 120, size: 31 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

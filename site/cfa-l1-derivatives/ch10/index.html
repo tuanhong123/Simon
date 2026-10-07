@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One-Period Binomial Model</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 10, title: 'Valuing a Derivative Using a One-Period Binomial Model', minutes: 5, language: 'en' };
+
+/* ---------- data ---------- */
+const L2 = (p, parts, x, y, t0, fill = COL.chalk, size = 34) => mline(p, parts, x, y, t0, fill, size, 'start');
+const S1u = ['S', Sb('1'), E('u')], S1d = ['S', Sb('1'), E('d')], c1u = ['c', Sb('1'), E('u')], c1d = ['c', Sb('1'), E('d')];
+// a one-period tree: root at (x, y), branches to (x + dx, y ∓ dy); node labels are math parts
+const tree = (p, x, y, dx, dy, root, up, dn, color, t0, { size = 34, w = 170, h = 70 } = {}) => {
+  const node = (nx, ny, parts, t) => { const g = G(p, { x: nx, y: ny, o: 0 }); mk('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: h / 2, fill: COL.board, stroke: color, 'stroke-width': 3 }, g); M(g, parts, { y: size * .35, size, fill: COL.chalk }); show(g, t); return g; };
+  const r = node(x, y, root, t0);
+  draw(path(p, `M${x + w / 2} ${y - 8}L${x + dx - w / 2} ${y - dy + 8}`, { stroke: color, 'stroke-width': 3 }, { d: 0 }), t0 + .4, .5);
+  draw(path(p, `M${x + w / 2} ${y + 8}L${x + dx - w / 2} ${y + dy - 8}`, { stroke: color, 'stroke-width': 3 }, { d: 0 }), t0 + .4, .5);
+  return { r, u: node(x + dx, y - dy, up, t0 + .8), d: node(x + dx, y + dy, dn, t0 + .8) };
+};
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Binomial model', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 10', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Valuing a Derivative with a', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'One-Period Binomial Model', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'hedge the option, and the price follows', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['model', 'The binomial model', (m) => {
+    const p = panel(0);
+    text(p, 'forward: replicate without a price model · option: one-sided payoff needs one', 800, 100, m('why'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const t = tree(p, 400, 470, 560, 210, ['S', Sb('0')], ['S', Sb('1'), E('u'), ' = R', Sb('u'), 'S', Sb('0')], ['S', Sb('1'), E('d'), ' = R', Sb('d'), 'S', Sb('0')], COL.task, m('tree'), { w: 300 });
+    pulse(t.u, m('up'), 1.08); pulse(t.d, m('down'), 1.08);
+    text(p, 'q', 700, 345, m('q'), { size: 36, fill: COL.good, weight: 700, anchor: 'middle' });
+    text(p, '1 − q', 640, 690, m('q', .5), { size: 36, fill: COL.bad, weight: 700, anchor: 'middle' });
+    text(p, '(not needed!)', 700, 295, m('q', 3), { size: 22, fill: COL.dim, anchor: 'middle' });
+    draw(path(p, 'M1160 260H1180V680H1160', { stroke: COL.real, 'stroke-width': 3 }, { d: 0 }), m('vol'), .6);
+    text(p, 'spread = volatility', 1200, 480, m('vol', .5), { size: 30, fill: COL.real, weight: 700 });
+    text(p, 't = 0', 400, 800, m('tree'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 't = 1', 960, 800, m('tree'), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['tree', 'Underlying and call trees', (m) => {
+    const p = panel(0);
+    text(p, 'one-year European call, X = €100', 800, 90, m('ex'), { size: 30, weight: 700, anchor: 'middle' });
+    text(p, 'underlying', 380, 170, m('ex'), { size: 28, fill: COL.task, weight: 700, anchor: 'middle' });
+    const a = tree(p, 230, 440, 330, 170, ['€80'], ['€110'], ['€60'], COL.task, m('ex', .5));
+    void a;
+    text(p, 'up: × 1.375', 680, 250, m('up'), { size: 24, fill: COL.task, anchor: 'start' });
+    text(p, 'down: × 0.75', 680, 640, m('down'), { size: 24, fill: COL.task, anchor: 'start' });
+    text(p, 'call', 1100, 170, m('cu'), { size: 28, fill: COL.good, weight: 700, anchor: 'middle' });
+    const b = tree(p, 950, 440, 330, 170, ['c', Sb('0'), ' = ?'], ['€10'], ['€0'], COL.good, m('cu'));
+    void b;
+    text(p, 'max(0, 110 − 100)', 1280, 200, m('cu', 1), { size: 22, fill: COL.dim, anchor: 'middle' });
+    text(p, 'max(0, 60 − 100)', 1280, 690, m('cd'), { size: 22, fill: COL.dim, anchor: 'middle' });
+    pill(p, 'the only unknown: today’s call value', COL.good, 800, 790, m('unk'), 28);
+  }],
+
+  ['hedge', 'The hedge ratio', (m) => {
+    const p = panel(0);
+    text(p, 'sell 1 call, buy h units of the underlying', 800, 90, m('idea'), { size: 32, weight: 700, anchor: 'middle' });
+    const t = tree(p, 330, 420, 520, 190, ['80', 'h', ' − ', 'c', Sb('0')], ['110', 'h', ' − 10'], ['60', 'h', ' − 0'], COL.real, m('idea', 1.5), { w: 240 });
+    pulse(t.u, m('vu'), 1.1); pulse(t.d, m('vd'), 1.1);
+    L2(p, ['110', 'h', ' − 10 = 60', 'h'], 1060, 320, m('eq'), COL.chalk, 36);
+    L2(p, ['h* = ', F('10 − 0', '110 − 60'), ' = ', F('10', '50'), ' = 0.20'], 1060, 440, m('h'), COL.good, 40);
+    L2(p, ['up: 110 × 0.2 − 10 = €12'], 1060, 580, m('check'), COL.task, 32);
+    L2(p, ['down: 60 × 0.2 − 0 = €12'], 1060, 640, m('check', 1.5), COL.task, 32);
+    pill(p, 'risk-free: €12 either way', COL.task, 1250, 740, m('check', 3), 28);
+  }],
+
+  ['price', 'Pricing the call', (m) => {
+    const p = panel(0), x = 260;
+    title(p, 'A riskless portfolio earns the risk-free rate (5%)', m('rf'), 100);
+    L2(p, ['V', Sb('0'), ' = ', F('12', '1.05'), ' = €11.43'], x, 250, m('v0'), COL.task, 44);
+    L2(p, ['V', Sb('0'), ' = 0.2 × 80 − ', 'c', Sb('0')], x, 380, m('c0'), COL.chalk, 44);
+    L2(p, ['c', Sb('0'), ' = 16 − 11.43 = €4.57'], x, 500, m('c0', 4), COL.good, 56);
+    pill(p, 'any other price → a risk-free asset earning more than 5%', COL.bad, 800, 680, m('arb'), 28);
+  }],
+
+  ['rn', 'Risk-neutral pricing', (m) => {
+    const p = panel(0);
+    mline(p, ['π = (1 + r − R', Sb('d'), ') / (R', Sb('u'), ' − R', Sb('d'), ')'], 400, 170, m('eq'), COL.chalk, 42);
+    mline(p, ['π = ', F('1.05 − 0.75', '1.375 − 0.75'), ' = 0.48'], 1100, 170, m('pi'), COL.task, 42);
+    const t = tree(p, 400, 500, 520, 190, ['c', Sb('0')], ['€10'], ['€0'], COL.good, m('val'));
+    void t;
+    text(p, 'π = 0.48', 650, 370, m('val', 1), { size: 30, fill: COL.task, weight: 700, anchor: 'middle' });
+    text(p, '1 − π = 0.52', 590, 700, m('val', 1.3), { size: 30, fill: COL.task, weight: 700, anchor: 'middle' });
+    mline(p, ['c', Sb('0'), ' = ', F('0.48 × 10 + 0.52 × 0', '1.05'), ' = ', F('4.80', '1.05'), ' = €4.57'], 1180, 520, m('val', 3), COL.good, 36);
+    text(p, 'not needed: the real probability q, or attitudes to risk', 800, 800, m('q'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 600 });
+  }],
+
+  ['hightest', 'Hightest example', (m) => {
+    const p = panel(0);
+    text(p, 'stock $50 · X = $55 · one year · r = 5%', 800, 80, m('setup'), { size: 30, weight: 700, anchor: 'middle' });
+    tree(p, 220, 330, 330, 140, ['$50'], ['$60'], ['$40'], COL.task, m('setup', 2), { w: 130, h: 60, size: 30 });
+    text(p, '±20%', 380, 220, m('setup', 2.5), { size: 24, fill: COL.dim, anchor: 'middle' });
+    mline(p, ['π = ', F('1.05 − 0.8', '1.2 − 0.8'), ' = 0.625'], 1050, 190, m('pi'), COL.task, 36);
+    L2(p, ['call: ', F('0.625 × 5', '1.05'), ' = $2.98'], 800, 330, m('call'), COL.good, 34);
+    L2(p, ['put: ', F('0.375 × 15', '1.05'), ' = $5.36'], 800, 440, m('put'), COL.real, 34);
+    mline(p, ['50 + 5.36 = 2.98 + 55/1.05 = 55.36'], 800, 560, m('parity'), COL.chalk, 34);
+    const cx = [470, 800, 1100];
+    ['stock moves', 'call', 'put'].forEach((s, i) => text(p, s, cx[i], 650, m('vol'), { size: 24, fill: COL.dim, weight: 700, anchor: 'middle' }));
+    [['±20%', '$2.98', '$5.36'], ['±40%', '$8.04', '$10.42']].forEach((r, j) => r.forEach((s, i) => text(p, s, cx[i], 700 + j * 50, m('vol', .5 + j * 2), { size: 30, fill: [COL.chalk, COL.good, COL.real][i], weight: 700, anchor: 'middle' })));
+    pill(p, 'Hightest’s view on the stock does not change the price', COL.task, 800, 840, m('view'), 26);
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['Price moves up by Ru or down by Rd; the spread is the volatility.', 'w1'],
+      ['Hedge ratio h* = (change in option) ÷ (change in underlying).', 'w2'],
+      ['The hedged portfolio earns the risk-free rate, pinning down the price.', 'w3'],
+      ['Value = risk-neutral expected payoff, discounted at the risk-free rate.', 'w4']], m, { y0: 250, gap: 120 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

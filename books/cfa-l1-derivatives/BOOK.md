@@ -15,8 +15,10 @@ Read this compact current state for chapter work. The chapter map/status lives i
 - Notation: S₀ spot today, S_T spot at expiry, F₀(T) forward price, X exercise price, r risk-free rate (annual, compounded annually unless stated), T in years; payoffs per unit of underlying.
 - Video: `tools/<book>/make_video.py chNN` renders every lesson beat (finish card left out) at 1920×1080.
 
-## Visual models / available helpers (copied per chapter)
-- `mline`, `text`, `pill` (as in the quant book); `box(p, label, color, x, y, w, h, t0)` counterparty box; `flow(p, x1, y1, x2, y2, color, t0, label)` labelled arrow between boxes; `payoff` axes for hockey-stick diagrams (S_T horizontal, payoff vertical).
+## Visual models / available helpers (`site/<book>/lib/helpers.js`, loaded by every chapter)
+- `mline`, `text`, `pill`, `title`, `numbered`, `swapTok`; `cbox` counterparty box; `flow` labelled (optionally curved/dashed) arrow; `payAxes` / `payLine` / `payDot` payoff diagrams; `growChart` price-vs-time chart (spot growing to forward). Chapter-local helpers: `icard*` cards, `rateChart` (ch07), `tree` (ch10), `mini` payoff tiles (ch09).
 
 ## Current decisions
-- Finish card in this book's engine hides score lines when no questions exist.
+- Book engine changes (site/<book>/lib/engine.js only): finish card hides score lines when no questions exist; `Sb()` subscripts and `Up()` upright text inside `M()`; only single letters are italic in formulas (PV, MRR, USD stay upright).
+- All 10 learning modules built (≈67 minutes). Illustrative (not source-exact) shapes are labelled on screen. Errata found in the source are listed in each chapter note.
+- Video: 1080p MP4 per chapter in `video/` (git-ignored), rendered with `tools/<book>/make_video.py`; run at most 3 renders in parallel, and not alongside TTS (CPU-bound).

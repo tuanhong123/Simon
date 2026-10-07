@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option Replication Using Put–Call Parity</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script src="../lib/helpers.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 9, title: 'Option Replication Using Put–Call Parity', minutes: 5, language: 'en', next: '../ch10/' };
+
+/* ---------- data ---------- */
+const ST = ['S', Sb('T')], S0 = ['S', Sb('0')], p0 = ['p', Sb('0')], c0 = ['c', Sb('0')], PVX = ['X(1 + r)', E('−T')];
+const L2 = (p, parts, x, y, t0, fill = COL.chalk, size = 34) => mline(p, parts, x, y, t0, fill, size, 'start');
+// a small payoff diagram (X = 30, S_T from 0 to 60, payoff from ymin to 60) with one line
+const mini = (p, x0, y0, title, pts, color, t0, { ymin = 0, ymax = 60, w = 300, h = 220, xl = ST } = {}) => {
+  const ax = payAxes(p, { x0, y0, w, h, xmin: 0, xmax: 60, ymin, ymax, xl, yl: '', ticks: [[30, 'X', COL.whole, 34]] }, t0);
+  text(p, title, x0 + w / 2, y0 - 26, t0, { size: 24, fill: color, anchor: 'middle', weight: 700 });
+  payLine(p, ax, pts, color, t0 + .4, .8);
+  return ax;
+};
+const op = (p, s, x, y, t0) => text(p, s, x, y, t0, { size: 48, fill: COL.dim, anchor: 'middle', weight: 700 });
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Put–call parity', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Derivatives · Learning Module 9', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Option Replication Using', { x: 800, y: 400, size: 72, weight: 600, anchor: 'middle' });
+    T(g, 'Put–Call Parity', { x: 800, y: 486, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'calls, puts, the underlying and a bond, tied together', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['portfolios', 'Fiduciary call and protective put', (m) => {
+    const p = panel(0), ya = 120, yb = 500, xs = [110, 560, 1100];
+    text(p, 'Fiduciary call', 40, ya + 120, m('fid'), { size: 28, fill: COL.good, weight: 700 });
+    mini(p, xs[0] + 170, ya, 'long call', [[0, 0], [30, 0], [60, 30]], COL.good, m('fid', .5), { w: 260 });
+    op(p, '+', 760, ya + 130, m('fid', 3));
+    mini(p, 820, ya, 'bond paying X', [[0, 30], [60, 30]], COL.whole, m('fid', 3.5), { w: 260 });
+    op(p, '=', 1140, ya + 130, m('fidsum'));
+    mini(p, 1220, ya, 'max(S, X)', [[0, 30], [30, 30], [60, 60]], COL.task, m('fidsum', .5), { w: 260 });
+    text(p, 'Protective put', 40, yb + 120, m('pp'), { size: 28, fill: COL.real, weight: 700 });
+    mini(p, xs[0] + 170, yb, 'long asset', [[0, 0], [60, 60]], COL.task, m('pp', .5), { w: 260 });
+    op(p, '+', 760, yb + 130, m('pp', 3));
+    mini(p, 820, yb, 'long put', [[0, 30], [30, 0], [60, 0]], COL.real, m('pp', 3.5), { w: 260 });
+    op(p, '=', 1140, yb + 130, m('ppsum'));
+    mini(p, 1220, yb, 'max(S, X)', [[0, 30], [30, 30], [60, 60]], COL.task, m('ppsum', .5), { w: 260 });
+    pill(p, 'identical payoffs', COL.task, 1350, 450, m('same'), 28);
+  }],
+
+  ['table', 'Every scenario', (m) => {
+    const p = panel(0), cx = [330, 720, 1010, 1300];
+    title(p, 'Value at maturity', m('head'), 100);
+    ['', 'put exercised (S < X)', 'S = X', 'call exercised (S > X)'].forEach((s, i) => text(p, s, cx[i], 180, m('head', .5), { size: 24, fill: COL.dim, weight: 700, anchor: 'middle' }));
+    path(p, 'M120 205H1480', { stroke: COL.faint, 'stroke-width': 2 });
+    const rows = [['asset', ['S', 'S', 'S'], COL.real], ['put', ['X − S', '0', '0'], COL.real], ['protective put', ['X', 'X', 'S'], COL.real, 1],
+      ['call', ['0', '0', 'S − X'], COL.good], ['bond', ['X', 'X', 'X'], COL.good], ['fiduciary call', ['X', 'X', 'S'], COL.good, 1]];
+    const at = ['low', 'mid', 'high'];
+    rows.forEach(([name, vals, c, tot], i) => {
+      const y = 260 + i * 66 + (i > 2 ? 30 : 0);
+      text(p, name, cx[0], y, m('head', 1 + i * .3), { size: 28, fill: tot ? c : COL.chalk, weight: tot ? 700 : 500, anchor: 'middle' });
+      vals.forEach((v, j) => mline(p, [v], cx[j + 1], y, m(at[j], tot ? .6 : 0), tot ? c : COL.chalk, tot ? 34 : 30));
+      if (tot) path(p, `M200 ${y - 42}H1480`, { stroke: COL.faint, 'stroke-width': 1 });
+    });
+    mline(p, [...S0, ' + ', ...p0, ' = ', ...c0, ' + ', ...PVX], 800, 790, m('rule', 2), COL.task, 48);
+  }],
+
+  ['parity', 'Using parity', (m) => {
+    const p = panel(0), x = 200;
+    mline(p, [...S0, ' + ', ...p0, ' = ', ...c0, ' + ', ...PVX], 800, 120, m('ex'), COL.chalk, 46);
+    text(p, 'Biomian: S₀ = INR 295 · call (X = 265, 6 months) = INR 59 · r = 4%', 800, 210, m('ex', 1), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+    L2(p, ['bond: 265 × 1.04', E('−0.5'), ' = 259.85'], x, 340, m('bond'), COL.whole, 38);
+    L2(p, ['295 + ', ...p0, ' = 59 + 259.85'], x, 450, m('solve'), COL.chalk, 38);
+    L2(p, [...p0, ' = INR 23.85'], x + 200, 570, m('ans'), COL.good, 52);
+  }],
+
+  ['arb', 'Parity arbitrage', (m) => {
+    const p = panel(0), cx = [330, 640, 900, 1110, 1330];
+    text(p, 'the put trades at INR 30, not 23.85', 800, 90, m('mis'), { size: 30, weight: 700, anchor: 'middle' });
+    mline(p, ['295 + 30 = 325   >   59 + 259.85 = 318.85'], 800, 160, m('mis', 3), COL.task, 36);
+    ['', 'today', 'S < X', 'S = X', 'S > X'].forEach((s, i) => text(p, s, cx[i], 240, m('trade'), { size: 24, fill: COL.dim, weight: 700, anchor: 'middle' }));
+    path(p, 'M120 262H1480', { stroke: COL.faint, 'stroke-width': 2 });
+    [['sell asset', '+295', '−S', '−S', '−S', COL.bad], ['sell put', '+30', '−(X − S)', '0', '0', COL.bad], ['buy call', '−59', '0', '0', 'S − X', COL.good], ['buy bond', '−259.85', 'X', 'X', 'X', COL.good]].forEach(([n, a, b, c, d, col], i) => {
+      const y = 320 + i * 64, t0 = m('trade', .6 + i * .8);
+      text(p, n, cx[0], y, t0, { size: 28, fill: col, weight: 700, anchor: 'middle' });
+      [a, b, c, d].forEach((v, j) => mline(p, [v], cx[j + 1], y, j ? m('zero', .2) : t0, COL.chalk, 30));
+    });
+    path(p, 'M200 560H1480', { stroke: COL.dim, 'stroke-width': 2 });
+    text(p, 'total', cx[0], 610, m('cash'), { size: 30, weight: 700, anchor: 'middle' });
+    text(p, '+6.15', cx[1], 610, m('cash', .5), { size: 34, fill: COL.good, weight: 700, anchor: 'middle' });
+    ['0', '0', '0'].forEach((v, j) => text(p, v, cx[j + 2], 610, m('zero', .8), { size: 34, weight: 700, anchor: 'middle' }));
+    pill(p, 'riskless profit: INR 6.15 a share', COL.good, 800, 730, m('zero', 2), 30);
+  }],
+
+  ['synth', 'Synthetic positions', (m) => {
+    const p = panel(0), cx = [300, 640, 880, 1120, 1360];
+    title(p, 'Build any position from the other three', m('head'), 100);
+    L2(p, ['put  ', ...p0, ' = ', ...c0, ' + ', ...PVX, ' − ', ...S0], 260, 200, m('put'), COL.real, 38);
+    L2(p, ['asset  ', ...S0, ' = ', ...c0, ' − ', ...p0, ' + ', ...PVX], 260, 280, m('stock'), COL.task, 38);
+    ['to replicate…', 'asset', 'bond', 'call', 'put'].forEach((s, i) => text(p, s, cx[i], 380, m('tab'), { size: 24, fill: COL.dim, weight: 700, anchor: 'middle' }));
+    path(p, 'M150 400H1460', { stroke: COL.faint, 'stroke-width': 2 });
+    [['asset', ['—', 'long', 'long', 'short']], ['bond', ['long', '—', 'short', 'long']], ['call', ['long', 'short', '—', 'long']], ['put', ['short', 'long', 'long', '—']]].forEach(([n, vals], i) => {
+      const y = 450 + i * 70, t0 = m('tab', .5 + i * .6);
+      text(p, n, cx[0], y, t0, { size: 28, weight: 700, anchor: 'middle' });
+      vals.forEach((v, j) => text(p, v, cx[j + 1], y, t0 + .2, { size: 28, fill: v === 'long' ? COL.good : v === 'short' ? COL.bad : COL.dim, weight: 600, anchor: 'middle' }));
+    });
+  }],
+
+  ['covered', 'Covered call', (m) => {
+    const p = panel(0), y0 = 170;
+    title(p, 'Covered call: hold the shares, sell a call (X = 325)', m('head'), 90);
+    mini(p, 80, y0, 'long asset', [[0, 0], [60, 60]], COL.task, m('head', 2), { w: 220, h: 200 });
+    op(p, '+', 415, y0 + 120, m('head', 3));
+    mini(p, 470, y0, 'short call', [[0, 0], [30, 0], [60, -30]], COL.bad, m('head', 3.5), { w: 220, h: 200, ymin: -30, ymax: 30 });
+    op(p, '=', 805, y0 + 120, m('eq', 2));
+    mini(p, 860, y0, 'min(S, X)', [[0, 0], [30, 30], [60, 30]], COL.good, m('pay'), { w: 220, h: 200 });
+    op(p, '=', 1195, y0 + 120, m('eq', 3.5));
+    mini(p, 1250, y0, 'bond − put', [[0, 0], [30, 30], [60, 30]], COL.whole, m('eq', 4), { w: 220, h: 200 });
+    mline(p, [...S0, ' − ', ...c0, ' = ', ...PVX, ' − ', ...p0], 800, 560, m('eq'), COL.chalk, 42);
+    mline(p, ['295 − ', ...c0, ' = 325 × 1.04', E('−0.5'), ' − 56 = 318.69 − 56'], 800, 660, m('ans'), COL.chalk, 36);
+    mline(p, [...c0, ' = INR 32.31'], 800, 760, m('ans', 5), COL.good, 50);
+  }],
+
+  ['fwdparity', 'Put–call forward parity', (m) => {
+    const p = panel(0), x = 200;
+    title(p, 'Replace the asset with a forward plus a bond', m('head'), 100);
+    mline(p, [...['F', Sb('0'), '(', 'T', ')'], '(1 + r)', E('−T'), ' + ', ...p0, ' = ', ...c0, ' + ', ...PVX], 800, 220, m('eq'), COL.chalk, 44);
+    mline(p, [...p0, ' − ', ...c0, ' = [X − ', 'F', Sb('0'), '(', 'T', ')](1 + r)', E('−T')], 800, 320, m('rearr'), COL.task, 44);
+    L2(p, ['F', Sb('0'), '(', 'T', ') = 295 × 1.04', E('0.5'), ' = 300.84'], x, 450, m('ex'), COL.whole, 38);
+    L2(p, [...p0, ' = 59 + (265 − 300.84) × 1.04', E('−0.5'), ' = 59 − 35.15'], x, 560, m('ans'), COL.chalk, 38);
+    L2(p, [...p0, ' = INR 23.85'], x + 200, 680, m('ans', 5), COL.good, 50);
+    text(p, 'same answer as before', x + 600, 680, m('ans', 6), { size: 26, fill: COL.dim });
+  }],
+
+  ['firm', 'Equity and debt as options', (m) => {
+    const p = panel(0), cfg = { y0: 190, w: 340, h: 300, xmin: 0, xmax: 60, ymin: 0, ymax: 45, xl: ['V', Sb('T')], yl: 'payoff', ticks: [[30, 'D', COL.whole]] };
+    text(p, 'A firm worth V has zero-coupon debt with face value D', 800, 90, m('head'), { size: 30, weight: 700, anchor: 'middle' });
+    text(p, 'V > D: solvent → debt gets D, equity the rest', 800, 140, m('solv'), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'V < D: insolvent → debt takes everything, equity 0', 800, 180, m('insolv'), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    const a = payAxes(p, { ...cfg, x0: 150, y0: 260 }, m('eq'));
+    payLine(p, a, [[0, 0], [30, 0], [60, 30]], COL.good, m('eq', .4), 1);
+    text(p, 'shareholders: max(0, V − D)', 320, 660, m('eq', .8), { size: 26, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, '= a call on the firm', 320, 700, m('eq', 3), { size: 26, fill: COL.dim, anchor: 'middle' });
+    const b = payAxes(p, { ...cfg, x0: 680, y0: 260 }, m('debt'));
+    payLine(p, b, [[0, 0], [30, 30], [60, 30]], COL.whole, m('debt', .4), 1);
+    text(p, 'debtholders: min(V, D)', 850, 660, m('debt', .8), { size: 26, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, '= bond − put sold to equity', 850, 700, m('debt', 3), { size: 26, fill: COL.dim, anchor: 'middle' });
+    mline(p, ['V', Sb('0'), ' = ', ...c0, ' + PV(D) − ', ...p0], 1360, 400, m('val'), COL.task, 40);
+    text(p, 'the put = credit risk premium', 1360, 470, m('spread'), { size: 26, fill: COL.bad, anchor: 'middle', weight: 700 });
+    text(p, 'insolvency likelier → put worth more', 1360, 510, m('spread', 3), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    numbered(p, [['Fiduciary call and protective put both pay max(S, X).', 'w1'],
+      ['So S₀ + p₀ = c₀ + PV(X); a mismatch is an arbitrage.', 'w2'],
+      ['Rearranged, parity replicates any position (covered calls, forwards).', 'w3'],
+      ['Equity is a call on firm value; risky debt is a bond minus a put.', 'w4']], m, { y0: 250, gap: 120 });
+  }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
