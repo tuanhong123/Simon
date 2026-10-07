@@ -15,7 +15,7 @@
 'use strict';
 const CHAPTER = { number: 14, title: 'Real Estate and Infrastructure', minutes: 9, language: 'en', next: '../ch15/' };
 const C_UND = COL.whole, C_PRICE = COL.task, C_GAIN = COL.good, C_RISK = COL.bad;
-const steps5 = (p, items, m, y0 = 850) => items.forEach(([a, b, c, k], i) => {
+const steps5 = (p, items, m, y0 = 790) => items.forEach(([a, b, c, k], i) => {
   const x = 110 + i * 290, top = y0 - 270 - i * 55, g = G(p, { o: 0, y: 30 });
   mk('rect', { x, y: top, width: 270, height: y0 - top, rx: 14, fill: c, 'fill-opacity': .14, stroke: c, 'stroke-width': 3 }, g);
   a.split('\n').forEach((s, j) => T(g, s, { x: x + 20, y: top + 48 + j * 34, size: 30, fill: c, weight: 700 }));
@@ -123,7 +123,7 @@ const BEATS = [
     text(p, 'Indirect', 1200, 180, m('ind'), { size: 36, fill: C_PRICE, anchor: 'middle', weight: 700 });
     ['infrastructure funds', 'ETFs', 'listed companies', 'MLPs'].forEach((s, i) => pill(p, s, C_PRICE, 1200, 270 + i * 75, m('ind', .6 + i * 1.2), 26));
     text(p, 'listed: liquid, transparent, but a small segment (~$2.2tn)', 1200, 620, m('ind', 6), { size: 22, fill: COL.dim, anchor: 'middle' });
-    text(p, 'Debt: private or traded, with flexible terms for years of zero cash flow', 1200, 720, m('debt'), { size: 24, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'Debt: private or traded, flexible terms', 1200, 720, m('debt'), { size: 24, fill: COL.dim, anchor: 'middle', weight: 600 });
   }],
 
   ['returns', 'Infrastructure risk and return', (m) => {
@@ -135,7 +135,7 @@ const BEATS = [
     const cx = [870, 1230, 1400], hdr = ['', 'return', 'SD', 'CV'];
     text(p, 'Mar 2008 – Jun 2021', 870, 150, m('stats'), { size: 24, fill: COL.dim });
     ['return', 'SD', 'CV'].forEach((s, i) => text(p, s, [1150, 1290, 1420][i], 200, m('stats'), { size: 24, fill: COL.dim, anchor: 'middle', weight: 700 }));
-    [['Private infrastructure', '8.57%', '7%', '0.82', C_GAIN], ['Real estate', '3.43%', '10%', '2.86', COL.dim], ['Natural resources', '3.29%', '9%', '2.66', COL.dim], ['MSCI US REIT', '7.77%', '26%', '3.38', COL.dim]].forEach(([n, a, b, c, col], i) => { const y = 290 + i * 80, t0 = m('stats', 1 + i * .8); text(p, n, 870, y, t0, { size: 24, fill: col, weight: i ? 500 : 700 }); [a, b, c].forEach((v, j) => text(p, v, [1150, 1290, 1420][j], y, t0 + .2, { size: 26, fill: col, anchor: 'middle', weight: 700 })); });
+    [['Infrastructure', '8.57%', '7%', '0.82', C_GAIN], ['Real estate', '3.43%', '10%', '2.86', COL.dim], ['Natural resources', '3.29%', '9%', '2.66', COL.dim], ['MSCI US REIT', '7.77%', '26%', '3.38', COL.dim]].forEach(([n, a, b, c, col], i) => { const y = 290 + i * 80, t0 = m('stats', 1 + i * .8); text(p, n, 870, y, t0, { size: 24, fill: col, weight: i ? 500 : 700 }); [a, b, c].forEach((v, j) => text(p, v, [1150, 1290, 1420][j], y, t0 + .2, { size: 26, fill: col, anchor: 'middle', weight: 700 })); });
     text(p, 'correlation with S&P 500: infrastructure 0.12, MSCI World 0.08', 870, 700, m('corr'), { size: 24, fill: C_UND, weight: 600 });
     text(p, 'income, diversification, some inflation protection', 870, 750, m('corr', 4), { size: 24, fill: COL.dim });
   }],
@@ -143,7 +143,7 @@ const BEATS = [
   ['wrap', 'Summary', (m) => wrapList(m, [
     'Real estate is heterogeneous, local and illiquid, held directly or via funds and REITs.',
     'Returns run from bond-like to equity-like; income is over half of the total.',
-    'Infrastructure earns contractual cash flows; greenfield, brownfield and secondary stages trade risk for return.',
+    'Infrastructure earns contractual cash flows; stages trade risk for return.',
     'Both diversify, but listed real estate behaves like equities in a crisis.'])],
 
   ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
