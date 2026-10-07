@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monetary and Fiscal Policy</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/econ.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 5, title: 'Monetary and Fiscal Policy', minutes: 7, language: 'en', next: '../ch06/' };
+
+const stackRow = (p, x, y, w, h, fill, label, t0, tcol = COL.board) => { const g = G(p, { o: 0, y: -16 }); mk('rect', { x, y, width: w, height: h, rx: 6, fill, opacity: .92 }, g); if (label) T(g, label, { x: x + w / 2, y: y + h / 2 + 11, size: 30, fill: tcol, weight: 700, anchor: 'middle' }); show(g, t0); tw(g, { y: 0 }, t0, .5, out); return g; };
+const numCard = (p, n, str, y, t0) => { const g = G(p, { x: -16, y, o: 0 }); mk('circle', { cx: 160, cy: -12, r: 26, fill: COL.task }, g); T(g, String(n), { x: 160, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, str, { x: 220, size: 34, weight: 600 }); tw(g, { o: 1, x: 0 }, t0, .6); };
+const bcard = (p, x, y, w, h, c, t0) => { const g = G(p, { o: 0, y: 20 }); mk('rect', { x, y, width: w, height: h, rx: 18, fill: 'none', stroke: c, 'stroke-width': 4 }, g); show(g, t0); tw(g, { y: 0 }, t0, .6, out); return g; };
+
+const BEATS = [
+  ['intro', 'Monetary and fiscal policy', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Economics · Chapter 5', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Monetary and Fiscal Policy', { x: 800, y: 430, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = ecNote(scene, 'money · interest rates · inflation', 800, 600, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['policy', 'Two kinds of policy', (m) => {
+    const p = panel(0);
+    const col = (x, c, title, who, what, mark) => {
+      bcard(p, x, 160, 640, 460, c, m(mark));
+      ecNote(p, title, x + 320, 240, m(mark), { size: 44, fill: c, anchor: 'middle', weight: 700 });
+      ecNote(p, who, x + 320, 310, m(mark, .4), { size: 30, fill: COL.dim, anchor: 'middle' });
+      what.forEach((s, i) => ecNote(p, s, x + 320, 400 + i * 70, m(mark, .9 + i * .5), { size: 32, anchor: 'middle', weight: 600 }));
+    };
+    col(110, COL.whole, 'Monetary policy', 'the central bank', ['quantity of money and credit', 'interest rates', 'reserve requirements'], 'mon');
+    col(850, COL.task, 'Fiscal policy', 'the government', ['taxation', 'government spending', 'redistribution'], 'fis');
+    ecNote(p, 'goal: stable growth, low and stable inflation', 800, 720, m('goal'), { size: 38, fill: COL.good, anchor: 'middle', weight: 700 });
+    ecNote(p, 'speed up a slowdown  ·  cool an overheating economy', 800, 790, m('goal', 1.5), { size: 30, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['money', 'What money does', (m) => {
+    const p = panel(0);
+    [[COL.whole, 'Medium of exchange', 'you can pay with it', 'm1'], [COL.good, 'Unit of account', 'prices are quoted in it', 'm2'], [COL.task, 'Store of value', 'purchasing power for later', 'm3']].forEach(([c, t, s, mark], i) => {
+      const x = 130 + i * 470; bcard(p, x, 190, 420, 260, c, m(mark));
+      ecNote(p, t, x + 210, 310, m(mark), { size: 36, fill: c, anchor: 'middle', weight: 700 }); ecNote(p, s, x + 210, 370, m(mark, .4), { size: 28, anchor: 'middle', fill: COL.dim });
+    });
+    ecNote(p, 'Narrow money:  notes + coins + current-account deposits', 800, 600, m('def'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    ecNote(p, 'Broad money:  narrow money + less liquid deposits', 800, 670, m('def', 2.5), { size: 34, fill: COL.dim, anchor: 'middle', weight: 700 });
+  }],
+
+  ['create', 'Money creation', (m) => {
+    const p = panel(0), x0 = 140, base = 700, u = 4.6, w = 62;
+    path(p, `M${x0 - 20} ${base}H${x0 + 800}`, { stroke: COL.dim, 'stroke-width': 3 });
+    ecNote(p, 'each bank: deposit received → keeps 10 %, lends 90 %', 800, 120, m('a'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const dep = [100, 90, 81, 72.9, 65.6, 59.0, 53.1, 47.8, 43.0, 38.7]; let tot = 0;
+    const mark = ['b1', 'b2', 'b3', 'more', 'more', 'more', 'more', 'more', 'more', 'more'];
+    dep.forEach((v, i) => {
+      const x = x0 + i * (w + 18), t0 = i < 3 ? m(mark[i]) : m('more') + (i - 3) * .35;
+      stackRow(p, x, base - v * u, w, v * u - 3, COL.whole, '', t0);
+      stackRow(p, x, base - v * u, w, v * .1 * u, COL.task, '', t0);
+      ecNote(p, i < 3 ? String(v) : '', x + w / 2, base - v * u - 12, t0, { size: 24, fill: COL.whole, anchor: 'middle', weight: 700 });
+    });
+    ecNote(p, 'orange = reserves kept (10 %)', 1020, 250, m('b1'), { size: 28, fill: COL.task, weight: 700 });
+    ecNote(p, 'blue = deposits that get lent on', 1020, 300, m('b1', .4), { size: 28, fill: COL.whole, weight: 700 });
+    ecNote(p, 'total deposits = 100 ÷ 0.10 = 1,000', 1020, 430, m('tot'), { size: 34, fill: COL.good, weight: 700 });
+    ecNote(p, 'multiplier = 1 ÷ 0.10 = 10', 1020, 500, m('mult'), { size: 34, fill: COL.chalk, weight: 700 });
+    ecNote(p, 'lower requirement → bigger', 1020, 560, m('mult', 2), { size: 28, fill: COL.dim });
+  }],
+
+  ['qty', 'Quantity theory of money', (m) => {
+    const p = panel(0);
+    const bx = [['M', 'money supply', COL.whole, 'M'], ['V', 'velocity', COL.dim, 'V'], ['P', 'price level', COL.task, 'P'], ['Y', 'real output', COL.good, 'Y']];
+    const xs = [220, 560, 1040, 1380];
+    bx.forEach(([k, n, c], i) => { const g = G(p, { x: xs[i], y: 330, o: 0 }); T(g, k, { size: 110, fill: c, anchor: 'middle', weight: 700, font: MATH }); T(g, n, { y: 70, size: 28, fill: COL.dim, anchor: 'middle' }); show(g, m('m') + i * .5); S['b' + k] = g; });
+    ecNote(p, '×', 390, 330, m('a'), { size: 90, anchor: 'middle' }); ecNote(p, '=', 800, 330, m('a'), { size: 90, anchor: 'middle' }); ecNote(p, '×', 1210, 330, m('a'), { size: 90, anchor: 'middle' });
+    ecNote(p, 'M × V = P × Y', 800, 170, m('a'), { size: 40, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ecNote(p, 'V and Y fixed;  M + 10 %', 800, 520, m('ex'), { size: 38, fill: COL.whole, anchor: 'middle', weight: 700 });
+    tw(S.bM, { s: 1.25 }, m('ex', 1), .6); 
+    ecNote(p, 'P + 10 %', 800, 600, m('p'), { size: 52, fill: COL.task, anchor: 'middle', weight: 700 });
+    tw(S.bP, { s: 1.25 }, m('p'), .6);
+    ecNote(p, 'money neutrality: more money → higher prices, not more output', 800, 730, m('p', 2.5), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['mdemand', 'Money market', (m) => {
+    const p = panel(0), C = ecChart(p, { xmax: 100, ymax: 10, xl: 'Quantity of money', yl: 'Interest rate (%)' }, .1);
+    ecNote(p, 'three motives to hold money:', 1020, 170, m('a'), { size: 28, fill: COL.dim, weight: 600 }); ecNote(p, 'transactions · precaution · speculation', 1020, 210, m('a'), { size: 26, fill: COL.dim });
+    ecLine(p, C, [[10, 9], [90, 1]], COL.whole, m('dem'), 1); ecNote(p, 'money demand', C.X(24), C.Y(7.6) - 18, m('dem', .6), { size: 28, fill: COL.whole, weight: 700 });
+    ecNote(p, 'cost of holding money = interest given up', 1020, 260, m('dem'), { size: 28, fill: COL.whole });
+    const sup = path(p, '', { stroke: COL.good, 'stroke-width': 6 }, { o: 0 });
+    const lab = T(p, 'money supply', { size: 28, fill: COL.good, weight: 700, o: 0 }), dot = G(p, { o: 0 }); mk('circle', { r: 13, fill: COL.chalk, stroke: COL.board, 'stroke-width': 3 }, dot);
+    const rd = T(p, '', { x: 1020, y: 400, size: 44, fill: COL.task, weight: 700, o: 0 });
+    const setM = M0 => { sup.setAttribute('d', `M${C.X(M0)} ${C.y0}V${C.Y(10)}`); put(lab, { x: C.X(M0) + 14, y: C.Y(9.4) }); const r = 10 - 0.1 * M0; put(dot, { x: C.X(M0), y: C.Y(r) }); rd.textContent = `interest rate = ${r.toFixed(1)} %`; };
+    setM(50); show(sup, m('sup')); show(lab, m('sup')); show(dot, m('eq')); show(rd, m('eq'));
+    prog(k => setM(50 + 20 * k), m('shift'), 2);
+    ecNote(p, 'more money → lower interest rate', 1020, 480, m('low'), { size: 32, fill: COL.good, weight: 700 });
+  }],
+
+  ['fisher', 'The Fisher effect', (m) => {
+    const p = panel(0), u = 40, base = 720, x1 = 300, x2 = 800, w = 260;
+    path(p, `M200 ${base}H1100`, { stroke: COL.dim, 'stroke-width': 3 });
+    const bar = (x, rv, iv, t0, lab) => { stackRow(p, x, base - rv * u, w, rv * u - 3, COL.good, 'real ' + rv + ' %', t0); stackRow(p, x, base - (rv + iv) * u, w, iv * u - 3, COL.bad, 'inflation ' + iv + ' %', t0 + .3, COL.board); ecNote(p, lab, x + w / 2, base + 50, t0, { size: 28, fill: COL.dim, anchor: 'middle' }); };
+    ecNote(p, 'Rnom = Rreal + expected inflation', 800, 150, m('a'), { size: 48, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    bar(x1, 2, 3, m('ex'), 'nominal 5 %');
+    ecNote(p, 'nominal rate = 5 %', 1120, 620, m('ex', 1), { size: 34, fill: COL.task, weight: 700 });
+    bar(x2, 2, 6, m('nom'), 'nominal 8 %');
+    ecNote(p, 'expected inflation 3 → 6 %', 1120, 340, m('up'), { size: 30, fill: COL.bad, weight: 700 });
+    ecNote(p, 'nominal 5 → 8 %', 1120, 400, m('nom'), { size: 34, fill: COL.task, weight: 700 });
+    ecNote(p, 'real rate stays 2 %', 1120, 480, m('why'), { size: 32, fill: COL.good, weight: 700 });
+  }],
+
+  ['costs', 'Costs of inflation', (m) => {
+    const p = panel(0);
+    bcard(p, 100, 150, 660, 640, COL.whole, m('exp')); bcard(p, 840, 150, 660, 640, COL.bad, m('unexp'));
+    ecNote(p, 'Expected inflation', 430, 230, m('exp'), { size: 42, fill: COL.whole, anchor: 'middle', weight: 700 });
+    ecNote(p, 'built into wages and contracts', 430, 290, m('exp'), { size: 28, fill: COL.dim, anchor: 'middle' });
+    ecNote(p, 'small costs', 430, 390, m('exp2'), { size: 34, anchor: 'middle', weight: 700 });
+    ecNote(p, '• hold less cash', 200, 460, m('exp2', .5), { size: 30 }); ecNote(p, '• change price lists more often', 200, 520, m('exp2', 1.2), { size: 30 });
+    ecNote(p, 'Unexpected inflation', 1170, 230, m('unexp'), { size: 42, fill: COL.bad, anchor: 'middle', weight: 700 });
+    ecNote(p, 'the costly kind', 1170, 290, m('unexp'), { size: 28, fill: COL.dim, anchor: 'middle' });
+    ecNote(p, '• redistributes: higher than expected', 910, 380, m('red'), { size: 28 }); ecNote(p, '   borrowers gain, lenders lose', 910, 420, m('red', .4), { size: 28, fill: COL.dim });
+    ecNote(p, '• uncertainty → risk premium', 910, 500, m('unc'), { size: 28 }); ecNote(p, '   higher borrowing cost, less investment', 910, 540, m('unc', .4), { size: 28, fill: COL.dim });
+    ecNote(p, '• blurs price signals', 910, 620, m('sig'), { size: 28 }); ecNote(p, '   firm mistakes inflation for demand', 910, 660, m('sig', .4), { size: 28, fill: COL.dim });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Monetary: money and rates. Fiscal: taxes and spending.', 'w1'], ['Lending creates money; multiplier = 1 ÷ reserve requirement.', 'w2'], ['More money: higher prices later, lower rates at first.', 'w3'], ['Nominal rate = real rate + expected inflation.', 'w4']].forEach(([s, k], i) => numCard(p, i + 1, s, 280 + i * 130, m(k)));
+  }],
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+boot();
+</script>
+</body>
+</html>

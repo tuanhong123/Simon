@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Currency Exchange Rates</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/econ.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 7, title: 'Currency Exchange Rates', minutes: 7, language: 'en' };
+
+const stackRow = (p, x, y, w, h, fill, label, t0, tcol = COL.board) => { const g = G(p, { o: 0, y: -16 }); mk('rect', { x, y, width: w, height: h, rx: 6, fill, opacity: .92 }, g); if (label) T(g, label, { x: x + w / 2, y: y + h / 2 + 11, size: 30, fill: tcol, weight: 700, anchor: 'middle' }); show(g, t0); tw(g, { y: 0 }, t0, .5, out); return g; };
+const numCard = (p, n, str, y, t0) => { const g = G(p, { x: -16, y, o: 0 }); mk('circle', { cx: 160, cy: -12, r: 26, fill: COL.task }, g); T(g, String(n), { x: 160, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, str, { x: 220, size: 34, weight: 600 }); tw(g, { o: 1, x: 0 }, t0, .6); };
+const bcard = (p, x, y, w, h, c, t0) => { const g = G(p, { o: 0, y: 20 }); mk('rect', { x, y, width: w, height: h, rx: 18, fill: 'none', stroke: c, 'stroke-width': 4 }, g); show(g, t0); tw(g, { y: 0 }, t0, .6, out); return g; };
+
+
+const BEATS = [
+  ['intro', 'Currency exchange rates', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Economics · Chapter 7', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Currency Exchange Rates', { x: 800, y: 430, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = ecNote(scene, 'quotes · spot and forward · exchange rates and trade', 800, 600, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['quote', 'Quoting exchange rates', (m) => {
+    const p = panel(0);
+    ecNote(p, 'USD/EUR', 800, 190, m('a'), { size: 40, fill: COL.dim, anchor: 'middle', weight: 700 });
+    ecNote(p, 'price of 1 EUR (base) in USD (price currency)', 800, 235, m('a'), { size: 26, fill: COL.dim, anchor: 'middle' });
+    const rate = T(p, '', { x: 800, y: 380, size: 120, weight: 700, anchor: 'middle', o: 0 });
+    const sub = T(p, '', { x: 800, y: 450, size: 34, fill: COL.whole, anchor: 'middle', weight: 600, o: 0 });
+    const inv = T(p, '', { x: 800, y: 560, size: 40, fill: COL.good, anchor: 'middle', weight: 700, o: 0 });
+    const pct = T(p, '', { x: 800, y: 640, size: 44, fill: COL.task, anchor: 'middle', weight: 700, o: 0 });
+    const pct2 = T(p, '', { x: 800, y: 710, size: 44, fill: COL.bad, anchor: 'middle', weight: 700, o: 0 });
+    const set = r => { rate.textContent = r.toFixed(2); sub.textContent = `1 EUR costs ${r.toFixed(2)} USD`; inv.textContent = `EUR/USD = 1 ÷ ${r.toFixed(2)} = ${(1 / r).toFixed(4)}`; };
+    set(1.2); show(rate, m('q')); show(sub, m('q', .8)); show(inv, m('inv'));
+    prog(k => set(1.2 + .06 * k), m('up'), 1.2);
+    pct.textContent = 'EUR appreciates:  1.26 ÷ 1.20 − 1 = +5.00 %'; show(pct, m('pct'));
+    pct2.textContent = 'USD depreciates:  0.7937 ÷ 0.8333 − 1 = −4.76 %'; show(pct2, m('dollar'));
+  }],
+
+  ['cross', 'Cross rates', (m) => {
+    const p = panel(0);
+    ecNote(p, 'USD/EUR = 1.20', 500, 240, m('d'), { size: 52, fill: COL.whole, anchor: 'middle', weight: 700 }); ecNote(p, 'USD/GBP = 1.50', 1100, 240, m('d', .8), { size: 52, fill: COL.task, anchor: 'middle', weight: 700 });
+    ecNote(p, 'EUR/GBP = USD/GBP ÷ USD/EUR', 800, 420, m('x'), { size: 48, anchor: 'middle', weight: 700 });
+    ecNote(p, '= 1.50 ÷ 1.20 = 1.25', 800, 510, m('x', 1), { size: 60, fill: COL.good, anchor: 'middle', weight: 700 });
+    ecNote(p, 'one pound costs 1.25 euros', 800, 580, m('x', 1.6), { size: 32, fill: COL.dim, anchor: 'middle' });
+    ecNote(p, 'line the quotes up so the common currency (USD) cancels', 800, 720, m('rule'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['real', 'Nominal and real rates', (m) => {
+    const p = panel(0);
+    ecNote(p, 'nominal rate: what the market quotes', 800, 200, m('a'), { size: 40, fill: COL.whole, anchor: 'middle', weight: 700 });
+    ecNote(p, 'real rate = nominal × (foreign prices ÷ domestic prices)', 800, 340, m('r'), { size: 44, fill: COL.good, anchor: 'middle', weight: 700 });
+    ecNote(p, '= 1.20 × (100 ÷ 110) ≈ 1.09', 800, 450, m('ex'), { size: 54, anchor: 'middle', weight: 700 });
+    ecNote(p, 'relative purchasing power of the currencies', 800, 580, m('mean'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    ecNote(p, 'real rate up → domestic currency buys relatively less', 800, 650, m('mean', 1.5), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['market', 'The FX market', (m) => {
+    const p = panel(0);
+    ecNote(p, '≈ 5 trillion USD a day', 800, 230, m('a'), { size: 80, fill: COL.task, anchor: 'middle', weight: 700 });
+    ecNote(p, 'the world\'s largest market', 800, 300, m('a', .6), { size: 34, fill: COL.dim, anchor: 'middle' });
+    [[COL.whole, 'Trade', 'goods & services', 'trade'], [COL.good, 'Capital flows', 'the larger part', 'cap'], [COL.task, 'Hedging', 'reduce risk', 'hedge'], [COL.bad, 'Speculation', 'bets on rates', 'spec']].forEach(([c, t, s, mk2], i) => {
+      const x = 90 + i * 370; bcard(p, x, 420, 340, 280, c, m(mk2)); ecNote(p, t, x + 170, 510, m(mk2), { size: 34, fill: c, anchor: 'middle', weight: 700 });
+      ecNote(p, s, x + 170, 570, m(mk2, .4), { size: 24, anchor: 'middle', fill: COL.dim });
+    });
+  }],
+
+  ['fwd', 'Spot and forward', (m) => {
+    const p = panel(0), y = 380;
+    path(p, `M160 ${y}H1440`, { stroke: COL.dim, 'stroke-width': 4 });
+    const pt = (x, c, t, s, mark) => { const g = G(p, { x, y, s: 0, o: 0 }); mk('circle', { r: 16, fill: c }, g); pop(g, m(mark)); ecNote(p, t, x, y - 50, m(mark), { size: 34, fill: c, anchor: 'middle', weight: 700 }); ecNote(p, s, x, y + 70, m(mark), { size: 26, fill: COL.dim, anchor: 'middle' }); };
+    pt(260, COL.whole, 'today', 'trade agreed', 'a'); pt(520, COL.good, 'spot', 'delivery in 2 business days', 'a'); pt(1240, COL.task, 'forward date', 'rate fixed today', 'f');
+    ecNote(p, 'forward rate = spot + forward points', 800, 560, m('pts'), { size: 44, anchor: 'middle', weight: 700 });
+    ecNote(p, 'forward > spot: base currency at a premium', 800, 640, m('prem'), { size: 34, fill: COL.good, anchor: 'middle', weight: 700 });
+    ecNote(p, 'forward < spot: base currency at a discount', 800, 700, m('prem', 2.2), { size: 34, fill: COL.bad, anchor: 'middle', weight: 700 });
+    ecNote(p, 'higher interest rate → forward discount (no free lunch)', 800, 790, m('int'), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['ml', 'Exchange rates and the trade balance', (m) => {
+    const p = panel(0), C = ecChart(p, { x0: 150, y0: 700, w: 800, h: 520, xmax: 10, ymax: 10, xl: 'Time after depreciation', yl: 'Trade balance' }, .1);
+    const zy = C.Y(5);
+    path(p, `M${C.x0} ${zy}H${C.x0 + C.w}`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '8 8' }); ecNote(p, '0', C.x0 - 14, zy + 9, .3, { size: 26, fill: COL.dim, anchor: 'end' });
+    ecNote(p, 'Depreciation: exports cheaper,', 1020, 170, m('a'), { size: 28, fill: COL.dim, weight: 600 });
+    ecNote(p, 'imports dearer', 1020, 210, m('a', .6), { size: 28, fill: COL.dim, weight: 600 }); ecNote(p, 'volumes: exports up, imports down', 1020, 250, m('vol'), { size: 30, fill: COL.good, weight: 700 });
+    ecNote(p, 'Marshall–Lerner:', 1020, 330, m('ml'), { size: 32, fill: COL.task, weight: 700 }); ecNote(p, 'wX·εX + wM·(εM − 1) > 0', 1020, 385, m('ml', .6), { size: 34, fill: COL.task, weight: 700 });
+    ecNote(p, 'demand must be price-sensitive enough', 1020, 435, m('ml', 1.4), { size: 26, fill: COL.dim });
+    const pts = [[0, 5], [1, 4.2], [2, 3.4], [3, 3.5], [4, 4.3], [5, 5.4], [6, 6.3], [7, 6.9], [8, 7.2], [9.5, 7.4]];
+    const d = pts.map(([t, v], i) => `${i ? 'L' : 'M'}${C.X(t)} ${C.Y(v)}`).join('');
+    const line = path(p, d, { stroke: COL.task, 'stroke-width': 7 }, { d: 0 }); draw(line, m('j'), 4);
+    ecNote(p, 'J-curve', C.X(7.2), C.Y(7.4) - 24, m('j', 3), { size: 34, fill: COL.task, weight: 700 });
+    ecNote(p, 'first worse (contracts fixed)', 1020, 520, m('j', .3), { size: 28, fill: COL.bad, weight: 600 }); ecNote(p, 'then better as volumes adjust', 1020, 570, m('j', 2.2), { size: 28, fill: COL.good, weight: 600 });
+  }],
+
+  ['abs', 'Absorption approach', (m) => {
+    const p = panel(0), base = 640, hh = v => (v - 80) * 9;
+    ecNote(p, 'trade balance = income − absorption (spending)', 800, 130, m('a'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    path(p, `M120 ${base}H1480`, { stroke: COL.dim, 'stroke-width': 3 });
+    const bar = (x, v, c, lab, t0) => { stackRow(p, x, base - hh(v), 150, hh(v) - 3, c, String(v), t0); ecNote(p, lab, x + 75, base + 44, t0, { size: 26, fill: c, anchor: 'middle', weight: 600 }); };
+    const grp = (x, title, tc, inc, note1, note2, t0, t1) => {
+      ecNote(p, title, x + 165, 250, t0, { size: 34, fill: tc, anchor: 'middle', weight: 700 });
+      bar(x, inc, COL.good, 'income', t0 + .4); bar(x + 180, 105, COL.bad, 'spending', t0 + .4);
+      if (note1) ecNote(p, note1, x + 165, 300, t1, { size: 28, fill: tc, anchor: 'middle', weight: 700 });
+      if (note2) ecNote(p, note2, x + 165, 345, t1 + .8, { size: 26, fill: COL.dim, anchor: 'middle' });
+    };
+    grp(130, 'today', COL.chalk, 100, 'deficit 5', '', m('ex'), m('ex', 1.2));
+    grp(600, 'spare capacity', COL.good, 106, 'income rises', 'deficit gone', m('spare'), m('spare', 1.2));
+    grp(1070, 'full employment', COL.bad, 100, 'income cannot rise', 'prices rise; deficit returns', m('full'), m('full', 1.2));
+    ecNote(p, 'lasting fix: more saving or less spending', 800, 790, m('lesson'), { size: 36, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Quote = price of base currency; % changes are asymmetric.', 'w1'], ['Cross rates: cancel the common currency. Real = nominal × prices.', 'w2'], ['Spot now; forward = spot + points; high-rate currency at discount.', 'w3'], ['Depreciation helps trade if demand is elastic or capacity is spare.', 'w4']].forEach(([s, k], i) => numCard(p, i + 1, s, 280 + i * 130, m(k)));
+  }],
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+boot();
+</script>
+</body>
+</html>

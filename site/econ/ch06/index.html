@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>International Trade and Capital Flows</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/econ.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 6, title: 'International Trade and Capital Flows', minutes: 8, language: 'en', next: '../ch07/' };
+
+const stackRow = (p, x, y, w, h, fill, label, t0, tcol = COL.board) => { const g = G(p, { o: 0, y: -16 }); mk('rect', { x, y, width: w, height: h, rx: 6, fill, opacity: .92 }, g); if (label) T(g, label, { x: x + w / 2, y: y + h / 2 + 11, size: 30, fill: tcol, weight: 700, anchor: 'middle' }); show(g, t0); tw(g, { y: 0 }, t0, .5, out); return g; };
+const numCard = (p, n, str, y, t0) => { const g = G(p, { x: -16, y, o: 0 }); mk('circle', { cx: 160, cy: -12, r: 26, fill: COL.task }, g); T(g, String(n), { x: 160, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, str, { x: 220, size: 34, weight: 600 }); tw(g, { o: 1, x: 0 }, t0, .6); };
+const bcard = (p, x, y, w, h, c, t0) => { const g = G(p, { o: 0, y: 20 }); mk('rect', { x, y, width: w, height: h, rx: 18, fill: 'none', stroke: c, 'stroke-width': 4 }, g); show(g, t0); tw(g, { y: 0 }, t0, .6, out); return g; };
+
+
+const BEATS = [
+  ['intro', 'Trade and capital flows', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Economics · Chapter 6', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'International Trade and Capital Flows', { x: 800, y: 430, size: 70, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = ecNote(scene, 'comparative advantage · balance of payments', 800, 600, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['terms', 'GDP, GNP and the terms of trade', (m) => {
+    const p = panel(0);
+    const col = (x, c, t, s1, s2, mark) => { bcard(p, x, 150, 640, 330, c, m(mark)); ecNote(p, t, x + 320, 230, m(mark), { size: 44, fill: c, anchor: 'middle', weight: 700 }); ecNote(p, s1, x + 320, 320, m(mark, .4), { size: 30, anchor: 'middle' }); ecNote(p, s2, x + 320, 380, m(mark, .9), { size: 28, anchor: 'middle', fill: COL.dim }); };
+    col(110, COL.whole, 'GDP', 'production inside the borders', 'includes foreign-owned factories', 'gdp');
+    col(850, COL.good, 'GNP', 'production by the nation\'s own', 'citizens and firms, wherever they operate', 'gnp');
+    ecNote(p, 'terms of trade = price of exports ÷ price of imports', 800, 600, m('tot'), { size: 38, fill: COL.task, anchor: 'middle', weight: 700 });
+    ecNote(p, 'export prices +5 %, import prices flat:  100 → 105', 800, 680, m('ex'), { size: 34, anchor: 'middle', weight: 600 });
+    ecNote(p, 'each unit of exports now buys more imports', 800, 740, m('ex', 1.8), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['gains', 'Benefits and costs of trade', (m) => {
+    const p = panel(0);
+    bcard(p, 100, 150, 660, 600, COL.good, m('ben')); bcard(p, 840, 150, 660, 600, COL.bad, m('cost'));
+    ecNote(p, 'Benefits', 430, 240, m('ben'), { size: 44, fill: COL.good, anchor: 'middle', weight: 700 });
+    ['resources go where they work best', 'specialization raises output', 'lower prices, more variety', 'bigger markets for firms'].forEach((s, i) => ecNote(p, '• ' + s, 150, 340 + i * 80, m('ben', .8 + i * .7), { size: 30 }));
+    ecNote(p, 'Costs', 1170, 240, m('cost'), { size: 44, fill: COL.bad, anchor: 'middle', weight: 700 });
+    ['import-competing industries shrink', 'workers there lose jobs', 'gains overall, but unevenly shared'].forEach((s, i) => ecNote(p, '• ' + s, 890, 340 + i * 80, m('cost', .8 + i * .8), { size: 30 }));
+  }],
+
+  ['adv', 'Absolute and comparative advantage', (m) => {
+    const p = panel(0), cx = [420, 780, 1140];
+    ecNote(p, 'Output of one worker in one day', 800, 120, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ecNote(p, 'pens', cx[1], 230, m('a'), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 }); ecNote(p, 'pencils', cx[2], 230, m('a'), { size: 34, fill: COL.whole, anchor: 'middle', weight: 700 });
+    ecNote(p, 'Brazil', 150, 320, m('a'), { size: 38, fill: COL.good, weight: 700 }); ecNote(p, '20', cx[1], 320, m('a'), { size: 44, anchor: 'middle', weight: 700 }); ecNote(p, '40', cx[2], 320, m('a'), { size: 44, anchor: 'middle', weight: 700 });
+    ecNote(p, 'Vietnam', 150, 420, m('v'), { size: 38, fill: COL.bad, weight: 700 }); ecNote(p, '10', cx[1], 420, m('v'), { size: 44, anchor: 'middle', weight: 700 }); ecNote(p, '60', cx[2], 420, m('v'), { size: 44, anchor: 'middle', weight: 700 });
+    ecNote(p, 'abs. advantage: pens', 1240, 320, m('abs'), { size: 26, fill: COL.task }); ecNote(p, 'abs. advantage: pencils', 1240, 420, m('abs', .8), { size: 26, fill: COL.whole });
+    ecNote(p, 'opportunity cost of one pen', 150, 560, m('oc'), { size: 30, fill: COL.dim });
+    ecNote(p, 'Brazil: 2 pencils', cx[1] - 100, 620, m('oc', .6), { size: 36, fill: COL.good, weight: 700 }); ecNote(p, 'Vietnam: 6 pencils', cx[2] - 60, 620, m('oc', 1.3), { size: 36, fill: COL.bad, weight: 700 });
+    ecNote(p, 'comparative advantage: Brazil → pens, Vietnam → pencils', 800, 720, m('ca'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    ecNote(p, 'trade 1 pen for 4 pencils:  Brazil gets 4 instead of 2,  Vietnam pays 4 instead of 6', 800, 800, m('trade'), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['models', 'Ricardo and Heckscher–Ohlin', (m) => {
+    const p = panel(0);
+    bcard(p, 100, 180, 660, 520, COL.task, m('ric')); bcard(p, 840, 180, 660, 520, COL.whole, m('ho'));
+    ecNote(p, 'Ricardian model', 430, 270, m('ric'), { size: 44, fill: COL.task, anchor: 'middle', weight: 700 });
+    ecNote(p, 'one factor: labor', 430, 340, m('ric', .5), { size: 30, anchor: 'middle', fill: COL.dim });
+    ecNote(p, 'source: differences in labor productivity', 430, 440, m('ric', 1.2), { size: 30, anchor: 'middle', weight: 600 }); ecNote(p, '(technology)', 430, 490, m('ric', 1.7), { size: 28, anchor: 'middle', fill: COL.dim });
+    ecNote(p, 'Heckscher–Ohlin model', 1170, 270, m('ho'), { size: 44, fill: COL.whole, anchor: 'middle', weight: 700 });
+    ecNote(p, 'two factors: labor and capital', 1170, 340, m('ho', .5), { size: 30, anchor: 'middle', fill: COL.dim });
+    ecNote(p, 'source: differences in factor endowments', 1170, 440, m('ho', 1.2), { size: 30, anchor: 'middle', weight: 600 });
+    ecNote(p, 'export what uses your abundant factor', 1170, 540, m('ho2'), { size: 28, anchor: 'middle', fill: COL.good, weight: 700 });
+  }],
+
+  ['bop', 'Balance of payments', (m) => {
+    const p = panel(0), x0 = 1000, u = 5, row = (y, name, v, c, sub, t0) => {
+      ecNote(p, name, 120, y + 36, t0, { size: 34, fill: c, weight: 700 }); ecNote(p, sub, 120, y + 76, t0, { size: 24, fill: COL.dim });
+      stackRow(p, v < 0 ? x0 + v * u : x0, y, Math.abs(v) * u, 70, c, Math.abs(v) < 20 ? '' : (v > 0 ? '+' : '−') + Math.abs(v), t0); if (Math.abs(v) < 20) ecNote(p, '+' + v, x0 + 40, y + 46, t0, { size: 30, fill: c, weight: 700 });
+    };
+    path(p, `M${x0} 180V620`, { stroke: COL.dim, 'stroke-width': 3 });
+    row(200, 'Current account', -100, COL.bad, 'goods, services, income, transfers', m('ca'));
+    row(330, 'Capital account', 5, COL.task, 'capital transfers', m('ka'));
+    row(460, 'Financial account', 95, COL.good, 'direct, portfolio, reserves', m('fa'));
+    ecNote(p, '−100 + 5 + 95 = 0', 800, 720, m('sum'), { size: 56, anchor: 'middle', weight: 700 });
+    ecNote(p, 'a current account deficit is financed by capital inflows', 800, 790, m('sum', 3), { size: 32, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['ident', 'Saving, investment and the current account', (m) => {
+    const p = panel(0), u = 14, base = 700;
+    path(p, `M200 ${base}H1000`, { stroke: COL.dim, 'stroke-width': 3 });
+    stackRow(p, 260, base - 20 * u, 220, 20 * u - 3, COL.whole, 'S  20', m('s'));
+    ecNote(p, 'national saving', 370, base + 46, m('s'), { size: 28, fill: COL.whole, anchor: 'middle', weight: 600 });
+    stackRow(p, 620, base - 25 * u, 220, 25 * u - 3, COL.good, 'I  25', m('i'));
+    ecNote(p, 'investment', 730, base + 46, m('i'), { size: 28, fill: COL.good, anchor: 'middle', weight: 600 });
+    const gap = stackRow(p, 620, base - 25 * u, 220, 5 * u - 3, COL.bad, '5', m('gap'));
+    ecNote(p, 'CA = S − I = 20 − 25 = −5', 1000, 300, m('gap'), { size: 40, fill: COL.bad, weight: 700 });
+    ecNote(p, 'financed by borrowing from abroad', 1000, 360, m('gap', .8), { size: 30, fill: COL.dim });
+    ecNote(p, 'pushes the current account toward deficit:', 1000, 470, m('dec'), { size: 28, fill: COL.dim }); ['households save less', 'firms invest more', 'bigger government deficit'].forEach((s, i) => ecNote(p, '• ' + s, 1000, 520 + i * 56, m('dec', .5 + i * .8), { size: 30, fill: COL.task, weight: 600 }));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['GDP: inside the borders. GNP: by nationals.', 'w1'], ['Comparative advantage: lower opportunity cost; both gain.', 'w2'], ['Ricardo: technology. Heckscher–Ohlin: endowments.', 'w3'], ['Balance of payments sums to zero; CA = S − I.', 'w4']].forEach(([s, k], i) => numCard(p, i + 1, s, 280 + i * 130, m(k)));
+  }],
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+boot();
+</script>
+</body>
+</html>

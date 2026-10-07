@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introduction to Business Cycles</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/econ.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 4, title: 'Introduction to Business Cycles', minutes: 8, language: 'en', next: '../ch05/' };
+
+const stackRow = (p, x, y, w, h, fill, label, t0, tcol = COL.board) => { const g = G(p, { o: 0, y: -16 }); mk('rect', { x, y, width: w, height: h, rx: 6, fill, opacity: .92 }, g); if (label) T(g, label, { x: x + w / 2, y: y + h / 2 + 11, size: 30, fill: tcol, weight: 700, anchor: 'middle' }); show(g, t0); tw(g, { y: 0 }, t0, .5, out); return g; };
+const bullet = (p, str, x, y, t0, fill = COL.chalk, size = 32) => ecNote(p, str, x, y, t0, { size, fill, weight: 700 });
+const numCard = (p, n, str, y, t0) => { const g = G(p, { x: -16, y, o: 0 }); mk('circle', { cx: 160, cy: -12, r: 26, fill: COL.task }, g); T(g, String(n), { x: 160, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, str, { x: 220, size: 34, weight: 600 }); tw(g, { o: 1, x: 0 }, t0, .6); };
+
+const BEATS = [
+  ['intro', 'Business cycles', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Economics · Chapter 4', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Introduction to Business Cycles', { x: 800, y: 430, size: 76, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = ecNote(scene, 'the cycle · unemployment · inflation', 800, 600, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['cycle', 'The business cycle', (m) => {
+    const p = panel(0), x0 = 140, w = 1320, y0 = 470, A = 200, th = t => t / (2 * Math.PI);
+    const X = th => x0 + th * w / (2.2 * Math.PI) , Yc = th => y0 - A * (-Math.cos(th)) - (th * 14);
+    const pts = []; for (let i = 0; i <= 110; i++) { const t = i / 110 * 2.2 * Math.PI; pts.push([t, Yc(t)]); }
+    path(p, `M${x0} ${y0 + 330}H${x0 + w}`, { stroke: COL.dim, 'stroke-width': 3 });
+    ecNote(p, 'time', x0 + w, y0 + 380, .3, { size: 26, fill: COL.dim, anchor: 'end' });
+    ecNote(p, 'real GDP', x0, y0 - 300, .3, { size: 26, fill: COL.dim });
+    const tr = path(p, `M${X(0)} ${Yc(0) + 0}L${X(2.2 * Math.PI)} ${Yc(2.2 * Math.PI) - 0}`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '10 10', opacity: 0 }); show(tr, .4);
+    ecNote(p, 'long-term trend', X(2.2 * Math.PI) - 10, Yc(2.2 * Math.PI) + 60, .6, { size: 26, fill: COL.dim, anchor: 'end' });
+    const curve = path(p, pts.map(([t, y], i) => `${i ? 'L' : 'M'}${X(t).toFixed(1)} ${y.toFixed(1)}`).join(''), { stroke: COL.whole, 'stroke-width': 7 }, { d: 0 });
+    draw(curve, m('a') + .4, m('exp') - m('a') + 4.5);
+    const dot = G(p, { o: 0 }); mk('circle', { r: 14, fill: COL.task, stroke: COL.board, 'stroke-width': 3 }, dot);
+    const pos = t => put(dot, { x: X(t), y: Yc(t) });
+    pos(0); show(dot, m('a') + .2);
+    prog(k => pos(Math.PI * k), m('exp'), m('peak') - m('exp') + .5);
+    prog(k => pos(Math.PI + Math.PI * k), m('con'), m('tr') - m('con') + 1.5);
+    const lab = (str, t, dx, dy, mark, c, anchor = 'middle') => ecNote(p, str, X(t) + dx, Yc(t) + dy, m(mark), { size: 34, fill: c, weight: 700, anchor });
+    lab('trough', 0, 0, 60, 'a', COL.dim); lab('expansion', Math.PI / 2, -140, 20, 'exp', COL.good); lab('peak', Math.PI, 0, -40, 'peak', COL.task); lab('contraction', 1.5 * Math.PI, 150, 20, 'con', COL.bad); lab('trough', 2 * Math.PI, 0, 70, 'tr', COL.dim);
+  }],
+
+  ['sectors', 'Cyclical sectors', (m) => {
+    const p = panel(0), x0 = 480, u = 62;
+    ecNote(p, 'How much each swings over the cycle (illustrative)', 800, 120, m('a'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const row = (i, name, v, c, t0) => { const y = 200 + i * 86; ecNote(p, name, x0 - 20, y + 40, t0, { size: 30, fill: c, anchor: 'end', weight: 600 }); stackRow(p, x0, y, v * u, 62, c, '', t0); };
+    row(0, 'Non-durables & services', 2, COL.whole, m('c')); row(1, 'Durable goods', 5, COL.task, m('c', 2.5)); row(2, 'Business investment', 8, COL.bad, m('inv'));
+    ecNote(p, 'Housing: rate- and credit-sensitive, often turns first', 160, 590, m('h'), { size: 32, fill: COL.good, weight: 700 });
+    ecNote(p, 'Trade: foreign growth and exchange rates', 160, 690, m('t'), { size: 32, fill: '#e8a0c8', weight: 700 });
+    ecNote(p, 'exports can offset weak domestic demand', 160, 740, m('t', 2.5), { size: 28, fill: COL.dim });
+  }],
+
+  ['unemp', 'Unemployment', (m) => {
+    const p = panel(0), cols = 10, gap = 62, gx = 160, gy = 160, dots = [];
+    const mkDot = (i, c, t0) => { const r = Math.floor(i / cols), k = i % cols; const g = G(p, { x: gx + k * gap, y: gy + r * gap, s: 0, o: 0 }); mk('circle', { r: 20, fill: c }, g); pop(g, t0 + i * .015); return g; };
+    for (let i = 0; i < 100; i++) dots.push(mkDot(i, COL.dim, m('a')));
+    ecNote(p, '100 working-age people', gx - 24, gy + 10 * gap + 20, m('a'), { size: 28, fill: COL.dim });
+    for (let i = 0; i < 60; i++) tw(dots[i], { s: 1 }, m('emp') + i * .012, .01) , prog(k => dots[i].firstChild.setAttribute('fill', k > .5 ? COL.good : COL.dim), m('emp') + i * .012, .3);
+    for (let i = 60; i < 64; i++) prog(k => dots[i].firstChild.setAttribute('fill', k > .5 ? COL.bad : COL.dim), m('un') + (i - 60) * .2, .3);
+    prog(k => dots[63].firstChild.setAttribute('fill', k > .5 ? COL.faint : COL.bad), m('disc'), .5);
+    const T1 = (str, y, t0, c, size = 34) => ecNote(p, str, 920, y, t0, { size, fill: c, weight: 700 });
+    T1('employed 60', 260, m('emp'), COL.good); T1('unemployed 4', 320, m('un'), COL.bad); T1('outside the labor force 36', 380, m('out'), COL.dim);
+    T1('labor force = 64', 470, m('rate'), COL.chalk); T1('rate = 4 ÷ 64 ≈ 6.3 %', 530, m('rate', 1), COL.bad, 40);
+    const r2 = T1('discouraged: stops looking', 620, m('disc'), COL.dim, 30);
+    T1('rate = 3 ÷ 63 ≈ 4.8 %  (nobody found a job)', 680, m('after'), COL.task, 30);
+    ecNote(p, 'frictional · structural · cyclical', 920, 780, m('types'), { size: 34, fill: COL.whole, weight: 700 });
+  }],
+
+  ['infl', 'Inflation, disinflation, deflation', (m) => {
+    const p = panel(0), C = ecChart(p, { x0: 150, y0: 560, w: 800, h: 360, xmax: 10, ymax: 8, xl: 'Time', yl: 'Inflation rate (%)' }, .1);
+    const zero = C.y0 - 2.5 / 8 * 360 * 0; const zy = C.Y(2);  // zero line drawn at value 2 -> shift axis: use offset
+    // axis shifted so that inflation 0 sits at Y(2): plot value v at C.Y(v + 2)
+    const V = v => C.Y(v + 2);
+    path(p, `M${C.x0} ${V(0)}H${C.x0 + C.w}`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '8 8' }); ecNote(p, '0', C.x0 - 16, V(0) + 9, .3, { size: 26, fill: COL.dim, anchor: 'end' });
+    const pts = [[0, 4], [1, 5], [2, 5.5], [3, 4], [4, 2.5], [5, 1], [6, -.5], [7, -1.2], [8, -.5], [9, 0.3]];
+    const d = pts.map(([t, v], i) => `${i ? 'L' : 'M'}${C.X(t)} ${V(v)}`).join('');
+    const line = path(p, d, { stroke: COL.task, 'stroke-width': 7 }, { d: 0 });
+    draw(line, m('a'), 3);
+    const reg = (t0, t1, c, str, mark) => { const r = mk('rect', { x: C.X(t0), y: C.Y(8), width: C.X(t1) - C.X(t0), height: C.y0 - C.Y(8), fill: c, 'fill-opacity': .12, opacity: 0 }, p); prog(k => r.setAttribute('opacity', k), m(mark), .6); ecNote(p, str, (C.X(t0) + C.X(t1)) / 2, C.Y(8) + 40, m(mark), { size: 28, fill: c, anchor: 'middle', weight: 700 }); };
+    reg(2.5, 5.5, COL.whole, 'disinflation', 'dis'); reg(5.5, 8.5, COL.bad, 'deflation', 'def');
+    ecNote(p, 'inflation falling, still above 0', 1020, 330, m('dis'), { size: 30, fill: COL.whole, weight: 600 });
+    ecNote(p, 'price level falling: inflation < 0', 1020, 400, m('def'), { size: 30, fill: COL.bad, weight: 600 });
+    ecNote(p, 'hyperinflation: prices out of control', 1020, 500, m('hyp'), { size: 30, fill: COL.task, weight: 700 });
+  }],
+
+  ['index', 'Measuring inflation', (m) => {
+    const p = panel(0);
+    const col = (x, title, rows, total, t0, c) => {
+      ecNote(p, title, x, 160, t0, { size: 36, fill: c, weight: 700 });
+      rows.forEach(([s, v], i) => { ecNote(p, s, x, 260 + i * 70, t0 + .3 + i * .4, { size: 30 }); ecNote(p, v, x + 420, 260 + i * 70, t0 + .3 + i * .4, { size: 30, anchor: 'end', fill: c, weight: 600 }); });
+      path(p, `M${x} 380H${x + 420}`, { stroke: COL.dim, 'stroke-width': 3 }); ecNote(p, total, x + 420, 430, t0 + 1.3, { size: 44, fill: c, anchor: 'end', weight: 700 });
+    };
+    col(140, 'January', [['50 kg rice × 3', '150'], ['70 L gasoline × 4.4', '308']], '458', m('jan'), COL.whole);
+    const feb = (x, t0, c) => { ecNote(p, 'February', 780, 160, t0, { size: 36, fill: c, weight: 700 }); [['50 kg rice × 4', '200'], ['70 L gasoline × 4.5', '315']].forEach(([s, v], i) => { ecNote(p, s, 780, 260 + i * 70, t0 + .3 + i * .4, { size: 30 }); ecNote(p, v, 780 + 420, 260 + i * 70, t0 + .3 + i * .4, { size: 30, anchor: 'end', fill: c, weight: 600 }); }); path(p, 'M780 380H1200', { stroke: COL.dim, 'stroke-width': 3 }); ecNote(p, '515', 1200, 430, t0 + 1.3, { size: 44, fill: c, anchor: 'end', weight: 700 }); };
+    feb(780, m('feb'), COL.good);
+    ecNote(p, 'index = 515 ÷ 458 × 100 ≈ 112.45', 800, 560, m('idx'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    ecNote(p, 'inflation = 112.45 ÷ 100 − 1 = 12.45 %', 800, 630, m('inf'), { size: 40, fill: COL.task, anchor: 'middle', weight: 700 });
+    ecNote(p, 'fixed basket → upward bias:  substitution · quality · new products', 800, 760, m('bias'), { size: 32, fill: COL.bad, anchor: 'middle', weight: 700 });
+  }],
+
+  ['core', 'Headline and core inflation', (m) => {
+    const p = panel(0), C = ecChart(p, { x0: 150, y0: 700, w: 900, h: 480, xmax: 6, ymax: 6, xl: 'Time', yl: 'Inflation (%)' }, .1);
+    const head = [[0, 2], [1, 2.2], [2, 3.4], [3, 5.2], [4, 3.0], [5, 2.2], [6, 2.0]], core = [[0, 2], [1, 2.1], [2, 2.3], [3, 2.4], [4, 2.4], [5, 2.3], [6, 2.2]];
+    ecLine(p, C, core, COL.whole, m('core'), 1.2); ecNote(p, 'core', C.X(6) + 14, C.Y(2.2) + 9, m('core'), { size: 30, fill: COL.whole, weight: 700 });
+    ecLine(p, C, head, COL.task, m('a'), 1.4); ecNote(p, 'headline', C.X(6) + 14, C.Y(2) + 46, m('a'), { size: 30, fill: COL.task, weight: 700 });
+    ecDot(p, C, 3, 5.2, COL.bad, m('spike')); ecNote(p, 'oil price spike', C.X(3), C.Y(5.2) - 30, m('spike'), { size: 28, fill: COL.bad, anchor: 'middle', weight: 700 });
+    ecNote(p, 'headline: all prices', 1200, 260, m('a'), { size: 30, fill: COL.task, weight: 700 }); ecNote(p, 'core: no food or energy', 1200, 320, m('core'), { size: 28, fill: COL.whole, weight: 700 });
+    ecNote(p, 'avoid overreacting', 1200, 420, m('why'), { size: 30, fill: COL.chalk, weight: 600 });
+  }],
+
+  ['causes', 'Cost-push and demand-pull', (m) => {
+    const p = panel(0);
+    const chain = (y, title, c, steps, mark) => {
+      ecNote(p, title, 140, y - 70, m(mark), { size: 38, fill: c, weight: 700 });
+      steps.forEach((s, i) => {
+        const x = 140 + i * 460, g = G(p, { o: 0, y: 16 });
+        mk('rect', { x, y: y - 30, width: 380, height: 90, rx: 16, fill: 'none', stroke: c, 'stroke-width': 3 }, g); T(g, s, { x: x + 190, y: y + 24, size: 30, anchor: 'middle' });
+        if (i) path(g, `M${x - 70} ${y + 15}H${x - 10}M${x - 28} ${y + 2}L${x - 10} ${y + 15}L${x - 28} ${y + 28}`, { stroke: c, 'stroke-width': 4 });
+        show(g, m(mark, .5 + i * .8)); tw(g, { y: 0 }, m(mark, .5 + i * .8), .5, out);
+      });
+    };
+    chain(250, 'Cost-push', COL.task, ['wages / commodities rise', 'firms\' costs rise', 'prices rise'], 'cp');
+    chain(500, 'Demand-pull', COL.whole, ['demand outruns capacity', 'prices rise', 'wages catch up'], 'dp');
+    ecNote(p, 'root cause: demand running ahead of capacity', 800, 660, m('root'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    ecNote(p, 'unemployment below NAIRU → labor shortages → wage pressure', 800, 740, m('nairu'), { size: 32, fill: COL.bad, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Trough, expansion, peak, contraction.', 'w1'], ['Discouraged workers can lower the unemployment rate.', 'w2'], ['Fixed baskets overstate inflation; core drops food and energy.', 'w3'], ['Cost-push or demand-pull; NAIRU marks wage pressure.', 'w4']].forEach(([s, k], i) => numCard(p, i + 1, s, 280 + i * 130, m(k)));
+  }],
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+boot();
+</script>
+</body>
+</html>

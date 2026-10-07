@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aggregate Output, Prices, and Economic Growth</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/econ.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 3, title: 'Aggregate Output, Prices, and Economic Growth', minutes: 12, language: 'en', next: '../ch04/' };
+
+const rectEl = (p, fill, op = .38) => mk('rect', { fill, 'fill-opacity': op, stroke: fill, 'stroke-width': 3, opacity: 0 }, p);
+const stackRow = (p, x, y, w, h, fill, label, t0, tcol = COL.board) => { const g = G(p, { o: 0, y: -16 }); mk('rect', { x, y, width: w, height: h, rx: 6, fill, opacity: .92 }, g); T(g, label, { x: x + w / 2, y: y + h / 2 + 11, size: 30, fill: tcol, weight: 700, anchor: 'middle' }); show(g, t0); tw(g, { y: 0 }, t0, .5, out); return g; };
+
+/* AD–AS board: AD  P = 200 − (Y − d);  SRAS  P = 20 + u + 0.8 Y;  LRAS  Y = 100 */
+function adBoard(p, t0, { lras = true, withAD = true } = {}) {
+  const C = ecChart(p, { xmax: 200, ymax: 200, xl: 'Real GDP', yl: 'Price level' }, t0);
+  if (lras) { ecLine(p, C, [[100, 0], [100, 200]], COL.good, t0 + .3, .8, 5); ecNote(p, 'LRAS', C.X(100) + 12, C.Y(200) + 14, t0 + .8, { size: 26, fill: COL.good, weight: 700 }); ecLabX(p, C, 100, 'potential', t0 + .8, COL.good); }
+  const ad = path(p, '', { stroke: COL.whole, 'stroke-width': 6, opacity: withAD ? 1 : 0 }), sr = path(p, '', { stroke: COL.task, 'stroke-width': 6 });
+  const adL = T(p, withAD ? 'AD' : '', { size: 28, fill: COL.whole, weight: 700 }), srL = T(p, 'SRAS', { size: 28, fill: COL.task, weight: 700 });
+  const dot = G(p, { o: 0 }); mk('circle', { r: 13, fill: COL.chalk, stroke: COL.board, 'stroke-width': 3 }, dot);
+  const B = { C, ad, sr, dot, d: 0, u: 0 };
+  B.eq = (d, u) => { const Y = (180 + d - u) / 1.8; return [Y, 200 - Y + d]; };
+  B.set = (d, u) => {
+    B.d = d; B.u = u;
+    const a0 = Math.max(0, d), a1 = Math.min(200, 200 + d);
+    ad.setAttribute('d', `M${C.X(a0)} ${C.Y(200 - (a0 - d))}L${C.X(a1)} ${C.Y(200 - (a1 - d))}`);
+    const s0 = Math.max(0, (-20 - u) / .8), s1 = Math.min(200, (180 - u) / .8);
+    sr.setAttribute('d', `M${C.X(s0)} ${C.Y(20 + u + .8 * s0)}L${C.X(s1)} ${C.Y(20 + u + .8 * s1)}`);
+    put(adL, { x: C.X(a1) + 10, y: C.Y(200 - (a1 - d)) + 6 }); put(srL, { x: C.X(s1) + 10, y: C.Y(20 + u + .8 * s1) + 6 });
+    const [Y, P] = B.eq(d, u); put(dot, { x: C.X(Y), y: C.Y(P) });
+  };
+  B.set(0, 0);
+  return B;
+}
+
+const BEATS = [
+  ['intro', 'Output, prices and growth', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Economics · Chapter 3', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Output, Prices, and Growth', { x: 800, y: 430, size: 76, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = ecNote(scene, 'GDP · aggregate demand and supply · economic growth', 800, 600, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['gdp', 'Gross domestic product', (m) => {
+    const p = panel(0), u = 3, x = 260, base = 780;
+    ecNote(p, 'GDP = value of final goods and services produced', 800, 120, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, `M${x - 40} ${base}H${x + 360}`, { stroke: COL.dim, 'stroke-width': 3 });
+    const seg = (v0, v1, c, lab, price, t0, side) => {
+      stackRow(p, x, base - v1 * u, 300, (v1 - v0) * u - 3, c, lab, t0);
+      ecNote(p, price, x + 340, base - v1 * u + 40, t0, { size: 30, fill: c, weight: 700 });
+    };
+    seg(0, 100, COL.whole, '+100', 'wheat sold for 100', m('w'));
+    seg(100, 140, COL.good, '+40', 'flour sold for 140', m('m'));
+    seg(140, 200, COL.task, '+60', 'bread sold for 200', m('b'));
+    ecNote(p, 'value added at each stage', 1060, 300, m('va'), { size: 32, fill: COL.chalk, weight: 600 });
+    ecNote(p, '100 + 40 + 60 = 200', 1060, 380, m('sum'), { size: 44, fill: COL.chalk, weight: 700 });
+    ecNote(p, '= price of the final loaf', 1060, 440, m('sum', .5), { size: 30, fill: COL.dim });
+    ecNote(p, 'count intermediates → double counting', 1060, 540, m('sum', 3), { size: 28, fill: COL.bad, weight: 600 });
+  }],
+
+  ['approaches', 'Three ways to measure', (m) => {
+    const p = panel(0);
+    ecNote(p, 'The same GDP, three ways', 800, 160, .2, { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const cols = [[COL.whole, 'Output', 'value added at every stage', 'o'], [COL.task, 'Expenditure', 'C + I + G + (X − M)', 'e'], [COL.good, 'Income', 'wages, profits, interest, rent', 'i']];
+    cols.forEach(([c, t, s, mark], i) => {
+      const x = 300 + i * 500, g = G(p, { o: 0, y: 24 });
+      mk('rect', { x: x - 200, y: 300, width: 400, height: 300, rx: 20, fill: 'none', stroke: c, 'stroke-width': 4 }, g);
+      T(g, t, { x, y: 400, size: 48, fill: c, weight: 700, anchor: 'middle' });
+      T(g, s, { x, y: 480, size: 28, anchor: 'middle' });
+      show(g, m(mark)); tw(g, { y: 0 }, m(mark), .6, out);
+      if (i) ecNote(p, '=', x - 250, 470, m(mark), { size: 80, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    });
+    ecNote(p, 'every euro produced is spent by someone and earned by someone', 800, 720, m('i', 1.4), { size: 32, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['expend', 'Expenditure approach', (m) => {
+    const p = panel(0), u = 12, x0 = 200, y = 480;
+    ecNote(p, 'GDP = C + I + G + (X − M)', 800, 190, m('a'), { size: 56, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    let x = x0;
+    [[60, COL.whole, 'C', 'consumption', 'c'], [18, COL.good, 'I', 'investment', 'i'], [20, COL.task, 'G', 'government', 'g']].forEach(([v, c, k, n, mark]) => {
+      stackRow(p, x, y, v * u - 4, 110, c, `${k}  ${v}`, m(mark));
+      ecNote(p, n, x + v * u / 2, y + 170, m(mark), { size: 28, fill: c, anchor: 'middle', weight: 600 }); x += v * u;
+    });
+    stackRow(p, x, y, 2 * u, 110, COL.rat || '#e8a0c8', '', m('nx'));
+    const lab = ecNote(p, 'X − M = 15 − 13 = +2', x + 30, y - 40, m('nx'), { size: 28, fill: '#e8a0c8', weight: 700, anchor: 'middle' });
+    path(p, `M${x0} ${y + 150}H${x + 2 * u}`, { stroke: COL.dim, 'stroke-width': 3 });
+    ecNote(p, 'GDP = 60 + 18 + 20 + 2 = 100', 800, 760, m('tot'), { size: 44, fill: COL.chalk, anchor: 'middle', weight: 700 });
+  }],
+
+  ['realnom', 'Real versus nominal', (m) => {
+    const p = panel(0), u = 4, base = 700, w = 220;
+    path(p, `M200 ${base}H1000`, { stroke: COL.dim, 'stroke-width': 3 });
+    const bar = (i, v, c, name, t0) => { const x = 240 + i * 280; stackRow(p, x, base - v * u, w, v * u - 3, c, v.toFixed(1).replace('.0', ''), t0); ecNote(p, name, x + w / 2, base + 46, t0, { size: 28, fill: c, anchor: 'middle', weight: 600 }); };
+    bar(0, 100, COL.dim, 'base year', m('a'));
+    bar(1, 110, COL.task, 'nominal GDP', m('n'));
+    bar(2, 102.8, COL.good, 'real GDP', m('r'));
+    ecNote(p, 'GDP deflator = 107', 1060, 300, m('d'), { size: 38, fill: COL.bad, weight: 700 });
+    ecNote(p, 'prices up 7 %', 1060, 350, m('d', .4), { size: 30, fill: COL.dim });
+    ecNote(p, 'real = nominal ÷ deflator × 100', 1060, 450, m('r'), { size: 32, fill: COL.good, weight: 700 });
+    ecNote(p, '= 110 ÷ 107 × 100 ≈ 102.8', 1060, 500, m('r', .6), { size: 30, fill: COL.good });
+    ecNote(p, 'real growth ≈ 2.8 %, not 10 %', 1060, 600, m('g'), { size: 32, fill: COL.chalk, weight: 700 });
+  }],
+
+  ['saving', 'Saving and investment', (m) => {
+    const p = panel(0), u = 22, base = 780;
+    path(p, `M200 ${base}H1400`, { stroke: COL.dim, 'stroke-width': 3 });
+    stackRow(p, 260, base - 22 * u, 300, 22 * u - 3, COL.whole, 'S  22', m('s'));
+    ecNote(p, 'private saving', 410, base + 46, m('s'), { size: 28, fill: COL.whole, anchor: 'middle', weight: 600 });
+    ecNote(p, '=', 700, base - 200, m('eq'), { size: 90, anchor: 'middle', weight: 700 });
+    stackRow(p, 840, base - 18 * u, 300, 18 * u - 3, COL.good, 'I  18', m('i'));
+    stackRow(p, 840, base - 21 * u, 300, 3 * u - 3, COL.task, 'G − T  3', m('f'));
+    stackRow(p, 840, base - 22 * u, 300, 1 * u - 3, '#e8a0c8', '', m('t'));
+    ecNote(p, 'X − M  1', 1170, base - 22 * u + 18, m('t'), { size: 28, fill: '#e8a0c8', weight: 700 });
+    ecNote(p, 'investment', 1170, base - 9 * u, m('i'), { size: 28, fill: COL.good, weight: 600 });
+    ecNote(p, 'fiscal deficit', 1170, base - 19.5 * u + 14, m('f'), { size: 28, fill: COL.task, weight: 600 });
+    ecNote(p, 'S = I + (G − T) + (X − M)', 800, 150, m('eq'), { size: 50, fill: COL.chalk, anchor: 'middle', weight: 700 });
+  }],
+
+  ['ad', 'Aggregate demand', (m) => {
+    const p = panel(0), C = ecChart(p, { xmax: 200, ymax: 200, xl: 'Real GDP', yl: 'Price level' }, .1);
+    ecLine(p, C, [[20, 180], [180, 20]], COL.whole, m('curve'), 1.1); ecNote(p, 'AD', C.X(182), C.Y(20) + 8, m('curve', .8), { size: 30, fill: COL.whole, weight: 700 });
+    ecNote(p, 'higher price level → less GDP demanded', 1110, 190, m('curve'), { size: 26, fill: COL.dim });
+    const eff = [['w', 'wealth effect', 'real wealth falls → spend less'], ['r', 'interest rate effect', 'rates rise → borrow less'], ['x', 'exchange rate effect', 'exports dearer → net exports fall']];
+    eff.forEach(([mark, h1, h2], i) => { ecNote(p, h1, 1110, 330 + i * 120, m(mark), { size: 34, fill: COL.whole, weight: 700 }); ecNote(p, h2, 1110, 372 + i * 120, m(mark, .3), { size: 28, fill: COL.dim }); });
+    const dot = ecDot(p, C, 60, 140, COL.task, m('w'), 12);
+    tw(dot, { x: C.X(100), y: C.Y(100) }, m('r'), 1.2); tw(dot, { x: C.X(140), y: C.Y(60) }, m('x'), 1.2);
+  }],
+
+  ['as', 'Aggregate supply', (m) => {
+    const p = panel(0), B = adBoard(p, .1, { withAD: false });
+    ecNote(p, 'Short run: input prices sticky', 1110, 260, m('sr'), { size: 32, fill: COL.task, weight: 700 });
+    ecNote(p, 'higher prices → more profit → more output', 1110, 312, m('sr', .5), { size: 28, fill: COL.dim });
+    ecNote(p, 'Long run: wages catch up', 1110, 430, m('lr'), { size: 32, fill: COL.good, weight: 700 });
+    ecNote(p, 'output set by resources and technology', 1110, 482, m('lr', .5), { size: 28, fill: COL.dim });
+  }],
+
+  ['adas', 'Equilibrium', (m) => {
+    const p = panel(0), B = adBoard(p, .1); S.B = B;
+    show(B.dot, m('eq')); ecNote(p, 'AD meets SRAS: short-run equilibrium', 1110, 250, m('eq'), { size: 26, fill: COL.chalk, weight: 600 });
+    ecNote(p, 'also on LRAS: potential GDP', 1110, 330, m('lr'), { size: 26, fill: COL.good, weight: 700 });
+    ecNote(p, 'real GDP = 100, price level = 100', 1110, 410, m('p'), { size: 26, fill: COL.task, weight: 700 });
+  }],
+
+  ['infl', 'Inflationary gap', (m) => {
+    const p = panel(0), B = adBoard(p, .1); show(B.dot, .6);
+    const side = (str, t0, c) => ecNote(p, str, 1110, side.y += 70, t0, { size: 26, fill: c, weight: 700 }); side.y = 190;
+    side('AD rises: tax cuts, spending, money', m('a'), COL.whole);
+    prog(k => B.set(30 * k, 0), m('shift'), 1.4);
+    side('output > potential, prices up', m('eq'), COL.bad); side('= inflationary gap', m('eq', .4), COL.bad);
+    side('wages rise', m('wage'), COL.dim); side('SRAS shifts up and left', m('sras'), COL.task);
+    prog(k => B.set(30, 30 * k), m('sras'), 2);
+    side('back at potential, price level 130', m('end'), COL.chalk);
+  }],
+
+  ['rec', 'Recessionary gap', (m) => {
+    const p = panel(0), B = adBoard(p, .1); show(B.dot, .6);
+    const side = (str, t0, c) => ecNote(p, str, 1110, side.y += 70, t0, { size: 26, fill: c, weight: 700 }); side.y = 190;
+    side('AD falls: confidence, taxes', m('a'), COL.whole);
+    prog(k => B.set(-30 * k, 0), m('shift'), 1.4);
+    side('output < potential', m('eq'), COL.bad); side('= recessionary gap', m('eq', .4), COL.bad);
+    side('wages fall slowly', m('wage'), COL.dim); side('SRAS shifts down and right', m('sras'), COL.task);
+    prog(k => B.set(-30, -30 * k), m('sras'), 2);
+    side('back at potential, price level 70', m('end'), COL.chalk);
+  }],
+
+  ['stag', 'Stagflation', (m) => {
+    const p = panel(0), B = adBoard(p, .1); show(B.dot, .6);
+    const side = (str, t0, c) => ecNote(p, str, 1110, side.y += 70, t0, { size: 26, fill: c, weight: 700 }); side.y = 190;
+    side('supply shock: oil price jumps', m('a'), COL.task);
+    prog(k => B.set(0, 30 * k), m('shift'), 1.6);
+    side('SRAS shifts up and left', m('shift', .4), COL.task);
+    side('output falls, prices rise', m('eq'), COL.bad); side('= stagflation', m('eq', .4), COL.bad);
+    side('cures conflict', m('tr'), COL.dim);
+  }],
+
+  ['growth', 'Economic growth', (m) => {
+    const p = panel(0);
+    ecNote(p, 'Potential GDP = A × F(L, K)', 800, 180, m('pf'), { size: 56, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    [[COL.whole, 'L  labor', 'workers and hours', 'l'], [COL.good, 'K  capital', 'quantity and quality', 'k'], [COL.task, 'A  technology', 'total factor productivity', 't']].forEach(([c, h1, h2, mark], i) => {
+      const x = 300 + i * 500, g = G(p, { o: 0, y: 24 });
+      mk('rect', { x: x - 200, y: 260, width: 400, height: 190, rx: 18, fill: 'none', stroke: c, 'stroke-width': 4 }, g);
+      T(g, h1, { x, y: 345, size: 40, fill: c, weight: 700, anchor: 'middle' }); T(g, h2, { x, y: 400, size: 28, fill: COL.dim, anchor: 'middle' });
+      show(g, m(mark)); tw(g, { y: 0 }, m(mark), .6, out);
+    });
+    ecNote(p, 'sustainable growth', 800, 570, m('sg'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ecNote(p, 'labor force growth  +  labor productivity growth', 800, 640, m('sg', .8), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    ecNote(p, '1 %  +  2 %  ≈  3 % a year', 800, 730, m('sg', 4), { size: 54, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['GDP: final output = spending = income.', 'w1'], ['Real GDP = nominal GDP ÷ deflator × 100.', 'w2'], ['AD slopes down, SRAS up, LRAS is vertical.', 'w3'], ['Demand shocks: gaps. Supply shocks: stagflation. Growth: L, K, A.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 280 + i * 130, o: 0 });
+      mk('circle', { cx: 160, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 160, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 220, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+boot();
+</script>
+</body>
+</html>

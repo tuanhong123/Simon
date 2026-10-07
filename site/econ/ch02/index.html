@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Introduction to the Firm and Market Organization</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/econ.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 2, title: 'Introduction to the Firm and Market Organization', minutes: 8, language: 'en', next: '../ch03/' };
+const FCOST = 20, AVC = q => q * q - 6 * q + 15, MC = q => 3 * q * q - 12 * q + 15, ATC = q => AVC(q) + FCOST / q;
+const QSTAR = pr => 2 + Math.sqrt(Math.max(0, (pr - 3) / 3));
+let ATCMIN = 1e9; for (let q = .5; q < 7; q += .01) ATCMIN = Math.min(ATCMIN, ATC(q));
+const MD = q => 800 - 2 * q, MR = q => 800 - 4 * q, MMC = q => 50 + 6 * q, MAC = q => 20000 / q + 50 + 3 * q;
+const rectEl = (p, fill, op = .38) => mk('rect', { fill, 'fill-opacity': op, stroke: fill, 'stroke-width': 3, opacity: 0 }, p);
+const setRect = (r, C, q0, q1, p0, p1) => { r.setAttribute('x', C.X(q0)); r.setAttribute('width', C.X(q1) - C.X(q0)); r.setAttribute('y', Math.min(C.Y(p0), C.Y(p1))); r.setAttribute('height', Math.abs(C.Y(p0) - C.Y(p1))); };
+const bullets = (p, items, t0s, y0, gap, x = 1060) => items.forEach(([s, c], i) => ecNote(p, s, x, y0 + i * gap, t0s[i], { size: 32, fill: c, weight: 700 }));
+
+const BEATS = [
+  ['intro', 'Firms and market organization', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Economics · Chapter 2', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'The Firm and Market Organization', { x: 800, y: 430, size: 72, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = ecNote(scene, 'perfect competition · monopoly · price discrimination', 800, 600, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['structures', 'Four market structures', (m) => {
+    const p = panel(0);
+    ecNote(p, 'Market structure', 800, 130, .2, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const ar = path(p, 'M200 250H1400M1380 236L1400 250L1380 264', { stroke: COL.dim, 'stroke-width': 4 }, { d: 0 }); draw(ar, m('a'), 1);
+    ecNote(p, 'fewer sellers · more pricing power', 800, 220, m('a', .5), { size: 28, fill: COL.dim, anchor: 'middle' });
+    const cols = [[COL.good, 'Perfect competition', ['many sellers', 'identical product', 'price taker'], 'pc'], [COL.whole, 'Monopolistic competition', ['many sellers', 'differentiated product', 'some pricing power'], 'mcm'],
+      [COL.task, 'Oligopoly', ['a few sellers', 'watch each other', 'strategic pricing'], 'ol'], [COL.bad, 'Monopoly', ['one seller', 'barriers to entry', 'most pricing power'], 'mo']];
+    cols.forEach(([c, t, ls, mark], i) => {
+      const x = 230 + i * 380, g = G(p, { o: 0, y: 24 });
+      mk('rect', { x: x - 170, y: 330, width: 340, height: 400, rx: 20, fill: 'none', stroke: c, 'stroke-width': 3 }, g);
+      T(g, t, { x, y: 400, size: 25, fill: c, weight: 700, anchor: 'middle' });
+      ls.forEach((l, j) => T(g, l, { x, y: 480 + j * 70, size: 28, fill: COL.chalk, anchor: 'middle' }));
+      show(g, m(mark)); tw(g, { y: 0 }, m(mark), .6, out);
+    });
+  }],
+
+  ['pc', 'The price taker', (m) => {
+    const p = panel(0);
+    const A = ecChart(p, { x0: 120, y0: 720, w: 560, h: 430, xmax: 10, ymax: 10, xl: 'Quantity', yl: 'Price' }, m('a'));
+    ecNote(p, 'Market', 400, 120, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ecLine(p, A, [[0.5, 9.5], [9.5, .5]], COL.whole, m('mkt'), .9); ecLine(p, A, [[.5, .5], [9.5, 9.5]], COL.good, m('mkt', .5), .9);
+    ecNote(p, 'D', A.X(.7), A.Y(9.5) + 4, m('mkt'), { fill: COL.whole, weight: 700 }); ecNote(p, 'S', A.X(9.5) + 10, A.Y(9.5), m('mkt', .5), { fill: COL.good, weight: 700 });
+    ecDot(p, A, 5, 5, COL.task, m('mkt', 1.2)); ecGuide(p, A, 5, 5, COL.task, m('mkt', 1.2)); ecLabY(p, A, 5, 'P*', m('mkt', 1.4), COL.task);
+    const B = ecChart(p, { x0: 920, y0: 720, w: 560, h: 430, xmax: 10, ymax: 10, xl: 'Quantity', yl: 'Price' }, m('firm') - 1);
+    ecNote(p, 'One firm', 1200, 120, m('firm') - 1, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ecLine(p, B, [[0, 5], [10, 5]], COL.task, m('firm'), 1, 7); ecLabY(p, B, 5, 'P*', m('firm', .4), COL.task);
+    ecNote(p, 'demand = marginal revenue = P*', 1200, 190 + 260, m('firm', .8), { size: 28, fill: COL.task, anchor: 'middle', weight: 600 });
+    ecNote(p, 'sells any quantity at P*', 1200, 640, m('firm', 1.6), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['cs', 'Consumer surplus', (m) => {
+    const p = panel(0), C = ecChart(p, { xmax: 10, ymax: 10, xl: 'Quantity', yl: 'Price (value to the buyer)' }, .1);
+    ecLine(p, C, [[0, 10], [10, 0]], COL.whole, m('wtp'), 1); ecNote(p, 'Demand = willingness to pay', C.X(5.2), C.Y(5.4) - 40, m('wtp', .8), { size: 28, fill: COL.whole, weight: 600 });
+    const tri = mk('path', { fill: COL.good, 'fill-opacity': .38, stroke: COL.good, 'stroke-width': 3, opacity: 0 }, p);
+    const rc = rectEl(p, COL.task, .3);
+    const pl = path(p, '', { stroke: COL.task, 'stroke-width': 4, 'stroke-dasharray': '12 8' }, { o: 0 });
+    const lab = T(p, '', { x: 1060, y: 330, size: 40, fill: COL.good, weight: 700, o: 0 }), lab2 = T(p, '', { x: 1060, y: 390, size: 34, fill: COL.task, weight: 700, o: 0 }), lab3 = T(p, '', { x: 1060, y: 450, size: 30, fill: COL.dim, o: 0 });
+    const setP = pr => {
+      const q = 10 - pr;
+      pl.setAttribute('d', `M${C.x0} ${C.Y(pr)}H${C.X(q)}`);
+      tri.setAttribute('d', `M${C.X(0)} ${C.Y(10)}L${C.X(q)} ${C.Y(pr)}L${C.X(0)} ${C.Y(pr)}Z`);
+      setRect(rc, C, 0, q, 0, pr);
+      lab.textContent = `surplus = ½ × ${q.toFixed(0)} × ${q.toFixed(0)} = ${(q * q / 2).toFixed(0)}`; lab2.textContent = `paid = ${pr.toFixed(0)} × ${q.toFixed(0)} = ${(pr * q).toFixed(0)}`; lab3.textContent = `price ${pr.toFixed(1)}`;
+    };
+    setP(4);
+    show(pl, m('price')); prog(q => { rc.setAttribute('opacity', q); }, m('price'), .6); show(lab2, m('price'));
+    prog(q => tri.setAttribute('opacity', q), m('cs'), .7); show(lab, m('cs')); show(lab3, m('price'));
+    prog(q => setP(4 - 2 * q), m('fall'), 3);
+  }],
+
+  ['firm', 'Profit-maximizing output', (m) => {
+    const p = panel(0), C = S.C = ecChart(p, { xmax: 7, ymax: 30, xl: 'Output', yl: 'Price and cost (€)' }, .1);
+    const PR = 16;
+    ecFn(p, C, MC, 0.2, 5.0, COL.bad, .2, 1); ecFn(p, C, ATC, 1.0, 6.5, COL.whole, .3, 1); 
+    ecNote(p, 'MC', C.X(5.0) + 8, C.Y(30) + 20, .6, { fill: COL.bad, weight: 700 }); ecNote(p, 'ATC', C.X(6.5) + 8, C.Y(ATC(6.5)), .8, { fill: COL.whole, weight: 700 });
+    ecLine(p, C, [[0, PR], [7, PR]], COL.task, m('a'), .9, 5); ecNote(p, 'P = MR', C.X(.2), C.Y(PR) - 14, m('a', .5), { fill: COL.task, weight: 700 });
+    const q = QSTAR(PR), a = ATC(q);
+    const rc = rectEl(p, COL.good, .38); setRect(rc, C, 0, q, a, PR);
+    ecGuide(p, C, q, MC(q), COL.chalk, m('pt')); ecDot(p, C, q, PR, COL.chalk, m('pt'), 13);
+    ecNote(p, 'MC < P: make more', 1060, 220, m('mc'), { size: 32, fill: COL.dim, weight: 600 });
+    ecNote(p, 'MC = P: stop', 1060, 280, m('pt'), { size: 32, fill: COL.chalk, weight: 700 });
+    ecDot(p, C, q, a, COL.whole, m('prof'), 11);
+    prog(k => rc.setAttribute('opacity', k), m('prof'), .8);
+    ecNote(p, `Q* ≈ ${q.toFixed(1)}`, 1060, 400, m('pt', .4), { size: 32, fill: COL.chalk, weight: 600 });
+    ecNote(p, `profit ≈ (${PR} − ${a.toFixed(1)}) × ${q.toFixed(1)} ≈ ${((PR - a) * q).toFixed(0)}`, 1060, 520, m('prof', .5), { size: 34, fill: COL.good, weight: 700 });
+  }],
+
+  ['longrun', 'Long-run equilibrium', (m) => {
+    const C = S.C, p = S.panel;
+    p.querySelectorAll('text').forEach(t => { if (st(t).x === 1060) hide(t, m('a'), .5); });
+    S.panel.querySelectorAll('path').forEach(e => { if (e.getAttribute('stroke') === COL.task && e.getAttribute('stroke-width') === '5') S.pl = e; });
+    const pl = S.pl, rc = S.panel.querySelector('rect');
+    const info = T(p, '', { x: 1060, y: 330, size: 44, weight: 700, o: 0 }), sub = T(p, '', { x: 1060, y: 390, size: 30, fill: COL.dim, o: 0 });
+    const setPr = pr => {
+      const q = QSTAR(pr), a = ATC(q);
+      pl.setAttribute('d', `M${C.X(0)} ${C.Y(pr)}H${C.X(7)}`);
+      setRect(rc, C, 0, q, a, pr); rc.setAttribute('fill', pr >= a ? COL.good : COL.bad); rc.setAttribute('stroke', pr >= a ? COL.good : COL.bad);
+      info.textContent = `profit ≈ ${Math.max(0, (pr - a) * q).toFixed(0)}`; sub.textContent = `P = ${pr.toFixed(1)}`;
+    };
+    S.setPr = setPr; show(info, m('a')); show(sub, m('a'));
+    ecNote(p, 'entry → supply up → price down', 1060, 480, m('entry'), { size: 30, fill: COL.whole, weight: 600 });
+    prog(k => setPr(16 + (ATCMIN + .02 - 16) * k), m('entry'), m('end') - m('entry') - .3);
+    ecNote(p, 'P = minimum ATC', 1060, 560, m('end'), { size: 34, fill: COL.chalk, weight: 700 });
+    ecNote(p, 'economic profit = 0', 1060, 620, m('zero'), { size: 32, fill: COL.good, weight: 700 });
+    ecNote(p, 'losses → exit → price up', 1060, 700, m('loss'), { size: 30, fill: COL.bad, weight: 600 });
+  }],
+
+  ['mdemand', 'Monopoly demand and marginal revenue', (m) => {
+    const p = panel(0), C = S.C = ecChart(p, { xmax: 420, ymax: 840, xl: 'Quantity', yl: 'Price (€)' }, .1);
+    ecLine(p, C, [[0, 800], [400, 0]], COL.whole, m('d'), 1); ecNote(p, 'Demand  P = 800 − 2Q', 1060, 250, m('d'), { size: 36, fill: COL.whole, weight: 700 });
+    ecLine(p, C, [[0, 800], [200, 0]], COL.task, m('mr'), 1.2); ecNote(p, 'MR = 800 − 4Q', 1060, 320, m('mr'), { size: 36, fill: COL.task, weight: 700 });
+    ecNote(p, 'twice as steep as demand', 1060, 380, m('mr', 1.3), { size: 28, fill: COL.dim });
+    ecDot(p, C, 200, 0, COL.task, m('half')); ecLabX(p, C, 200, '200', m('half'), COL.task); ecLabX(p, C, 400, '400', m('half'), COL.whole);
+    ecNote(p, 'MR = 0 at half the quantity', 1060, 470, m('half'), { size: 30, fill: COL.chalk, weight: 600 });
+  }],
+
+  ['mopt', 'Monopoly optimum', (m) => {
+    const C = S.C, p = S.panel;
+    p.querySelectorAll('text').forEach(t => { if (st(t).x === 1060) hide(t, m('a'), .5); });
+    ecLine(p, C, [[0, 50], [125, 800]], COL.bad, m('a'), 1.2); ecNote(p, 'MC = 50 + 6Q', 1060, 220, m('a'), { size: 36, fill: COL.bad, weight: 700 });
+    ecFn(p, C, MAC, 40, 230, COL.dim, m('a', .5), 1, 4); 
+    ecDot(p, C, 75, MR(75), COL.chalk, m('x'), 13); ecGuide(p, C, 75, MR(75), COL.chalk, m('x')); ecLabX(p, C, 75, '75', m('x'), COL.chalk);
+    ecNote(p, 'MR = MC → Q = 75', 1060, 300, m('x'), { size: 36, fill: COL.chalk, weight: 700 });
+    ecDot(p, C, 75, MD(75), COL.whole, m('p'), 13); ecGuide(p, C, 75, MD(75), COL.whole, m('p')); ecLabY(p, C, 650, '650', m('p'), COL.whole);
+    ecNote(p, 'price from demand: 650', 1060, 360, m('p'), { size: 36, fill: COL.whole, weight: 700 });
+    const rc = rectEl(p, COL.good, .38); setRect(rc, C, 0, 75, MAC(75), 650);
+    prog(k => rc.setAttribute('opacity', k), m('prof'), .8); ecDot(p, C, 75, MAC(75), COL.dim, m('prof'), 10);
+    ecNote(p, 'average cost ≈ 542', 1060, 450, m('prof'), { size: 32, fill: COL.dim, weight: 600 });
+    ecNote(p, 'profit = (650 − 542) × 75 ≈ 8,125', 1060, 510, m('prof', 1.2), { size: 34, fill: COL.good, weight: 700 });
+  }],
+
+  ['dwl', 'Deadweight loss', (m) => {
+    const C = S.C, p = S.panel;
+    p.querySelectorAll('text').forEach(t => { if (st(t).x === 1060) hide(t, m('a'), .5); });
+    const qc = 750 / 8, pc = MD(qc);
+    ecDot(p, C, qc, pc, COL.good, m('c'), 13); ecGuide(p, C, qc, pc, COL.good, m('c')); ecLabX(p, C, qc, '94', m('c'), COL.good);
+    ecNote(p, 'competition: P = MC', 1060, 250, m('c'), { size: 34, fill: COL.good, weight: 700 }); ecNote(p, '≈ 94 units at 612.5', 1060, 300, m('c', .5), { size: 30, fill: COL.good });
+    ecNote(p, 'monopoly: 75 units at 650', 1060, 380, m('m'), { size: 34, fill: COL.whole, weight: 700 });
+    ecNote(p, 'fewer units, higher price', 1060, 430, m('m', .5), { size: 30, fill: COL.dim });
+    const tri = mk('path', { d: `M${C.X(75)} ${C.Y(650)}L${C.X(75)} ${C.Y(MMC(75))}L${C.X(qc)} ${C.Y(pc)}Z`, fill: COL.bad, 'fill-opacity': .5, stroke: COL.bad, 'stroke-width': 3, opacity: 0 }, p);
+    prog(k => tri.setAttribute('opacity', k), m('dwl'), .8);
+    ecNote(p, 'deadweight loss', 1060, 530, m('dwl'), { size: 36, fill: COL.bad, weight: 700 });
+    ecNote(p, `≈ ½ × 18.75 × 150 ≈ ${(.5 * (qc - 75) * (650 - MMC(75))).toFixed(0)}`, 1060, 585, m('dwl', .6), { size: 30, fill: COL.bad });
+  }],
+
+  ['disc', 'Price discrimination', (m) => {
+    const p = panel(0), C = ecChart(p, { xmax: 10, ymax: 10, xl: 'Quantity', yl: 'Price' }, .1);
+    ecLine(p, C, [[0, 10], [10, 0]], COL.whole, .3, .8);
+    const mcL = path(p, `M${C.X(0)} ${C.Y(2)}H${C.X(10)}`, { stroke: COL.bad, 'stroke-width': 4, 'stroke-dasharray': '10 8' }, { o: 0 }); show(mcL, .5);
+    ecNote(p, 'marginal cost = 2', C.X(10) + 14, C.Y(2) + 8, .6, { size: 26, fill: COL.bad });
+    const stairs = mk('path', { fill: COL.task, 'fill-opacity': .4, stroke: COL.task, 'stroke-width': 3, opacity: 0 }, p);
+    const csT = mk('path', { fill: COL.good, 'fill-opacity': .4, opacity: 0 }, p);
+    const lab = T(p, '', { x: 1060, y: 280, size: 38, fill: COL.good, weight: 700, o: 0 }), lab2 = T(p, '', { x: 1060, y: 340, size: 34, fill: COL.task, weight: 700, o: 0 }), lab3 = T(p, '', { x: 1060, y: 410, size: 32, fill: COL.chalk, weight: 600, o: 0 });
+    // Simple, exact version: n price steps over 0..6 units (demand 10−Q, unit price = demand at the step end)
+    const QQ = 6, setSteps = n => {
+      n = Math.max(1, Math.round(n)); const w = QQ / n; let d = '', rev = 0;
+      for (let i = 0; i < n; i++) { const pr = 10 - (i + 1) * w; d += `M${C.X(i * w)} ${C.Y(0)}V${C.Y(pr)}H${C.X((i + 1) * w)}V${C.Y(0)}Z`; rev += pr * w; }
+      stairs.setAttribute('d', d);
+      const tot = 10 * QQ - QQ * QQ / 2;   // total value of 6 units to buyers = 42
+      lab.textContent = `consumer surplus left ≈ ${(tot - rev).toFixed(0)}`; lab2.textContent = `${n === 1 ? 'one price' : n + ' prices'}: revenue ≈ ${rev.toFixed(0)}`;
+      lab3.textContent = n >= 24 ? 'first-degree: all surplus' : n >= 2 ? 'more prices, more captured' : 'single price';
+    };
+    setSteps(1); show(stairs, m('one')); show(lab, m('one')); show(lab2, m('one')); show(lab3, m('one'));
+    prog(k => setSteps(1 + 2 * k), m('more'), 1.5, lin);
+    prog(k => setSteps(3 + 27 * k), m('first'), 3, out);
+    ecNote(p, 'second-degree: volume discounts', 1060, 520, m('second'), { size: 30, fill: COL.whole, weight: 600 });
+    ecNote(p, 'third-degree: student vs business', 1060, 570, m('third'), { size: 30, fill: COL.whole, weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Structures: perfect competition to monopoly.', 'w1'], ['Competitive firm: price taker, P = MC.', 'w2'], ['Long run: entry drives economic profit to zero.', 'w3'], ['Monopoly: MR = MC, price from demand, deadweight loss.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 280 + i * 130, o: 0 });
+      mk('circle', { cx: 160, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 160, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 220, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+boot();
+</script>
+</body>
+</html>

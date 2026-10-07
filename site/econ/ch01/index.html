@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topics in Demand and Supply Analysis</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/econ.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 1, title: 'Topics in Demand and Supply Analysis', minutes: 9, language: 'en', next: '../ch02/' };
+
+/* demand: Q = 57 − 6.39 P   (price in € per liter, quantity in liters per month) */
+const QD = p => 57 - 6.39 * p, ELAS = p => -6.39 * p / QD(p), P_UNIT = 57 / 12.78;
+/* costs: VC = q³ − 6q² + 15q, FC = 20 */
+const FCOST = 20, AVC = q => q * q - 6 * q + 15, MC = q => 3 * q * q - 12 * q + 15, ATC = q => AVC(q) + FCOST / q;
+const QSTAR = pr => 2 + Math.sqrt(Math.max(0, (pr - 3) / 3));
+let ATCMIN = 1e9; for (let q = .5; q < 7; q += .01) ATCMIN = Math.min(ATCMIN, ATC(q));
+
+const BEATS = [
+  ['intro', 'Demand and supply', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Economics · Chapter 1', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Topics in Demand and Supply', { x: 800, y: 430, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = ecNote(scene, 'elasticity · substitution and income effects · costs · breakeven and shutdown', 800, 600, m('sub'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['demand', 'The demand curve', (m) => {
+    const p = panel(0), C = S.C = ecChart(p, { xmax: 60, ymax: 10 }, .1);
+    ecNote(p, 'Household demand for gasoline', 170, 100, .3, { size: 34, fill: COL.dim, weight: 600 });
+    const L = ecLine(p, C, [[0, 57 / 6.39 * 0 + 8.92], [57, 0]], COL.whole, m('line', .2), 1.2);
+    ecNote(p, 'Demand', C.X(8), C.Y(8.2), m('line', 1.1), { fill: COL.whole, weight: 700 });
+    ecNote(p, 'Q = 57 − 6.39 P', 1060, 300, m('eq'), { size: 46, fill: COL.whole, weight: 700 });
+    ecNote(p, 'higher price → lower quantity', 1060, 360, m('line', 2), { size: 30, fill: COL.dim });
+    ecGuide(p, C, 47.54, 1.48, COL.task, m('p1')); ecDot(p, C, 47.54, 1.48, COL.task, m('p1'));
+    ecLabY(p, C, 1.48, '€1.48', m('p1', .3), COL.task); ecLabX(p, C, 47.54, '47.5', m('p1', .3), COL.task);
+    ecNote(p, '€1.48 → 47.5 liters', 1060, 480, m('p1', .4), { fill: COL.task, weight: 600 });
+    ecGuide(p, C, 41.15, 2.48, COL.bad, m('p2')); ecDot(p, C, 41.15, 2.48, COL.bad, m('p2'));
+    ecLabY(p, C, 2.48, '€2.48', m('p2', .3), COL.bad); ecLabX(p, C, 41.15, '41.2', m('p2', .3), COL.bad);
+    ecNote(p, '€2.48 → 41.2 liters', 1060, 540, m('p2', .4), { fill: COL.bad, weight: 600 });
+  }],
+
+  ['elas', 'Price elasticity', (m) => {
+    const p = panel(0);
+    ecNote(p, 'Price elasticity of demand', 800, 200, .2, { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const f = G(p, { o: 0 });
+    T(f, '% change in quantity demanded', { x: 800, y: 380, size: 58, fill: COL.whole, anchor: 'middle', weight: 600 });
+    path(f, 'M300 410H1300', { stroke: COL.chalk, 'stroke-width': 4 });
+    T(f, '% change in price', { x: 800, y: 480, size: 58, fill: COL.task, anchor: 'middle', weight: 600 });
+    show(f, m('f'), .8);
+    ecNote(p, 'price +10 %,  quantity −8 %', 800, 640, m('ex'), { size: 38, fill: COL.dim, anchor: 'middle' });
+    ecNote(p, 'E = −8 ÷ +10 = −0.8', 800, 720, m('ex', 1.4), { size: 60, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    ecNote(p, 'a pure number: no units', 800, 800, m('unit'), { size: 34, fill: COL.good, anchor: 'middle', weight: 600 });
+  }],
+
+  ['slide', 'Elasticity along the curve', (m) => {
+    const p = panel(0), C = S.C = ecChart(p, { xmax: 60, ymax: 10 }, .1);
+    ecLine(p, C, [[0, 8.92], [57, 0]], COL.whole, .2, .8);
+    ecNote(p, 'Elasticity = −6.39 × P ÷ Q', 1060, 150, m('a'), { size: 34, fill: COL.dim, weight: 600 });
+    const mk1 = S.mk = G(p, { o: 0 }); mk('circle', { r: 14, fill: COL.task, stroke: COL.board, 'stroke-width': 3 }, mk1);
+    const drop = S.drop = path(p, '', { stroke: COL.task, 'stroke-width': 3, 'stroke-dasharray': '9 9' }, { o: 0 });
+    const readE = S.readE = T(p, '', { x: 1060, y: 330, size: 70, fill: COL.task, weight: 700, o: 0 });
+    const readZ = S.readZ = T(p, '', { x: 1060, y: 410, size: 42, fill: COL.task, weight: 600, o: 0 });
+    const readP = S.readP = T(p, '', { x: 1060, y: 230, size: 34, fill: COL.dim, o: 0 });
+    S.setP = pr => {
+      const q = QD(pr), e = ELAS(pr);
+      put(mk1, { x: C.X(q), y: C.Y(pr) });
+      drop.setAttribute('d', `M${C.x0} ${C.Y(pr)}H${C.X(q)}V${C.y0}`);
+      readP.textContent = `P = €${pr.toFixed(2)}   Q = ${q.toFixed(1)}`;
+      readE.textContent = `E = ${e.toFixed(2).replace('-', '−')}`;
+      const z = Math.abs(Math.abs(e) - 1) < .03 ? ['unit elastic  |E| = 1', COL.chalk] : Math.abs(e) < 1 ? ['inelastic  |E| < 1', COL.whole] : ['elastic  |E| > 1', COL.bad];
+      readZ.textContent = z[0]; readE.setAttribute('fill', z[1]); readZ.setAttribute('fill', z[1]); mk1.firstChild.setAttribute('fill', z[1]);
+    };
+    S.setP(1.48);
+    show(mk1, m('p1')); show(drop, m('p1')); show(readE, m('p1')); show(readZ, m('p1')); show(readP, m('p1'));
+    prog(q => S.setP(1.48 + (P_UNIT - 1.48) * q), m('slide1'), m('unit') - m('slide1') - .2);
+    prog(q => S.setP(P_UNIT + (7 - P_UNIT) * q), m('slide2'), 4.2);
+  }],
+
+  ['spend', 'Total expenditure', (m) => {
+    const C = S.C, p = S.panel;
+    const rc = mk('rect', { fill: COL.good, opacity: .38, stroke: COL.good, 'stroke-width': 3 }, p);
+    const lab = T(p, '', { x: 1060, y: 520, size: 46, fill: COL.good, weight: 700, o: 0 });
+    const note = T(p, '', { x: 1060, y: 590, size: 32, fill: COL.dim, o: 0 });
+    const setS = pr => {
+      S.setP(pr);
+      const q = QD(pr); rc.setAttribute('x', C.x0); rc.setAttribute('y', C.Y(pr)); rc.setAttribute('width', C.X(q) - C.x0); rc.setAttribute('height', C.y0 - C.Y(pr));
+      lab.textContent = `P × Q = ${(pr * q).toFixed(0)}`;
+    };
+    rc.setAttribute('opacity', 0); setS(7);
+    tw(rc, {}, 0, .01); prog(q => rc.setAttribute('opacity', .38 * q), m('r'), .6);
+    show(lab, m('r')); show(note, m('down'));
+    const setN = s => { note.textContent = s; };
+    prog(q => { setS(7 + (P_UNIT - 7) * q); setN('elastic: lower price → more'); }, m('down'), m('peak') - m('down'));
+    prog(q => { setS(P_UNIT + (1.48 - P_UNIT) * q); setN(q < .02 ? 'unit elastic: spending peaks' : 'inelastic: lower price → less'); }, m('low'), 4);
+  }],
+
+  ['income', 'Income and cross-price elasticity', (m) => {
+    const p = panel(0);
+    const row = (y, title, formula, neg, pos, negC, posC, t0, e, ex) => {
+      ecNote(p, title, 140, y - 100, t0, { size: 34, fill: COL.dim, weight: 700 });
+      ecNote(p, formula, 1460, y - 100, t0, { size: 30, fill: COL.dim, anchor: 'end' });
+      const l = path(p, `M200 ${y}H1400`, { stroke: COL.dim, 'stroke-width': 4 }, { d: 0 }); draw(l, t0, .8);
+      path(p, `M800 ${y - 14}V${y + 14}`, { stroke: COL.chalk, 'stroke-width': 4 });
+      ecNote(p, '0', 800, y + 52, t0 + .3, { size: 28, fill: COL.dim, anchor: 'middle' });
+      return { neg: ecNote(p, neg, 520, y - 24, t0 + 99, { size: 36, fill: negC, anchor: 'middle', weight: 700 }), pos: ecNote(p, pos, 1080, y - 24, t0 + 99, { size: 36, fill: posC, anchor: 'middle', weight: 700 }) };
+    };
+    // two rows
+    const A = 330, B = 640;
+    const rowA = row(A, 'Income elasticity of demand', '% Δ quantity ÷ % Δ income', '', '', COL.bad, COL.good, m('a'));
+    const rowB = row(B, 'Cross-price elasticity of demand', '% Δ quantity of X ÷ % Δ price of Y', '', '', COL.bad, COL.good, m('b'));
+    const lab = (str, x, y, t0, fill) => ecNote(p, str, x, y, t0, { size: 36, fill, anchor: 'middle', weight: 700 });
+    lab('positive → NORMAL good', 1090, A - 26, m('pos'), COL.good); path(p, `M800 ${A}H1400`, { stroke: COL.good, 'stroke-width': 8, 'stroke-linecap': 'round', opacity: .7 });
+    lab('negative → INFERIOR good', 510, A - 26, m('neg'), COL.bad); path(p, `M200 ${A}H800`, { stroke: COL.bad, 'stroke-width': 8, opacity: .7 });
+    lab('positive → SUBSTITUTES', 1090, B - 26, m('sub'), COL.good); path(p, `M800 ${B}H1400`, { stroke: COL.good, 'stroke-width': 8, opacity: .7 });
+    lab('negative → COMPLEMENTS', 510, B - 26, m('comp'), COL.bad); path(p, `M200 ${B}H800`, { stroke: COL.bad, 'stroke-width': 8, opacity: .7 });
+    // hide the plain bars until their word: put them in groups
+    const dot1 = ecDot(p, { X: v => 800 + v * 320, Y: () => A }, .263, 0, COL.task, m('ex'), 13);
+    const dot2 = ecDot(p, { X: v => 800 + v * 320, Y: () => B }, -.841, 0, COL.task, m('ex', 1.2), 13);
+    ecNote(p, '+0.26  gasoline & income', 800 + .263 * 320 + 20, A + 62, m('ex'), { size: 28, fill: COL.task, weight: 600 });
+    ecNote(p, '−0.84  gasoline & cars', 800 - .841 * 320 - 20, B + 62, m('ex', 1.2), { size: 28, fill: COL.task, weight: 600, anchor: 'end' });
+  }],
+
+  ['effects', 'Substitution and income effects', (m) => {
+    const p = panel(0), x0 = 860, k = 34;
+    ecNote(p, 'The price of a good falls — change in quantity bought', 800, 130, .2, { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    path(p, `M${x0} 200V820`, { stroke: COL.dim, 'stroke-width': 3 });
+    ecNote(p, 'buy less', x0 - 20, 190, .3, { size: 26, fill: COL.dim, anchor: 'end' });
+    ecNote(p, 'buy more', x0 + 20, 190, .3, { size: 26, fill: COL.dim });
+    const bar = (y, from, to, color, t0, label) => {
+      const g = G(p, { o: 0 });
+      mk('rect', { x: x0 + Math.min(from, to) * k, y: y - 24, width: Math.abs(to - from) * k, height: 48, rx: 6, fill: color, opacity: .9 }, g);
+      T(g, label, { x: x0 + Math.max(from, to) * k + 14, y: y + 10, size: 28, fill: color, weight: 700 });
+      show(g, t0); return g;
+    };
+    const tag = (str, y, t0, color) => ecNote(p, str, 60, y + 10, t0, { size: 34, fill: color, weight: 700 });
+    const grp = (y, title, c, t0, se, ie, tot, tm) => {
+      tag(title, y, t0, c);
+      bar(y - 52, 0, se, COL.whole, t0 + .6, 'substitution');
+      bar(y, se, se + ie, ie >= 0 ? COL.good : COL.bad, t0 + 1.4, 'income');
+      bar(y + 52, 0, tot, COL.task, t0 + 2.2, 'total ' + (tot > 0 ? '+' : '−'));
+    };
+    grp(310, 'Normal good', COL.good, m('norm'), 6, 5, 11);
+    grp(550, 'Inferior good', COL.task, m('inf'), 6, -3, 3);
+    grp(790, 'Giffen good', COL.bad, m('giff'), 3, -6, -3);
+    const se = ecNote(p, 'substitution: it is cheaper than the alternatives', 1000, 860, m('se'), { size: 26, fill: COL.whole, weight: 600 });
+    const ie = ecNote(p, 'income: my money buys more', 1000, 890, m('ie'), { size: 26, fill: COL.good, weight: 600 });
+    hide(se, m('norm') - .2); hide(ie, m('norm') - .2);
+  }],
+
+  ['returns', 'Diminishing marginal returns', (m) => {
+    const p = panel(0), x0 = 200, base = 780, u = 12, w = 130, gap = 26;
+    ecNote(p, 'Output of a factory as workers are added', 200, 110, .2, { size: 34, fill: COL.dim, weight: 600 });
+    path(p, `M${x0 - 20} ${base}H1400`, { stroke: COL.dim, 'stroke-width': 3 });
+    const mp = [12, 10, 8, 6, 4, 2];
+    let tot = 0;
+    mp.forEach((v, i) => {
+      const x = x0 + i * (w + gap), g = G(p, { o: 0, y: -20 });
+      mk('rect', { x, y: base - tot * u - v * u, width: w, height: v * u - 3, rx: 8, fill: i % 2 ? COL.good : COL.whole, opacity: .9 }, g);
+      T(g, '+' + v, { x: x + w / 2, y: base - tot * u - v * u / 2 + (v * u > 50 ? 12 : 7), size: v * u > 50 ? 40 : 20, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(p, 'worker ' + (i + 1), { x: x + w / 2, y: base + 44, size: 26, fill: COL.dim, anchor: 'middle', o: 0 });
+      const lbl = p.lastChild; show(lbl, m('b' + (i + 1)));
+      show(g, m('b' + (i + 1))); tw(g, { y: 0 }, m('b' + (i + 1)), .5, out);
+      tot += v;
+    });
+    ecNote(p, 'each extra worker adds less', 200, 230, m('c'), { size: 38, fill: COL.bad, weight: 700 });
+    ecNote(p, 'marginal product falls', 200, 285, m('c', .4), { size: 30, fill: COL.dim });
+    const t = ecNote(p, 'total output = 42', 200, 360, m('tot'), { size: 40, fill: COL.task, weight: 700 });
+  }],
+
+  ['costs', 'Cost curves', (m) => {
+    const p = panel(0), C = S.C = ecChart(p, { xmax: 7, ymax: 30, xl: 'Output', yl: 'Cost per unit (€)' }, .1);
+    ecNote(p, 'Total cost = fixed + variable', 1060, 150, m('a'), { size: 36, fill: COL.dim, weight: 700 });
+    ecNote(p, 'fixed: does not change with output', 1060, 210, m('a', 1.2), { size: 30, fill: COL.whole });
+    ecNote(p, 'variable: rises with output', 1060, 260, m('a', 3), { size: 30, fill: COL.task });
+    ecFn(p, C, AVC, 0.2, 6.2, COL.task, m('avc'), 1.2); ecNote(p, 'AVC  average variable', 1060, 360, m('avc'), { fill: COL.task, weight: 700 });
+    ecFn(p, C, MC, 0.2, 5.0, COL.bad, m('mc'), 1.4); ecNote(p, 'MC  marginal', 1060, 420, m('mc'), { fill: COL.bad, weight: 700 });
+    ecDot(p, C, 3, 6, COL.task, m('mc', 3.5), 11);
+    ecNote(p, 'MC cuts AVC at its minimum', 1060, 480, m('mc', 3.5), { size: 28, fill: COL.dim });
+    ecFn(p, C, ATC, 1.0, 6.5, COL.whole, m('atc'), 1.4); ecNote(p, 'ATC  average total', 1060, 540, m('atc'), { fill: COL.whole, weight: 700 });
+    ecNote(p, 'ATC = AVC + average fixed cost', 1060, 600, m('atc', 1.5), { size: 28, fill: COL.dim });
+  }],
+
+  ['profit', 'Breakeven and shutdown', (m) => {
+    const C = S.C, p = S.panel; /* continue on the same cost chart */
+    const pl = path(p, '', { stroke: COL.chalk, 'stroke-width': 4, 'stroke-dasharray': '14 8' }, { o: 0 });
+    const rc = mk('rect', { opacity: 0 }, p);
+    const pt = G(p, { o: 0 }); mk('circle', { r: 12, fill: COL.chalk, stroke: COL.board, 'stroke-width': 3 }, pt);
+    S.panel.querySelectorAll('text').forEach(t => { if (st(t).x === 1060) hide(t, m('a'), .5); });
+    const info = T(p, '', { x: 1060, y: 700, size: 46, weight: 700, o: 0 }), sub = T(p, '', { x: 1060, y: 752, size: 28, fill: COL.dim, o: 0 });
+    const pr0 = 22;
+    const setPr = pr => {
+      const q = QSTAR(pr), a = ATC(q), y = C.Y(pr);
+      pl.setAttribute('d', `M${C.x0} ${y}H${C.X(6.8)}`);
+      put(pt, { x: C.X(q), y });
+      const prof = (pr - a) * q;
+      rc.setAttribute('x', C.x0); rc.setAttribute('width', C.X(q) - C.x0);
+      rc.setAttribute('y', Math.min(y, C.Y(a))); rc.setAttribute('height', Math.abs(C.Y(a) - y));
+      let col, msg, sm;
+      if (pr < AVC(q) - .001 || pr < 6) { col = COL.bad; msg = 'SHUT DOWN'; sm = 'P below minimum AVC (6)'; }
+      else if (pr < a - .001) { col = COL.task; msg = 'loss, keep producing'; sm = 'AVC < P < ATC: covers variable cost'; }
+      else { col = COL.good; msg = 'profit'; sm = 'P above ATC'; }
+      rc.setAttribute('fill', col); rc.setAttribute('stroke', col); rc.setAttribute('fill-opacity', .35); rc.setAttribute('stroke-width', 3);
+      info.textContent = msg + (prof > .05 || prof < -.05 ? `  ${prof > 0 ? '+' : '−'}${Math.abs(prof).toFixed(0)}` : ''); info.setAttribute('fill', col); sub.textContent = sm + `   P = ${pr.toFixed(1)}`;
+    };
+    rc.setAttribute('opacity', 1); setPr(pr0);
+    show(pl, m('a')); show(pt, m('a')); show(info, m('a')); show(sub, m('a'));
+    prog(q => setPr(pr0 + (ATCMIN + .02 - pr0) * q), m('hi'), m('be') - m('hi'));
+    prog(q => setPr(ATCMIN + .02 + (6 - ATCMIN - .02) * q), m('loss'), m('sd') - m('loss') - .5);
+    prog(q => setPr(6 - 1.4 * q), m('sd'), 3);
+    // markers for breakeven / shutdown prices
+    const be = ecNote(p, 'breakeven = min ATC ≈ ' + ATCMIN.toFixed(1), 1060, 300, m('be'), { size: 32, fill: COL.whole, weight: 700 });
+    const sd = ecNote(p, 'shutdown = min AVC = 6', 1060, 360, m('sd'), { size: 32, fill: COL.bad, weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Elasticity: % change ÷ % change, no units.', 'w1'], ['Elasticity decides how a price change moves spending.', 'w2'], ['Signs separate normal/inferior goods and substitutes/complements.', 'w3'], ['Price vs ATC and AVC: produce, break even or shut down.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 280 + i * 130, o: 0 });
+      mk('circle', { cx: 160, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 160, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 220, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+boot();
+</script>
+</body>
+</html>
