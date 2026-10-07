@@ -217,10 +217,10 @@ main#contents { padding-bottom: 80px; }
 'use strict';
 // Chapters are numbered in order through the units. Add a chapter here when its lesson is ready.
 const UNITS = [   // [unit title, [[chapter title, minutes], ...]]; chapters are numbered in order.
-  ['Bond Features and Markets', []],
-  ['Valuation, Yields and Curves', []],
-  ['Interest Rate Risk', []],
-  ['Credit and Securitization', [['Mortgage-Backed Security (MBS) Instrument and Market Features', 10]]],
+  ['Bond Features and Markets', [['Fixed-Income Instrument Features', 5], ['Fixed-Income Cash Flows and Types', 9], ['Fixed-Income Issuance and Trading', 8], ['Fixed-Income Markets for Corporate Issuers', 9], ['Fixed-Income Markets for Government Issuers', 8]]],
+  ['Valuation, Yields and Curves', [['Fixed-Income Bond Valuation: Prices and Yields', 9], ['Yield and Yield Spread Measures for Fixed-Rate Bonds', 9], ['Yield and Yield Spread Measures for Floating-Rate Instruments', 7], ['The Term Structure of Interest Rates: Spot, Par, and Forward Curves', 9]]],
+  ['Interest Rate Risk', [['Interest Rate Risk and Return', 9], ['Yield-Based Bond Duration Measures and Properties', 8], ['Yield-Based Bond Convexity and Portfolio Properties', 8], ['Curve-Based and Empirical Fixed-Income Risk Measures', 9]]],
+  ['Credit and Securitization', [['Credit Risk', 9], ['Credit Analysis for Government Issuers', 8], ['Credit Analysis for Corporate Issuers', 9], ['Fixed-Income Securitization', 8], ['Asset-Backed Security (ABS) Instrument and Market Features', 10], ['Mortgage-Backed Security (MBS) Instrument and Market Features', 10]]],
 ];
 const HUES = ['#f4a48c', '#86c9e8', '#f3c95c', '#e8a0c8', '#8fd6b0', '#bba8ee', '#f0b45a'];
 const id = n => 'ch' + String(n).padStart(2, '0');
