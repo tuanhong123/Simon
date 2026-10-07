@@ -14,4 +14,11 @@ Chapter map/status: `chapters.md`; storyboards and errata: `chapters/chNN.md`.
 - Currency £ for the Reston example; figures re-checked (30% rate: payable 1,153/4,327/7,753; ΔDTL 257; expense 1,410/4,584/8,010).
 - Video: `tools/<book>/make_video.py chNN` (server on :8765) → `video/` (git-ignored).
 
-## Helpers (ch01 page): `text`, `box`, `arrowDown`, `pill`; stacked bars; waterfall (`recon`); two-line gap chart (`gap`).
+## Helpers
+- Shared in `site/<book>/lib/common.js` (load after engine.js): `text`, `box`, `arrowDown/Right`, `pill`, `leg`, `axisLine`, `bar` (stacked), `wrapList`, `introBeat`, `FINISH`, `lines` (word wrap), `infoCard` (titled card).
+- ch01 keeps its own copies (pilot). Chapter-local: `waterfall` (ch04), `stack` (ch09), `cardRow` (several).
+- Note: the engine already defines `card`; use `infoCard`. Engine `finishCard` hides score lines when `SCORE` is empty.
+
+## Status
+- All 12 learning modules built (ch01-ch12), 6-11 min each, no quizzes. Videos: `tools/<book>/make_video.py chNN` -> `video/` (git-ignored).
+- Tools: `check.sh chNN` (frames + contact sheets), `shots.py`, `sheet.py`, `tts_kokoro.py`.
