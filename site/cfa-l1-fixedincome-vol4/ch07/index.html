@@ -13,7 +13,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 7, title: 'Yield and Yield Spread Measures for Fixed-Rate Bonds', minutes: 9, language: 'en' };
+const CHAPTER = { number: 7, title: 'Yield and Yield Spread Measures for Fixed-Rate Bonds', minutes: 9, language: 'en', next: '../ch08/' };
 
 const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });
 const MS = [1, 2, 4, 12], EAR = MS.map(m => ((1 + .05 / m) ** m - 1) * 100), ZY = MS.map(m => (((100 / 80) ** (1 / 5)) ** (1 / m) - 1) * m * 100);

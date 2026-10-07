@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yield and Yield Spread Measures for Floating-Rate Instruments</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 8, title: 'Yield and Yield Spread Measures for Floating-Rate Instruments', minutes: 7, language: 'en' };
+
+const lab = (p, s, x, y, t, c = COL.chalk, size = 26) => text(p, s, x, y, t, { size, fill: c, anchor: 'middle', weight: 600 });
+const MRR = [3.00, 3.25, 3.00, 2.50, 2.25, 2.50];
+const frnPrice = (dm) => { const c = (3 + 1) / 4, r = (3 + dm) / 4 / 100; let v = 100 / (1 + r) ** 8; for (let k = 1; k <= 8; k++) v += c / (1 + r) ** k; return v; };
+const PV = 100 * (1 - 180 / 360 * .0595);
+
+const BEATS = [
+  ['intro', 'Floaters and money markets', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 8', { x: 800, y: 270, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Yield and Yield Spread', 'Measures for Floating-Rate', 'Instruments'].forEach((s, i) => T(g, s, { x: 800, y: 370 + i * 92, size: 72, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'floaters, discount margins and money market yields', 800, 700, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['frn', 'Floating-rate notes', (m) => {
+    const p = panel(0), base = 700, k = 70, bx = i => 330 + i * 210;
+    text(p, 'coupon = reference rate + quoted margin (1.00%)', 800, 120, m('a'), { size: 42, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    path(p, `M200 ${base}H1480`, { stroke: COL.chalk, 'stroke-width': 3 });
+    MRR.forEach((v, i) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: bx(i) - 55, y: base - v * k, width: 110, height: v * k, fill: COL.whole, 'fill-opacity': .88, rx: 4 }, g); mk('rect', { x: bx(i) - 55, y: base - (v + 1) * k, width: 110, height: k, fill: COL.task, 'fill-opacity': .88, rx: 4 }, g);
+      T(g, 'coupon ' + (v + 1).toFixed(2) + '%', { x: bx(i), y: base - (v + 1) * k - 16, size: 26, fill: COL.good, weight: 700, anchor: 'middle' }); T(g, v.toFixed(2) + '%', { x: bx(i), y: base - v * k / 2 + 8, size: 26, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, 'reset ' + (i + 1), { x: bx(i), y: base + 42, size: 24, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('bars', .2 + i * .9), .6, out);
+    });
+    const leg = (s, c, y, t) => { const g = G(p, { o: 0 }); mk('rect', { x: 240, y: y - 20, width: 24, height: 24, rx: 5, fill: c }, g); T(g, s, { x: 280, y, size: 26, fill: COL.dim }); show(g, t); };
+    leg('reference rate (resets)', COL.whole, 200, m('a', 1)); leg('quoted margin', COL.task, 240, m('a', 1.6));
+    show(pill(p, 'price stays near par · less interest rate risk', COL.good, 800, 810, 0, 32), m('b'));
+  }],
+
+  ['margin', 'Quoted margin vs discount margin', (m) => {
+    const p = panel(0), base = 700, H = v => (v - 98.5) * 150, xs = [430, 800, 1170];
+    path(p, `M200 ${base}H1400`, { stroke: COL.chalk, 'stroke-width': 3 });
+    draw(path(p, `M200 ${base - H(100)}H1400`, { stroke: COL.dim, 'stroke-width': 3, 'stroke-dasharray': '10 8' }, { d: 0 }), .3, .8);
+    text(p, 'par', 1400, base - H(100) - 14, .6, { size: 26, fill: COL.dim, anchor: 'end' });
+    [['Discount', frnPrice(1.5), COL.bad, 'QM 100 < DM 150', 'disc'], ['Par', 100, COL.whole, 'QM = DM', 'eq'], ['Premium', frnPrice(.6), COL.good, 'QM 100 > DM 60', 'prem']].forEach(([s, v, c, why, k], i) => {
+      const g = G(p, { x: xs[i], y: 30, o: 0 });
+      mk('rect', { x: -110, y: base - H(v), width: 220, height: H(v), fill: c, 'fill-opacity': .88, rx: 6 }, g);
+      T(g, v.toFixed(2), { y: base - H(v) - 16, size: 44, fill: COL.chalk, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m(k), .7, out);
+      text(p, s, xs[i], base + 50, m(k, .4), { size: 36, fill: c, anchor: 'middle', weight: 700 }); text(p, why, xs[i], base + 92, m(k, .8), { size: 28, fill: COL.dim, anchor: 'middle' });
+    });
+    text(p, 'QM = quoted margin, DM = discount margin, in basis points · axis starts at 98.5 · illustrative 2-year quarterly note, reference rate 3%', 800, 850, m('eq'), { size: 24, fill: COL.faint, anchor: 'middle' });
+    text(p, 'credit weakens → required margin ↑ → price ↓', 800, 130, m('end'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['market', 'Money market instruments', (m) => {
+    const p = panel(0);
+    show(pill(p, 'maturity of one year or less: T-bills · commercial paper · CDs', COL.whole, 800, 150, 0, 32), m('a'));
+    show(infoCard(p, 420, 400, 660, 280, COL.task, 'Discount rate basis', ['DR = (FV − PV) ÷ FV × 360 ÷ days', 'interest relative to face value'], 40), m('dr'));
+    show(infoCard(p, 1180, 400, 660, 280, COL.good, 'Add-on rate basis', ['AOR = (FV − PV) ÷ PV × 360 ÷ days', 'interest relative to the price paid'], 40), m('aor'));
+    show(pill(p, 'simple interest: no compounding within the year', COL.rat, 800, 700, 0, 30), m('b'));
+  }],
+
+  ['dr', 'Price from a discount rate', (m) => {
+    const p = panel(0);
+    text(p, '180-day CD · discount rate 5.95% · 360-day year', 800, 140, .3, { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'price = FV × (1 − days/360 × DR)', 800, 290, m('pv'), { size: 44, fill: COL.task, anchor: 'middle', weight: 600 });
+    text(p, '100 × (1 − 180/360 × 5.95%)', 800, 370, m('pv', 2), { size: 38, fill: COL.dim, anchor: 'middle' });
+    const big = T(p, '= 0.000', { x: 800, y: 470, size: 64, fill: COL.good, weight: 700, anchor: 'middle', o: 0 }); show(big, m('pv', 4));
+    prog(q => { big.textContent = '= ' + (100 - (100 - PV) * q).toFixed(3); }, m('pv', 4.2), 1.2);
+    const a = card1(p, 380, 680, 360, 130, COL.task), b = card1(p, 1220, 680, 360, 130, COL.good);
+    T(a, 'pay 97.025', { y: -5, size: 40, fill: COL.task, weight: 700, anchor: 'middle' }); T(a, 'today', { y: 40, size: 26, fill: COL.dim, anchor: 'middle' });
+    T(b, 'receive 100', { y: -5, size: 40, fill: COL.good, weight: 700, anchor: 'middle' }); T(b, 'after 180 days', { y: 40, size: 26, fill: COL.dim, anchor: 'middle' });
+    show(a, m('int')); show(b, m('int', 1.2)); arw(p, 580, 680, 1020, COL.dim, m('int', .6));
+    text(p, 'interest 2.975', 800, 650, m('int', 1.8), { size: 30, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['aor', 'Add-on rate and bond equivalent yield', (m) => {
+    const p = panel(0), x0 = 560, k = 1500;
+    [['Discount rate (360)', 5.95, COL.task, 'aor', 0], ['Add-on rate (360)', 6.13, COL.whole, 'aor', 0], ['Bond equivalent yield (365)', 6.22, COL.good, 'bey', 0]].forEach(([s, v, c, mk_], i) => {
+      const y = 240 + i * 110, g = G(p, { o: 0 }); T(g, s, { x: x0 - 20, y: y + 10, size: 30, fill: c, weight: 600, anchor: 'end' });
+      const r = mk('rect', { x: x0, y: y - 32, width: 0, height: 64, rx: 6, fill: c, 'fill-opacity': .88 }, g); T(g, v.toFixed(2) + '%', { x: x0 + (v - 5.8) * k + 20, y: y + 10, size: 34, fill: COL.chalk, weight: 700 });
+      const t = i === 0 ? m('aor', -6) : i === 1 ? m('aor') : m('bey'); show(g, t); tw(r, { a_width: (v - 5.8) * k }, t, .8);
+    });
+    text(p, '2.975 ÷ 97.025 × 360/180 = 6.13%', 1480, 190, m('aor', .4), { size: 28, fill: COL.whole, anchor: 'end', weight: 600 });
+    text(p, 'axis starts at 5.8%', 1480, 600, m('aor'), { size: 22, fill: COL.faint, anchor: 'end' });
+    text(p, 'the discount rate understates the return: it divides by face value', 800, 640, m('cmp'), { size: 32, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'CD: pay 96.5m, receive 100m in 270 days', 800, 730, m('ex'), { size: 32, fill: COL.dim, anchor: 'middle' });
+    text(p, 'add-on rate = 3.5 ÷ 96.5 × 360/270 = 4.84%', 800, 790, m('ex', 3), { size: 36, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['A floater pays reference rate + quoted margin; price stays near par.', 'w1'], ['Quoted margin below the discount margin: a discount.', 'w2'],
+     ['Money market quotes use a discount rate or an add-on rate.', 'w3'], ['Discount rates understate return: convert to a bond equivalent yield.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 33, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
