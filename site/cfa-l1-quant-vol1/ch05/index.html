@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sampling and Estimation</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 5, title: 'Sampling and Estimation', minutes: 11, language: 'en', next: '../ch06/' };
+
+/* ---------- chapter drawing helpers ---------- */
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const line = (p, d, color, t0, w = 4, dur = .7) => draw(path(p, d, { stroke: color, 'stroke-width': w }, { d: 0 }), t0, dur);
+const axisLine = (p, x0, x1, y, t0) => draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), t0, .7);
+const NPDF = x => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+const curveD = (f, lo, hi, X, Y, n = 200) => { let d = ''; for (let i = 0; i <= n; i++) { const x = lo + (hi - lo) * i / n; d += (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(f(x)).toFixed(1); } return d; };
+const bcard = (p, x, y, w, h, title, body, c, t0) => {
+  const g = G(p, { y: 24, o: 0 });
+  mk('rect', { x, y, width: w, height: h, rx: 18, fill: 'none', stroke: c, 'stroke-width': 3 }, g);
+  T(g, title, { x: x + 28, y: y + 62, size: 36, fill: c, weight: 700 });
+  body.forEach((s, i) => T(g, s, { x: x + 28, y: y + 118 + i * 40, size: 28, fill: COL.dim }));
+  tw(g, { o: 1, y: 0 }, t0, .6, out);
+};
+
+/* ---------- data (defined above BEATS) ---------- */
+const POP = Array.from({ length: 100 }, (_, i) => 5 + 6 * ((i * 53) % 100) / 100);   // population of 100 values
+const MU = POP.reduce((a, b) => a + b, 0) / POP.length;
+function lcg(seed) { let s = seed; return () => (s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296; }
+const SAMPLES = (() => { const r = lcg(12345); return Array.from({ length: 30 }, () => { const idx = new Set(); while (idx.size < 10) idx.add(Math.floor(r() * 100)); return [...idx]; }); })();
+const SMEAN = SAMPLES.map(ix => ix.reduce((a, i) => a + POP[i], 0) / ix.length);
+const CI_MEANS = [7.1, 9.4, 8.6, 6.2, 10.1, 7.7, 8.3, 12.3, 5.9, 9.0, 7.2, 8.8, 6.8, 9.7, 8.1, 10.8, 7.4, 6.5, 9.2, 8.5];   // true mean 8, half-width 3.92: only 12.3 misses
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Sampling and estimation', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Quantitative Methods, Chapter 5', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Sampling and Estimation', { x: 800, y: 450, size: 84, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'how far can we trust a sample?', 800, 600, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['sampling', 'Samples and sampling distributions', (m) => {
+    const p = panel(0), x0 = 170, y0 = 250, sp = 44, base = 640, X = v => 900 + (v - 6.5) * 180;
+    text(p, 'Population', x0 + 200, 190, m('pop'), { size: 32, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, `100 values, mean μ = ${MU.toFixed(2)}`, x0 + 200, 740, m('pop'), { size: 28, fill: COL.dim, anchor: 'middle' });
+    const dots = POP.map((v, i) => {
+      const g = G(p, { x: x0 + (i % 10) * sp, y: y0 + Math.floor(i / 10) * sp, s: 0, o: 0 });
+      const c = mk('circle', { r: 15, fill: COL.whole }, g);
+      tw(g, { s: 1, o: 1 }, m('pop', .1 + i * .012), .3, back);
+      return c;
+    });
+    axisLine(p, 860, 1480, base, .1);
+    for (const v of [7, 8, 9]) text(p, String(v), X(v), base + 36, .3, { size: 24, fill: COL.dim, anchor: 'middle' });
+    line(p, `M${X(MU)} ${base + 10}V${base - 330}`, COL.task, m('pop', 1.5), 3, .5);
+    text(p, 'μ', X(MU), base - 345, m('pop', 1.7), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'sample means', 1170, 190, m('s1'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+    const used = {};
+    const addMean = (k, t) => {
+      const v = SMEAN[k], bin = Math.round(v * 10), n = used[bin] = (used[bin] || 0) + 1;
+      const g = G(p, { x: X(v), y: base - 14 - (n - 1) * 24, s: 0, o: 0 });
+      mk('circle', { r: 11, fill: COL.good, stroke: COL.board, 'stroke-width': 2 }, g);
+      tw(g, { s: 1, o: 1 }, t, .35, back);
+    };
+    ['s1', 's2', 's3'].forEach((key, k) => {
+      SAMPLES[k].forEach(i => { tw(dots[i], { c_fill: COL.task }, m(key), .3); tw(dots[i], { c_fill: COL.whole }, m(key, 1.3), .4); });
+      addMean(k, m(key, .9));
+    });
+    for (let k = 3; k < 30; k++) addMean(k, m('dist', .2 + (k - 3) * .18));
+    text(p, 'each sample gives a different mean', 1170, 800, m('s2'), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['clt', 'Central limit theorem', (m) => {
+    const p = panel(0), base = 640, X = x => 800 + x * 42, f = s => x => NPDF(x / s) / s, Y = v => base - v * 900;
+    axisLine(p, 100, 1500, base, .1);
+    line(p, curveD(f(10), -16, 16, X, Y), COL.dim, m('pop'), 4, 1);
+    line(p, curveD(f(5), -16, 16, X, Y), COL.whole, m('n4'), 5, 1);
+    line(p, curveD(f(2), -16, 16, X, Y), COL.good, m('n25'), 5, 1);
+    line(p, curveD(f(1), -16, 16, X, Y), COL.task, m('n100'), 5, 1);
+    text(p, 'the sample mean is approximately normal, centered on μ', 800, 140, m('a'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'population:  σ = 10', 1050, 300, m('pop'), { size: 30, fill: COL.dim, weight: 700 });
+    text(p, 'n = 4:   SE = 10 ÷ √4 = 5', 1050, 345, m('n4'), { size: 30, fill: COL.whole, weight: 700 });
+    text(p, 'n = 25:   SE = 10 ÷ √25 = 2', 1050, 390, m('n25'), { size: 30, fill: COL.good, weight: 700 });
+    text(p, 'n = 100:   SE = 10 ÷ √100 = 1', 1050, 435, m('n100'), { size: 30, fill: COL.task, weight: 700 });
+    text(p, 'halve the error → four times the data', 800, 780, m('note'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'μ', X(0), base + 38, .3, { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['se', 'Standard error and confidence interval', (m) => {
+    const p = panel(0);
+    mline(p, ['SE = ', F('s', '√n')], 800, 200, m('a'), COL.chalk, 64);
+    mline(p, ['SE = ', F('12', '√36'), ' = ', F('12', '6'), ' = 2'], 800, 350, m('ex'), COL.task, 56);
+    text(p, 'confidence interval  =  estimate  ±  reliability factor × SE', 800, 490, m('ci'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    mline(p, ['8 ± 1.96 × 2  =  8 ± 3.92'], 800, 600, m('z'), COL.good, 56);
+    mline(p, ['(4.08%,  11.92%)'], 800, 700, m('z', 3.2), COL.good, 64);
+  }],
+
+  ['q1', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-se', prompt: ['A sample of 25 observations has a standard deviation of 20. What is the standard error of the sample mean?'],
+    build: blanks([{ parts: ['SE = ', { box: '4' }], why: 'SE = s ÷ √n = 20 ÷ √25 = 20 ÷ 5 = 4.', hint: 'Divide s by the square root of n (the square root of 25 is 5).' }]),
+  }], done) }],
+
+  ['ci', 'What confidence means', (m) => {
+    const p = panel(0), X = v => 380 + v * 55, y0 = 190, dy = 29, hw = 3.92;
+    line(p, `M${X(8)} ${y0 - 20}V${y0 + 20 * dy}`, COL.task, m('a'), 3, .6);
+    text(p, 'true mean μ', X(8), y0 - 30, m('a'), { size: 28, fill: COL.task, anchor: 'middle', weight: 700 });
+    CI_MEANS.forEach((v, i) => {
+      const miss = Math.abs(v - 8) > hw, c = miss ? COL.bad : COL.good, g = G(p, { o: 0 });
+      path(g, `M${X(v - hw)} ${y0 + i * dy}H${X(v + hw)}M${X(v - hw)} ${y0 + i * dy - 8}V${y0 + i * dy + 8}M${X(v + hw)} ${y0 + i * dy - 8}V${y0 + i * dy + 8}`, { stroke: c, 'stroke-width': 3 });
+      mk('circle', { cx: X(v), cy: y0 + i * dy, r: 5, fill: c }, g);
+      tw(g, { o: 1 }, m('draw', .3 + i * .22), .3);
+    });
+    text(p, '20 samples,', 1310, 330, m('draw'), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, '20 intervals', 1310, 370, m('draw'), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, '19 contain μ', 1310, 470, m('hit'), { size: 32, fill: COL.good, weight: 700 });
+    text(p, '1 misses', 1310, 520, m('miss'), { size: 32, fill: COL.bad, weight: 700 });
+    text(p, 'about 95% of intervals contain the true mean', 800, 850, m('rule'), { size: 32, fill: COL.chalk, anchor: 'middle', weight: 700 });
+  }],
+
+  ['samplesize', 'Choosing the sample size', (m) => {
+    const p = panel(0);
+    text(p, 'margin of error  E = z × s ÷ √n', 800, 170, m('a'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    mline(p, ['n = (', F('z × s', 'E'), ')', E('2')], 800, 330, m('solve'), COL.task, 64);
+    mline(p, ['n = (', F('1.96 × 12', '2'), ')', E('2'), ' = 11.76', E('2'), ' ≈ 138.3'], 800, 500, m('ex'), COL.chalk, 52);
+    text(p, 'round up:  n = 139', 800, 640, m('up'), { size: 52, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'halve the margin → four times the sample', 800, 780, m('note'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['q2', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-n', prompt: ['At 95% confidence (z = 1.96), s = 10 and a required margin of error of 1.96, what sample size is needed?'],
+    build: blanks([{ parts: ['n = ', { box: '100' }], why: 'n = (z × s ÷ E)² = (1.96 × 10 ÷ 1.96)² = 10² = 100.', hint: 'n = (z × s ÷ E)². Here z and E are equal, so they cancel.' }]),
+  }], done) }],
+
+  ['biases', 'Sampling biases', (m) => {
+    const p = panel(0);
+    text(p, 'A perfect formula cannot fix a bad sample', 800, 140, m('a'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    bcard(p, 150, 200, 640, 250, 'Data snooping', ['Testing many ideas on the same data', 'until one looks good'], COL.bad, m('ds'));
+    bcard(p, 810, 200, 640, 250, 'Sample selection', ['Part of the population is missing:', 'closed funds drop out (survivorship)'], COL.task, m('ss'));
+    bcard(p, 150, 480, 640, 250, 'Look-ahead', ['Uses information that was not', 'available on the decision date'], COL.whole, m('la'));
+    bcard(p, 810, 480, 640, 250, 'Time-period', ['Period too short or unusual', 'to represent the long run'], COL.good, m('tp'));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Sample means vary; their distribution is the sampling distribution.', 'w1'],
+     ['By the central limit theorem it is approximately normal, with SE = s ÷ √n.', 'w2'],
+     ['Confidence interval = estimate ± reliability factor × SE.', 'w3'],
+     ['Watch for data snooping, selection, look-ahead and time-period biases.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 120, o: 0 });
+      mk('circle', { cx: 100, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 100, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 160, size: 30, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+
+  ['final1', 'Chapter practice', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+    id: 'p-se', prompt: ['A sample of 100 observations has s = 15. What is the standard error of the mean?'],
+    build: blanks([{ parts: ['SE = ', { box: '1.5' }], why: 'SE = 15 ÷ √100 = 15 ÷ 10 = 1.5.', hint: 'The square root of 100 is 10.' }]),
+  }, {
+    id: 'p-width', prompt: ['To cut the width of a confidence interval in half, at the same confidence level, the sample size must be:'],
+    build: choice([['Doubled'], ['Quadrupled'], ['Halved']], 1, 'The margin of error shrinks with √n, so halving it needs n × 4.', ['Doubling n only cuts the width by about 29%.', null, 'A smaller sample widens the interval.']),
+  }, {
+    id: 'p-bias', prompt: ['A study of fund performance uses only funds that are still operating today. This is an example of:'],
+    build: choice([['Sample selection (survivorship) bias'], ['Data snooping'], ['Look-ahead bias']], 0, 'Funds that closed are missing from the sample, so the sample is not representative.', [null, 'Data snooping means searching the same data repeatedly for a pattern.', 'Look-ahead bias uses information unavailable at the time of the decision.']),
+  }], done, 'Chapter practice') }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

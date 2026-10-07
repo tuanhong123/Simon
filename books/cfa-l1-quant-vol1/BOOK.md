@@ -18,4 +18,5 @@ Read this compact current state for chapter work. The chapter map/status lives i
 - `$$()` money formatter; `mline`, `text` (template); `bar` growth stacks (ch01 fv); timeline with discount arcs (ch01 pv, annuity).
 
 ## Current decisions
-- Pilot = chapter 1 only; remaining modules wait for review.
+- All six learning modules built (ch01-ch06). Each: lesson beats + 1-2 quick checks + 3-5 practice questions. Videos (1080p, no quizzes) are rendered with tools/<book>/make_video.py.
+- Narration: Kokoro offline (Edge TTS blocked here). Chapters 2-6 reuse the same look and helpers (curves, grids, pills) copied per chapter; ch05 uses `bcard` (engine already defines `card`).

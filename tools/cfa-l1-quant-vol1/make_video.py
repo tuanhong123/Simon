@@ -9,12 +9,12 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
-SITE = ROOT / "site/cfa-l1-quant-vol1/ch01"
-URL = "http://localhost:8765/cfa-l1-quant-vol1/ch01/index.html?beat=0&t=0"
-WORK = Path("/tmp/claude-0/vid"); OUT = ROOT / "video/cfa-l1-quant-vol1-ch01.mp4"
+CH = sys.argv[1] if len(sys.argv) > 1 else "ch01"
+SITE = ROOT / f"site/cfa-l1-quant-vol1/{CH}"
+URL = f"http://localhost:8765/cfa-l1-quant-vol1/{CH}/index.html?beat=0&t=0"
+WORK = Path(f"/tmp/claude-0/vid_{CH}"); OUT = ROOT / f"video/cfa-l1-quant-vol1-{CH}.mp4"
 FPS = 24
-ANS = {"q1": "1210", "q2": "10.25", "q3": "1000", "q4": "1000"}
-IDS = ["intro","rate","premiums","fv","q1","compounding","q2","pv","q3","annuity","perp","q4","solve","wrap"]
+ANS = {}   # quiz beats are left out of the video
 
 def ff(*a):
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *a], check=True)
@@ -31,6 +31,8 @@ async def main():
         await pg.goto(URL); await pg.wait_for_timeout(800)
         await pg.add_style_tag(content=".caption,#bar,.paused-mark,.bar{display:none!important}")
         ids = await pg.evaluate("BEATS.map(b=>b.id)")
+        asks = await pg.evaluate("BEATS.map(b=>!!b.ask)")
+        IDS = [x for x, a in zip(ids, asks) if not a]
         for id_ in IDS:
             i = ids.index(id_); mp3 = SITE / f"audio/en/{id_}.mp3"
             await pg.evaluate(f"seek({i}, false)"); await pg.wait_for_timeout(900)

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Common Probability Distributions</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 4, title: 'Common Probability Distributions', minutes: 12, language: 'en', next: '../ch05/' };
+
+/* ---------- chapter drawing helpers ---------- */
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const line = (p, d, color, t0, w = 4, dur = .7) => draw(path(p, d, { stroke: color, 'stroke-width': w }, { d: 0 }), t0, dur);
+const axisLine = (p, x0, x1, y, t0) => draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), t0, .7);
+// density functions and curve builders
+const NPDF = x => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+function lgamma(z) {
+  const c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (z < .5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+  z -= 1; let x = c[0]; for (let i = 1; i < 9; i++) x += c[i] / (z + i);
+  const t = z + 7.5; return .5 * Math.log(2 * Math.PI) + (z + .5) * Math.log(t) - t + Math.log(x);
+}
+const TPDF = v => x => Math.exp(lgamma((v + 1) / 2) - lgamma(v / 2)) / Math.sqrt(v * Math.PI) * (1 + x * x / v) ** (-(v + 1) / 2);
+const CHI = k => x => x <= 0 ? 0 : Math.exp((k / 2 - 1) * Math.log(x) - x / 2 - (k / 2) * Math.log(2) - lgamma(k / 2));
+const curveD = (f, lo, hi, X, Y, n = 200) => { let d = ''; for (let i = 0; i <= n; i++) { const x = lo + (hi - lo) * i / n; d += (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(f(x)).toFixed(1); } return d; };
+const areaD = (f, a, b, X, Y, base, n = 100) => curveD(f, a, b, X, Y, n) + `L${X(b).toFixed(1)} ${base}L${X(a).toFixed(1)} ${base}Z`;
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Probability distributions', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Quantitative Methods, Chapter 4', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Common Probability', { x: 800, y: 430, size: 80, weight: 600, anchor: 'middle' });
+    T(g, 'Distributions', { x: 800, y: 520, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'every outcome, and how likely it is', 800, 650, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['discrete', 'Expected value and variance', (m) => {
+    const p = panel(0), base = 620, X = v => 450 + v * 300, pr = [.2, .5, .3];
+    axisLine(p, 250, 1250, base, .1);
+    text(p, 'Number of rate cuts this year', 800, 130, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    pr.forEach((q, v) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: X(v) - 70, y: base - q * 640, width: 140, height: q * 640, rx: 6, fill: COL.whole, 'fill-opacity': .88 }, g);
+      T(g, Math.round(q * 100) + '%', { x: X(v), y: base - q * 640 - 16, size: 32, weight: 700, anchor: 'middle' });
+      T(g, String(v), { x: X(v), y: base + 42, size: 30, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('a', 1.5 + v * .5), .6, out);
+    });
+    const f = G(p, { x: X(1.1), y: base + 6, o: 0 }); mk('path', { d: 'M0 0L-18 32L18 32Z', fill: COL.task }, f); show(f, m('ev'));
+    mline(p, ['E(X) = 0(0.2) + 1(0.5) + 2(0.3) = 1.1'], 800, 770, m('ev', .3), COL.task, 40);
+    mline(p, ['σ', E('2'), ' = 0.2(1.21) + 0.5(0.01) + 0.3(0.81) = 0.49'], 800, 825, m('var'), COL.chalk, 40);
+    mline(p, ['σ = √0.49 = 0.7'], 800, 880, m('sd'), COL.good, 40);
+  }],
+
+  ['q1', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-ev', prompt: ['A project pays $10 with probability 0.6 and $20 with probability 0.4. What is the expected payoff, in dollars?'],
+    build: blanks([{ parts: ['E(X) = $', { box: '14' }], why: '10 × 0.6 + 20 × 0.4 = 6 + 8 = 14.', hint: 'Multiply each payoff by its probability, then add.' }]),
+  }], done) }],
+
+  ['uniform', 'Uniform distributions', (m) => {
+    const p = panel(0), base = 540;
+    text(p, 'Discrete uniform: a fair die', 400, 190, m('d'), { size: 32, fill: COL.whole, anchor: 'middle', weight: 700 });
+    axisLine(p, 130, 670, base, .1);
+    for (let i = 0; i < 6; i++) {
+      const g = G(p, { y: 24, o: 0 }), hi = i < 4;
+      mk('rect', { x: 150 + i * 86, y: base - 150, width: 72, height: 150, rx: 5, fill: hi ? COL.task : COL.whole, 'fill-opacity': hi ? .9 : .6 }, g);
+      T(g, String(i + 1), { x: 186 + i * 86, y: base + 38, size: 26, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('d', .5 + i * .2), .5, out);
+    }
+    text(p, 'each face: 1/6', 400, base - 175, m('d', 1.8), { size: 28, fill: COL.dim, anchor: 'middle' });
+    text(p, 'P(X ≤ 4) = 4/6 = 2/3', 400, base + 120, m('cum'), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 });
+    // continuous uniform on [0, 10]
+    const X = v => 880 + v * 60, h = 150;
+    text(p, 'Continuous uniform on [0, 10]', 1180, 190, m('c'), { size: 32, fill: COL.nat, anchor: 'middle', weight: 700 });
+    axisLine(p, 860, 1500, base, m('c'));
+    for (const v of [0, 2, 5, 10]) text(p, String(v), X(v), base + 38, m('c', .3), { size: 26, fill: COL.dim, anchor: 'middle' });
+    const rect = G(p, { o: 0 }); mk('rect', { x: X(0), y: base - h, width: 600, height: h, fill: COL.nat, 'fill-opacity': .55, stroke: COL.nat, 'stroke-width': 3 }, rect); show(rect, m('c', .6));
+    text(p, 'height 1/10, total area 1', 1180, base - h - 25, m('c', 1.4), { size: 28, fill: COL.dim, anchor: 'middle' });
+    const sh = G(p, { o: 0 }); mk('rect', { x: X(2), y: base - h, width: 180, height: h, fill: COL.task, 'fill-opacity': .9 }, sh); show(sh, m('area'));
+    text(p, 'P(2 ≤ X ≤ 5) = 3 × 0.1 = 0.3', 1180, base + 120, m('area', .4), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'P(X = any exact value) = 0', 1180, base + 180, m('pt'), { size: 30, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['binomial', 'Binomial distribution', (m) => {
+    const p = panel(0), base = 640, bx = x => 240 + x * 190, pr = [.064, .288, .432, .216];
+    text(p, 'Three trades, each wins with probability 0.6', 800, 130, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    axisLine(p, 120, 930, base, .1);
+    let hi;
+    pr.forEach((q, x) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: bx(x) - 65, y: base - q * 800, width: 130, height: q * 800, rx: 6, fill: COL.whole, 'fill-opacity': .88 }, g);
+      T(g, String(q), { x: bx(x), y: base - q * 800 - 16, size: 28, weight: 700, anchor: 'middle' });
+      T(g, x + (x === 1 ? ' win' : ' wins'), { x: bx(x), y: base + 42, size: 26, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m('bars', x * .6), .6, out);
+      if (x === 2) hi = g;
+    });
+    const sel = G(p, { o: 0 }); mk('rect', { x: bx(2) - 75, y: base - .432 * 800 - 8, width: 150, height: .432 * 800 + 8, rx: 10, fill: 'none', stroke: COL.task, 'stroke-width': 5 }, sel); show(sel, m('x2'));
+    text(p, 'two winners', 1190, 270, m('x2'), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 });
+    mline(p, ['3 × 0.6', E('2'), ' × 0.4 = 0.432'], 1190, 340, m('x2', 1.2), COL.task, 44);
+    mline(p, ['P(x) = C(n, x) ', 'p', E('x'), '(1 − p)', E('n − x')], 1190, 470, m('formula'), COL.chalk, 38);
+    mline(p, ['mean = np = 1.8'], 1190, 580, m('mv'), COL.good, 42);
+    mline(p, ['variance = np(1 − p) = 0.72'], 1190, 650, m('mv', 1.6), COL.good, 38);
+  }],
+
+  ['q2', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-binom', prompt: ['A fair coin is flipped 3 times. What is the probability of exactly 2 heads?'],
+    build: blanks([{ parts: ['P(x = 2) = ', { box: '0.375' }], why: 'C(3, 2) × 0.5² × 0.5 = 3 × 0.25 × 0.5 = 0.375.', hint: 'There are 3 ways to place the 2 heads; each way has probability 0.5³ = 0.125.' }]),
+  }], done) }],
+
+  ['normal', 'Normal distribution', (m) => {
+    const p = panel(0), base = 620, X = z => 800 + z * 125, Y = v => base - v * 760;
+    axisLine(p, 260, 1340, base, .1);
+    const bands = [[3, .22, 's3'], [2, .3, 's2'], [1, .45, 's1']];
+    bands.forEach(([k, a, mk_]) => { const e = path(p, areaD(NPDF, -k, k, X, Y, base), { fill: COL.whole, 'fill-opacity': a, stroke: 'none' }, { o: 0 }); show(e, m(mk_)); });
+    line(p, curveD(NPDF, -4, 4, X, Y), COL.chalk, m('a'), 5, 1.4);
+    ['−3σ', '−2σ', '−σ', 'μ', 'σ', '2σ', '3σ'].forEach((s, i) => text(p, s, X(i - 3), base + 36, m('a', .5 + i * .1), { size: 26, fill: COL.dim, anchor: 'middle' }));
+    [[1, '±1σ  →  about 68%', 's1'], [2, '±2σ  →  about 95%', 's2'], [3, '±3σ  →  about 99.7%', 's3']].forEach(([k, s, key], i) => {
+      const y = base + 80 + i * 44;
+      line(p, `M${X(-k)} ${y}H${X(k)}`, COL.whole, m(key), 4, .5);
+      text(p, s, X(k) + 24, y + 9, m(key, .2), { size: 28, fill: COL.whole, weight: 700 });
+    });
+    text(p, 'Real returns often have fatter tails.', 800, 150, m('note'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['zscore', 'Standardizing: z-scores', (m) => {
+    const p = panel(0), base = 540, X = z => 800 + z * 130, Y = v => base - v * 640;
+    mline(p, ['z = ', F('x − μ', 'σ')], 800, 160, m('a'), COL.chalk, 56);
+    axisLine(p, 380, 1220, base, .1);
+    const tail = path(p, areaD(NPDF, -4, -1, X, Y, base), { fill: COL.task, 'fill-opacity': .85, stroke: 'none' }, { o: 0 }); show(tail, m('tail'));
+    line(p, curveD(NPDF, -3.2, 3.2, X, Y), COL.chalk, .2, 5, 1.2);
+    for (let z = -3; z <= 3; z++) {
+      text(p, (8 + 12 * z) + '%', X(z), base + 38, m('ex', .2 + (z + 3) * .1), { size: 24, fill: COL.dim, anchor: 'middle' });
+      text(p, String(z).replace('-', '−'), X(z), base + 82, m('z', .2 + (z + 3) * .1), { size: 24, fill: COL.good, anchor: 'middle' });
+    }
+    text(p, 'return', 330, base + 38, m('ex'), { size: 24, fill: COL.dim, anchor: 'end' });
+    text(p, 'z', 330, base + 82, m('z'), { size: 24, fill: COL.good, anchor: 'end' });
+    text(p, 'μ = 8%, σ = 12%.  P(return < −4%)?', 800, 245, m('ex'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    line(p, `M${X(-1)} ${base}V${Y(NPDF(-1)) - 10}`, COL.task, m('z', 1), 3, .5);
+    mline(p, ['z = (−4 − 8) ÷ 12 = −1'], 800, 740, m('z', .6), COL.good, 46);
+    mline(p, ['P(Z < −1) ≈ 0.159, about 16%'], 800, 810, m('tail', .4), COL.task, 46);
+  }],
+
+  ['tdist', 'Student’s t-distribution', (m) => {
+    const p = panel(0), base = 640, X = x => 800 + x * 110, Y = v => base - v * 900;
+    axisLine(p, 230, 1370, base, .1);
+    line(p, curveD(NPDF, -5, 5, X, Y), COL.dim, m('a'), 4, 1);
+    line(p, curveD(TPDF(5), -5, 5, X, Y), COL.good, m('curve'), 5, 1.2);
+    line(p, curveD(TPDF(30), -5, 5, X, Y), COL.task, m('conv'), 4, 1);
+    const leg = (s, c, y, key, off = 0) => text(p, s, 200, y, m(key, off), { size: 30, fill: c, weight: 700 });
+    leg('normal', COL.dim, 190, 'a', .3); leg('t, 5 degrees of freedom', COL.good, 235, 'curve'); leg('t, 30 degrees of freedom', COL.task, 280, 'conv');
+    // zoom on the right tail, where the difference lives
+    const Xi = x => 1060 + (x - 2) * 110, Yi = v => 590 - v * 2200, ib = 590;
+    text(p, 'zoom: right tail (t has more probability out here)', 1225, 410, m('curve', 1.2), { size: 26, fill: COL.good, anchor: 'middle', weight: 700 });
+    axisLine(p, 1040, 1420, ib, m('curve', 1.2));
+    line(p, curveD(NPDF, 2, 5, Xi, Yi, 80), COL.dim, m('curve', 1.4), 4, .8);
+    line(p, curveD(TPDF(5), 2, 5, Xi, Yi, 80), COL.good, m('curve', 1.6), 5, .8);
+    [-4, -2, 0, 2, 4].forEach(v => text(p, String(v).replace('-', '−'), X(v), base + 36, .3, { size: 24, fill: COL.dim, anchor: 'middle' }));
+    text(p, '95% two-sided critical values', 1100, 190, m('crit'), { size: 30, fill: COL.chalk, weight: 700 });
+    text(p, '5 df:  2.571', 1100, 240, m('crit', .6), { size: 30, fill: COL.good, weight: 700 });
+    text(p, '30 df:  2.042', 1100, 285, m('crit', 2.2), { size: 30, fill: COL.task, weight: 700 });
+    text(p, 'normal:  1.960', 1100, 330, m('crit', 4.2), { size: 30, fill: COL.dim, weight: 700 });
+  }],
+
+  ['chisq', 'Chi-square and F distributions', (m) => {
+    const p = panel(0), base = 620, X = x => 250 + x * 55, Y = v => base - v * 1300;
+    axisLine(p, 230, 1360, base, .1);
+    for (let v = 0; v <= 20; v += 5) text(p, String(v), X(v), base + 36, .3, { size: 24, fill: COL.dim, anchor: 'middle' });
+    line(p, curveD(CHI(3), 0, 20, X, Y, 300), COL.whole, m('a'), 5, 1.4);
+    line(p, curveD(CHI(8), 0, 20, X, Y, 300), COL.good, m('df'), 5, 1.4);
+    text(p, 'chi-square, 3 df', 420, 260, m('a', 1), { size: 30, fill: COL.whole, weight: 700 });
+    text(p, 'chi-square, 8 df', 800, 400, m('df', .8), { size: 30, fill: COL.good, weight: 700 });
+    text(p, 'never negative, skewed right', 800, 160, m('a', 2.6), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'used to test a variance', 1040, 300, m('use'), { size: 30, fill: COL.task, weight: 700 });
+    mline(p, ['F = ', F('χ₁² ÷ df₁', 'χ₂² ÷ df₂')], 800, 760, m('f'), COL.nat, 52);
+    text(p, 'right-skewed, used to compare two variances', 800, 860, m('f', 3), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Discrete distributions: expected value and variance use probability-weighted outcomes.', 'w1'],
+     ['Uniform: equally likely. For a continuous variable, probability is area.', 'w2'],
+     ['Binomial counts successes. Normal: mean and standard deviation; z-scores standardize.', 'w3'],
+     ['t, chi-square and F depend on degrees of freedom and drive later tests.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 120, o: 0 });
+      mk('circle', { cx: 100, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 100, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 160, size: 29, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+
+  ['final1', 'Chapter practice', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+    id: 'p-z', prompt: ['Returns are normal with a mean of 8% and a standard deviation of 6%. What is the z-score of a 20% return?'],
+    build: blanks([{ parts: ['z = ', { box: '2' }], why: '(20 − 8) ÷ 6 = 2: the return is two standard deviations above the mean.', hint: 'z = (x − mean) ÷ standard deviation.' }]),
+  }, {
+    id: 'p-two', prompt: ['About what percentage of observations from a normal distribution lie within two standard deviations of the mean?'],
+    build: choice([['68%'], ['95%'], ['99.7%']], 1, 'About 95% lie within ±2σ. 68% is for ±1σ and 99.7% is for ±3σ.', ['That is the share within one standard deviation.', null, 'That is the share within three standard deviations.']),
+  }, {
+    id: 'p-t', prompt: ['Compared with the normal distribution, the Student’s t-distribution has:'],
+    build: choice([['Fatter tails'], ['Thinner tails'], ['A skewed shape']], 0, 'The t-distribution is symmetric but has fatter tails, especially with few degrees of freedom.', [null, 'Fatter tails reflect extra uncertainty from estimating the standard deviation.', 'It is symmetric, like the normal. The chi-square and F distributions are skewed.']),
+  }], done, 'Chapter practice') }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

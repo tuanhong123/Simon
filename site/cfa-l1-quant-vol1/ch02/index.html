@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Organizing, Visualizing, and Describing Data</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 2, title: 'Organizing, Visualizing, and Describing Data', minutes: 14, language: 'en', next: '../ch03/' };
+
+/* ---------- chapter drawing helpers ---------- */
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const pill = (p, str, color, x, y, t0, size = 30) => {
+  const w = uiW(str, size) + 56, g = G(p, { x, y, o: 0 });
+  mk('rect', { x: -w / 2, y: -size - 1, width: w, height: size * 2 + 2, rx: size, fill: 'none', stroke: color, 'stroke-width': 3 }, g);
+  T(g, str, { y: size / 3, size, fill: color, weight: 600, anchor: 'middle' });
+  show(g, t0);
+  return g;
+};
+const timeline = (p, x0, x1, y, t0) => draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), t0, .7);
+const line = (p, d, color, t0, w = 4, dur = .7) => draw(path(p, d, { stroke: color, 'stroke-width': w }, { d: 0 }), t0, dur);
+const dotG = (p, x, y, r, color) => { const g = G(p, { x, y, s: 0, o: 0 }); mk('circle', { r, fill: color, stroke: COL.board, 'stroke-width': 2 }, g); return g; };
+
+/* ---------- data (defined above BEATS) ---------- */
+const RET = [-3.4, -2.1, -1.2, -0.7, -0.2, 0.3, 0.6, 0.9, 1.1, 1.4, 1.7, 2.0, 2.3, 2.6, 3.0, 3.5, 4.1, 4.6, 5.2, 6.3];
+const EDGES = [-4, -2, 0, 2, 4, 6, 8];
+const COUNTS = EDGES.slice(0, -1).map((lo, i) => RET.filter(v => v >= lo && v < EDGES[i + 1]).length);   // 2 3 6 5 3 1
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Describing data', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Quantitative Methods, Chapter 2', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Organizing, Visualizing,', { x: 800, y: 400, size: 76, weight: 600, anchor: 'middle' });
+    T(g, 'and Describing Data', { x: 800, y: 490, size: 76, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'organize it, picture it, summarize it', 800, 620, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['types', 'Types of data', (m) => {
+    const p = panel(0);
+    show(pill(p, 'Data', COL.chalk, 800, 150, 0, 34), m('root'));
+    const node = (str, c, x, y, k, parent, ex) => {
+      show(pill(p, str, c, x, y, 0), m(k));
+      line(p, `M${parent[0]} ${parent[1] + 40}L${x} ${y - 40}`, c, m(k, -.1), 3, .5);
+      if (ex) text(p, ex, x, y + 74, m(k, .6), { size: 26, fill: COL.dim, anchor: 'middle' });
+    };
+    node('Numerical', COL.whole, 450, 330, 'num', [800, 150]);
+    node('Categorical', COL.nat, 1150, 330, 'cat', [800, 150]);
+    node('Discrete', COL.whole, 270, 540, 'disc', [450, 330], 'number of trades');
+    node('Continuous', COL.whole, 640, 540, 'cont', [450, 330], 'a stock price');
+    node('Nominal', COL.nat, 960, 540, 'nom', [1150, 330], 'sector: tech, energy');
+    node('Ordinal', COL.nat, 1340, 540, 'ord', [1150, 330], 'rating: AAA > AA > A');
+    text(p, 'The data type decides which statistics make sense.', 800, 790, m('end'), { size: 34, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['shapes', 'Cross-section, time series, panel', (m) => {
+    const p = panel(0), cell = 46, rows = 6, cols = 6;
+    text(p, 'Rows: companies    Columns: months', 800, 150, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const grid = (x0, title, key, lit, c) => {
+      const g = G(p, { o: 0 });
+      for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+        const on = lit(r, q);
+        mk('rect', { x: x0 + q * cell, y: 270 + r * cell, width: cell - 5, height: cell - 5, rx: 6, fill: on ? c : 'none', 'fill-opacity': on ? .85 : 1, stroke: on ? c : COL.faint, 'stroke-width': 2 }, g);
+      }
+      T(g, title, { x: x0 + cols * cell / 2 - 3, y: 270 + rows * cell + 56, size: 30, fill: c, weight: 600, anchor: 'middle' });
+      tw(g, { o: 1 }, m(key), .7);
+    };
+    grid(130, 'Cross-sectional', 'cs', (r, q) => q === 2, COL.whole);
+    grid(650, 'Time series', 'ts', (r, q) => r === 2, COL.good);
+    grid(1170, 'Panel', 'panel', () => true, COL.task);
+    text(p, 'one date, many companies', 268, 700, m('cs', 1), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'one company, many dates', 788, 700, m('ts', 1), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'many companies, many dates', 1308, 700, m('panel', 1), { size: 24, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['freq', 'Frequency distribution', (m) => {
+    const p = panel(0), base = 740, X = v => 300 + (v + 4) * 1000 / 12, bw = 1000 / 12 * 2;
+    timeline(p, 280, 1320, base, .1);
+    EDGES.forEach(e => text(p, e + '%', X(e), base + 40, .3, { size: 24, fill: COL.dim, anchor: 'middle' }));
+    text(p, 'Twenty monthly returns', 800, 140, m('dots'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const used = COUNTS.map(() => 0), dots = [];
+    RET.forEach((v, i) => {
+      const b = EDGES.findIndex((lo, j) => v >= lo && v < EDGES[j + 1]), k = used[b]++;
+      const g = dotG(p, X(v), 280, 18, COL.whole);
+      tw(g, { s: 1, o: 1 }, m('dots', .3 + i * .08), .3, back);
+      tw(g, { x: X(EDGES[b]) + bw / 2, y: base - 24 - k * 42 }, m('drop', i * .09), .8, out);
+      dots.push(g);
+    });
+    COUNTS.forEach((c, b) => {
+      const g = G(p, { o: 0 }), x = X(EDGES[b]) + 8;
+      mk('rect', { x, y: base - c * 42, width: bw - 16, height: c * 42, rx: 6, fill: COL.whole, 'fill-opacity': .85 }, g);
+      T(g, String(c), { x: x + (bw - 16) / 2, y: base - c * 42 - 14, size: 30, weight: 700, anchor: 'middle' });
+      const r = T(g, Math.round(c / 20 * 100) + '%', { x: x + (bw - 16) / 2, y: base - 16, size: 26, fill: COL.board, weight: 700, anchor: 'middle', o: 0 });
+      tw(g, { o: 1 }, m('bars', b * .2), .5);
+      tw(r, { o: 1 }, m('rel'), .6);
+      if (b === 2) pulse(g, m('tall'), 1.06);
+      dots.forEach((d, i) => { if (b === 0 && i < RET.length) hide(d, m('bars'), .5); });
+    });
+    text(p, 'count above the bar, relative frequency inside', 800, 840, m('rel', 1), { size: 26, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['charts', 'Choosing a chart', (m) => {
+    const p = panel(0), cols = [['Distribution', 'Histogram', COL.whole, 260, 'c1'], ['Comparison', 'Bar chart', COL.nat, 620, 'c2'],
+      ['Over time', 'Line chart', COL.good, 980, 'c3'], ['Relationship', 'Scatter plot', COL.task, 1340, 'c4']];
+    text(p, 'What question are you asking?', 800, 130, m('a'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    cols.forEach(([q, name, c, cx, k], i) => {
+      const g = G(p, { o: 0, y: 24 }), L = cx - 120, B = 560;
+      T(g, q, { x: cx, y: 250, size: 32, fill: c, weight: 600, anchor: 'middle' });
+      path(g, `M${L} ${B}H${L + 240}`, { stroke: COL.faint, 'stroke-width': 3 });
+      if (i === 0) [50, 110, 170, 120, 60].forEach((h, j) => mk('rect', { x: L + 6 + j * 46, y: B - h, width: 42, height: h, rx: 4, fill: c, 'fill-opacity': .85 }, g));
+      if (i === 1) [200, 150, 105, 60].forEach((w, j) => mk('rect', { x: L, y: B - 190 + j * 46, width: w, height: 34, rx: 4, fill: c, 'fill-opacity': .85 }, g));
+      if (i === 2) path(g, `M${L} ${B - 40}L${L + 50} ${B - 90}L${L + 100} ${B - 60}L${L + 150} ${B - 140}L${L + 200} ${B - 120}L${L + 240} ${B - 190}`, { stroke: c, 'stroke-width': 5 });
+      if (i === 3) [[20, 30], [50, 60], [80, 55], [110, 100], [140, 90], [170, 140], [200, 130], [225, 175]].forEach(([x, y]) => mk('circle', { cx: L + x, cy: B - 12 - y, r: 9, fill: c }, g));
+      T(g, name, { x: cx, y: 630, size: 34, weight: 600, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m(k), .7, out);
+    });
+    text(p, 'Match the chart to the question.', 800, 790, m('end'), { size: 34, fill: COL.task, anchor: 'middle', weight: 600 });
+  }],
+
+  ['mean', 'Mean, median, mode', (m) => {
+    const p = panel(0), x0 = 250, w = 1100, y = 520, X = v => x0 + v / 30 * w;
+    timeline(p, x0 - 20, x0 + w + 20, y, .1);
+    for (let v = 0; v <= 30; v += 5) { path(p, `M${X(v)} ${y - 8}V${y + 8}`, { stroke: COL.chalk, 'stroke-width': 2 }); text(p, String(v), X(v), y + 34, .3, { size: 22, fill: COL.dim, anchor: 'middle' }); }
+    const vals = [2, 3, 3, 4, 8], used = {}, dots = vals.map((v, i) => {
+      const k = used[v] = (used[v] || 0) + 1, g = dotG(p, X(v), y - 20 - (k - 1) * 34, 15, COL.whole);
+      tw(g, { s: 1, o: 1 }, m('dots', .2 + i * .25), .4, back);
+      return g;
+    });
+    const fulc = G(p, { x: X(4), y: y + 14, o: 0 });
+    mk('path', { d: 'M0 0L-24 44L24 44Z', fill: COL.task }, fulc);
+    show(fulc, m('mean'));
+    const mean4 = text(p, 'mean = 4', X(4), y + 112, m('mean', .4), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+    const mean8 = T(p, 'mean = 8', { x: X(8), y: y + 112, size: 32, fill: COL.task, anchor: 'middle', weight: 700, o: 0 });
+    const ring = G(p, { x: X(3), y: y - 54, o: 0 }); mk('circle', { r: 22, fill: 'none', stroke: COL.good, 'stroke-width': 4 }, ring);
+    show(ring, m('median'));
+    text(p, 'median = 3', X(3) + 50, y - 90, m('median', .3), { size: 32, fill: COL.good, weight: 700 });
+    const mode = G(p, { x: X(3), y: y - 37, o: 0 }); mk('rect', { x: -21, y: -52, width: 42, height: 104, rx: 21, fill: 'none', stroke: COL.nat, 'stroke-width': 4 }, mode);
+    show(mode, m('mode'));
+    text(p, 'mode = 3', X(3) - 50, y - 40, m('mode', .3), { size: 32, fill: COL.nat, anchor: 'end', weight: 700 });
+    tw(dots[4], { x: X(28) }, m('outlier'), 1.3);
+    tw(fulc, { x: X(8) }, m('outlier'), 1.3);
+    hide(mean4, m('outlier'), .3); show(mean8, m('outlier', 1.3));
+    text(p, 'the outlier drags the mean, not the median', 800, 800, m('note'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['q1', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-mean', prompt: ['Find the mean of the values ', $m('4, 8, 6, 2'), '.'],
+    build: blanks([{ parts: ['mean = ', { box: '5' }], why: 'The sum is 4 + 8 + 6 + 2 = 20, and 20 ÷ 4 = 5.', hint: 'Add the values, then divide by how many there are (4).' }]),
+  }], done) }],
+
+  ['geo', 'Geometric mean', (m) => {
+    const p = panel(0), base = 700, k = 3.2, bx = [380, 800, 1220];
+    timeline(p, 250, 1350, base, .1);
+    text(p, 'Start with $100:   +10%, then −10%', 800, 140, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [[100, 'Start', 'a'], [110, 'Year 1', 'y1'], [99, 'Year 2', 'y2']].forEach(([v, lab, key], i) => {
+      const g = G(p, { y: 30, o: 0 });
+      mk('rect', { x: bx[i] - 70, y: base - v * k, width: 140, height: v * k, rx: 6, fill: i === 2 ? COL.bad : COL.task, 'fill-opacity': .88 }, g);
+      T(g, '$' + v, { x: bx[i], y: base - v * k - 16, size: 38, weight: 700, anchor: 'middle' });
+      T(g, lab, { x: bx[i], y: base + 38, size: 26, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1, y: 0 }, m(i ? key : 'a', i ? 0 : .6), .6, out);
+    });
+    text(p, 'arithmetic mean: (+10% − 10%) ÷ 2 = 0%   but money was lost', 800, 790, m('arith'), { size: 30, fill: COL.bad, anchor: 'middle', weight: 600 });
+    mline(p, ['(1.10 × 0.90)', E('1/2'), ' − 1 ≈ −0.50%'], 800, 850, m('geo'), COL.good, 48);
+  }],
+
+  ['harmonic', 'Harmonic mean', (m) => {
+    const p = panel(0), x0 = 300, u = 6, y = 420;
+    text(p, 'Invest $1,000 each time', 800, 140, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    const row = (price, shares, yy, c, key) => {
+      const g = G(p, { o: 0 });
+      mk('rect', { x: x0, y: yy, width: shares * u, height: 70, rx: 8, fill: c, 'fill-opacity': .85 }, g);
+      T(g, `$${price} a share → ${shares} shares`, { x: x0 + shares * u + 24, y: yy + 46, size: 32, weight: 600 });
+      tw(g, { o: 1 }, m(key), .6);
+    };
+    row(10, 100, y, COL.whole, 'b1'); row(20, 50, y + 110, COL.nat, 'b2');
+    line(p, `M${x0} ${y + 250}H${x0 + 900}`, COL.chalk, m('tot'), 3);
+    text(p, '$2,000 bought 150 shares → $13.33 per share', 800, y + 310, m('tot', .5), { size: 38, fill: COL.good, anchor: 'middle', weight: 700 });
+    mline(p, ['2 ÷ (1/10 + 1/20) = 13.33   (harmonic)'], 800, y + 395, m('cmp'), COL.task, 42);
+    text(p, 'the arithmetic mean, $15, overstates the cost', 800, y + 455, m('cmp', 2.2), { size: 28, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['quantiles', 'Quantiles', (m) => {
+    const p = panel(0), vals = [3, 5, 6, 8, 9, 12, 13, 15, 18, 21, 30], X = i => 220 + i * 116, y = 470;
+    text(p, 'Eleven sorted values', 800, 130, m('a'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    mline(p, ['position = (n + 1) × ', F('p', '100')], 800, 235, m('pos'), COL.chalk, 52);
+    timeline(p, 150, 1450, y + 50, .2);
+    vals.forEach((v, i) => {
+      const g = dotG(p, X(i), y, 31, COL.whole);
+      T(g, String(v), { y: 9, size: 26, fill: COL.board, weight: 700, anchor: 'middle' });
+      tw(g, { s: 1, o: 1 }, .3 + i * .08, .3, back);
+    });
+    const mark = (i, label, c, key, extra) => {
+      const g = G(p, { x: X(i), y: y + 110, o: 0 });
+      path(g, 'M0 -34V-58', { stroke: c, 'stroke-width': 4 });
+      T(g, label, { y: 6, size: 34, fill: c, weight: 700, anchor: 'middle' });
+      T(g, extra, { y: 44, size: 24, fill: COL.dim, anchor: 'middle' });
+      tw(g, { o: 1 }, m(key), .5);
+    };
+    mark(5, 'median = 12', COL.good, 'med', 'position 6');
+    mark(2, 'Q1 = 6', COL.task, 'q1', 'position 3');
+    mark(8, 'Q3 = 18', COL.task, 'q3', 'position 9');
+    line(p, `M${X(2)} 665V690H${X(8)}V665`, COL.nat, m('iqr'), 4);
+    text(p, 'interquartile range = 18 − 6 = 12', X(5), 745, m('iqr', .4), { size: 34, fill: COL.nat, anchor: 'middle', weight: 700 });
+  }],
+
+  ['spread', 'Dispersion', (m) => {
+    const p = panel(0), X = v => 300 + v * 90, y = 500;
+    timeline(p, 360, 1260, y, .1);
+    [2, 4, 6, 8, 10].forEach((v, i) => {
+      const g = dotG(p, X(v), y, 18, COL.whole); tw(g, { s: 1, o: 1 }, .3 + i * .15, .35, back);
+      text(p, String(v), X(v), y + 52, .5 + i * .15, { size: 24, fill: COL.dim, anchor: 'middle' });
+    });
+    line(p, `M${X(6)} 310V560`, COL.task, .9, 3, .5);
+    text(p, 'mean = 6', X(6), 285, 1.1, { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+    line(p, `M${X(2)} 600V624H${X(10)}V600`, COL.nat, m('range'), 4);
+    text(p, 'range = 10 − 2 = 8', X(6), 668, m('range', .3), { size: 30, fill: COL.nat, anchor: 'middle', weight: 700 });
+    [[2, '−4', 350], [4, '−2', 410], [8, '+2', 410], [10, '+4', 350]].forEach(([v, s2, ay], i) => {
+      const d = v < 6 ? 1 : -1;
+      line(p, `M${X(6)} ${ay}H${X(v)}`, COL.good, m('dev', i * .35), 3, .5);
+      line(p, `M${X(v) + 14 * d} ${ay - 12}L${X(v)} ${ay}L${X(v) + 14 * d} ${ay + 12}`, COL.good, m('dev', i * .35 + .3), 3, .2);
+      text(p, s2, (X(6) + X(v)) / 2, ay - 16, m('dev', i * .35 + .3), { size: 28, fill: COL.good, anchor: 'middle', weight: 700 });
+    });
+    mline(p, ['MAD = (4 + 2 + 0 + 2 + 4) ÷ 5 = 2.4'], 800, 740, m('mad'), COL.chalk, 40);
+    mline(p, ['s', E('2'), ' = (16 + 4 + 0 + 4 + 16) ÷ 4 = 10'], 800, 800, m('var'), COL.chalk, 40);
+    mline(p, ['s = √10 ≈ 3.16'], 800, 860, m('sd'), COL.good, 44);
+  }],
+
+  ['q2', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-var', prompt: ['Find the sample variance of ', $m('3, 5, 7'), '.'],
+    build: blanks([{ parts: ['s', E('2'), ' = ', { box: '4' }], why: 'The mean is 5. Squared deviations: 4 + 0 + 4 = 8. Divide by n − 1 = 2, so s² = 4.', hint: 'Divide by n − 1 (that is 2), not by n.' }]),
+  }], done) }],
+
+  ['cv', 'Coefficient of variation', (m) => {
+    const p = panel(0), base = 580, k = 14;
+    text(p, 'Which fund trades risk for return better?', 800, 130, m('a'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    timeline(p, 300, 1300, base, .1);
+    const fund = (x, mean, sd, name, c, key) => {
+      const g = G(p, { o: 0 });
+      mk('rect', { x: x - 75, y: base - mean * k, width: 150, height: mean * k, rx: 6, fill: c, 'fill-opacity': .85 }, g);
+      path(g, `M${x} ${base - (mean + sd) * k}V${base - (mean - sd) * k}M${x - 24} ${base - (mean + sd) * k}H${x + 24}M${x - 24} ${base - (mean - sd) * k}H${x + 24}`, { stroke: COL.chalk, 'stroke-width': 4 });
+      T(g, name, { x, y: base + 130, size: 32, weight: 700, anchor: 'middle' });
+      T(g, `mean ${mean}%`, { x, y: base + 168, size: 26, fill: COL.dim, anchor: 'middle' });
+      T(g, `± ${sd}% st. dev.`, { x: x + 100, y: base - mean * k - 22, size: 26, fill: COL.dim });
+      tw(g, { o: 1 }, m(key), .7);
+    };
+    fund(500, 10, 15, 'Fund A', COL.whole, 'fa'); fund(1100, 6, 6, 'Fund B', COL.nat, 'fb');
+    text(p, 'CV = 15 ÷ 10 = 1.5', 500, 820, m('cv'), { size: 34, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, 'CV = 6 ÷ 6 = 1.0  (lower is better)', 1100, 820, m('cv', 2.6), { size: 34, fill: COL.nat, anchor: 'middle', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Know the data type: numerical or categorical; cross-sectional, time-series or panel.', 'w1'],
+     ['Frequency tables and the right chart reveal the shape of data.', 'w2'],
+     ['Mean, median, mode locate the center. Median resists outliers; geometric mean fits returns.', 'w3'],
+     ['Range, variance, standard deviation and CV measure spread.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 120, o: 0 });
+      mk('circle', { cx: 100, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 100, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 160, size: 30, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+
+  ['final1', 'Chapter practice', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+    id: 'p-robust', prompt: ['Which measure of the center is least affected by one extreme value?'],
+    build: choice([['Arithmetic mean'], ['Median'], ['Geometric mean']], 1, 'The median depends on the middle position, not on how extreme the largest value is.',
+      ['The mean moves toward an outlier.', null, 'The geometric mean also uses every value, so an extreme one still pulls it.']),
+  }, {
+    id: 'p-geo', prompt: ['A fund returns +21% in year 1 and −19% in year 2. What is its geometric mean annual return, in percent?'],
+    build: blanks([{ parts: ['geometric mean = ', { box: '-1' }, ' %'], why: '1.21 × 0.81 = 0.9801, whose square root is 0.99, so the mean return is −1%.', hint: 'Multiply the growth factors 1.21 and 0.81, take the square root, subtract 1.' }]),
+  }, {
+    id: 'p-cv', prompt: ['An asset has a mean return of 8% and a standard deviation of 4%. What is its coefficient of variation?'],
+    build: blanks([{ parts: ['CV = ', { box: '0.5' }], why: 'CV = standard deviation ÷ mean = 4 ÷ 8 = 0.5.', hint: 'Divide the standard deviation by the mean.' }]),
+  }], done, 'Chapter practice') }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

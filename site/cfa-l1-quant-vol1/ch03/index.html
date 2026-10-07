@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Probability Concepts</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 3, title: 'Probability Concepts', minutes: 10, language: 'en', next: '../ch04/' };
+
+/* ---------- chapter drawing helpers ---------- */
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const pill = (p, str, color, x, y, t0, size = 30) => {
+  const w = uiW(str, size) + 56, g = G(p, { x, y, o: 0 });
+  mk('rect', { x: -w / 2, y: -size - 1, width: w, height: size * 2 + 2, rx: size, fill: 'none', stroke: color, 'stroke-width': 3 }, g);
+  T(g, str, { y: size / 3, size, fill: color, weight: 600, anchor: 'middle' });
+  show(g, t0);
+  return g;
+};
+const line = (p, d, color, t0, w = 4, dur = .7) => draw(path(p, d, { stroke: color, 'stroke-width': w }, { d: 0 }), t0, dur);
+// 10 × 10 grid of cells (100 equally likely cases). Returns cells[r][c] and a helper to colour a set of cells.
+const GRID_BASE = '#2f423c';
+function cells100(p, x0, y0, size, t0) {
+  const g = G(p, { o: 0 }), cells = [];
+  for (let r = 0; r < 10; r++) { cells.push([]); for (let c = 0; c < 10; c++) cells[r].push(mk('rect', { x: x0 + c * size, y: y0 + r * size, width: size - 4, height: size - 4, rx: 5, fill: GRID_BASE }, g)); }
+  tw(g, { o: 1 }, t0, .6);
+  const paint = (pred, color, at, dur = .5) => cells.forEach((row, r) => row.forEach((el, c) => { if (pred(r, c)) tw(el, { c_fill: color }, at, dur); }));
+  const fade = (pred, o, at) => cells.forEach((row, r) => row.forEach((el, c) => { if (pred(r, c)) tw(el, { o }, at, .5); }));
+  return { cells, paint, fade };
+}
+const inA = (r, c) => c < 5, inB = (r, c) => (c < 5 && r < 6) || (c >= 5 && r < 2);
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Probability', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Quantitative Methods, Chapter 3', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Probability Concepts', { x: 800, y: 450, size: 88, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'a language for uncertainty', 800, 600, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['basics', 'Probability basics', (m) => {
+    const p = panel(0), x0 = 250, w = 1100, y = 330;
+    text(p, 'Every probability is between 0 and 1', 800, 140, m('rules'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'Exclusive and exhaustive events add up to 1', 800, 195, m('rules', 3.2), { size: 32, fill: COL.dim, anchor: 'middle' });
+    let acc = 0;
+    [['Up', .45, COL.good], ['Flat', .15, COL.whole], ['Down', .40, COL.bad]].forEach(([name, pr, c], i) => {
+      const g = G(p, { o: 0 }), x = x0 + acc * w;
+      mk('rect', { x, y, width: pr * w - 4, height: 130, rx: 8, fill: c, 'fill-opacity': .88 }, g);
+      T(g, name, { x: x + pr * w / 2, y: y + 62, size: 34, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, Math.round(pr * 100) + '%', { x: x + pr * w / 2, y: y + 104, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      tw(g, { o: 1 }, m('bar', .4 + i * .9), .6); acc += pr;
+    });
+    line(p, `M${x0} ${y - 24}H${x0 + w}`, COL.chalk, m('bar', 3.4), 3);
+    text(p, 'total = 100%', 800, y - 40, m('bar', 3.6), { size: 30, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    show(pill(p, 'Empirical: observed frequencies', COL.whole, 800, 570, 0, 28), m('emp'));
+    show(pill(p, 'Subjective: judgment', COL.task, 800, 660, 0, 28), m('subj'));
+    show(pill(p, 'A priori: logic, like a fair die', COL.good, 800, 750, 0, 28), m('apr'));
+  }],
+
+  ['odds', 'Odds', (m) => {
+    const p = panel(0), x0 = 440, s = 170, y = 300;
+    mline(p, ['P(event) = 1/4'], 800, 170, m('a'), COL.dim, 44);
+    for (let i = 0; i < 4; i++) {
+      const g = G(p, { o: 0 });
+      mk('rect', { x: x0 + i * s, y, width: s - 10, height: 130, rx: 10, fill: i === 0 ? COL.task : 'none', 'fill-opacity': .9, stroke: i === 0 ? COL.task : COL.faint, 'stroke-width': 3 }, g);
+      tw(g, { o: 1 }, m('sq', i * .15), .4);
+    }
+    mline(p, ['odds for  =  ', F('P', '1 − P'), '  =  ', F('0.25', '0.75'), '  =  1 to 3'], 800, 580, m('for'), COL.task, 54);
+    mline(p, ['odds against  =  3 to 1'], 800, 690, m('against'), COL.bad, 54);
+    mline(p, ['odds of a to b   →   P = ', F('a', 'a + b')], 800, 810, m('back'), COL.good, 50);
+  }],
+
+  ['q1', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-odds', prompt: ['An event has a probability of 20%. The odds against the event are ', $m('□'), ' to 1.'],
+    build: blanks([{ parts: ['odds against = ', { box: '4' }, ' to 1'], why: 'Odds against = (1 − 0.2) ÷ 0.2 = 0.8 ÷ 0.2 = 4, so 4 to 1.', hint: 'Odds against = (1 − P) ÷ P.' }]),
+  }], done) }],
+
+  ['conditional', 'Conditional and joint probability', (m) => {
+    const p = panel(0), x0 = 150, y0 = 190, sz = 56;
+    const g = cells100(p, x0, y0, sz, .2);
+    g.paint(inA, COL.whole, m('a'));
+    text(p, 'A: technology sector (50 of 100)', 780, 240, m('a'), { size: 32, fill: COL.whole, weight: 700 });
+    g.paint(inB, COL.nat, m('b'));
+    g.paint((r, c) => inA(r, c) && inB(r, c), COL.task, m('ab'));
+    text(p, 'B: stock rose (40 of 100)', 780, 320, m('b'), { size: 32, fill: COL.nat, weight: 700 });
+    text(p, 'A and B: 30 of 100', 780, 400, m('ab'), { size: 32, fill: COL.task, weight: 700 });
+    text(p, 'P(A and B) = 0.3', 780, 450, m('ab', .6), { size: 36, fill: COL.task, weight: 700 });
+    g.fade((r, c) => !inB(r, c), .15, m('cond'));
+    text(p, 'knowing B, look only at the 40 cells', 780, 540, m('cond'), { size: 30, fill: COL.dim });
+    mline(p, ['P(A | B) = ', F('P(A and B)', 'P(B)'), ' = ', F('0.3', '0.4'), ' = 0.75'], 1090, 700, m('eq'), COL.chalk, 46);
+  }],
+
+  ['rules', 'Multiplication and addition rules', (m) => {
+    const p = panel(0), x0 = 150, y0 = 190, sz = 56;
+    const g = cells100(p, x0, y0, sz, 0);
+    g.paint(inA, COL.whole, 0, .01); g.paint(inB, COL.nat, 0, .01); g.paint((r, c) => inA(r, c) && inB(r, c), COL.task, 0, .01);
+    text(p, 'Multiplication rule', 780, 250, m('mult'), { size: 34, fill: COL.task, weight: 700 });
+    mline(p, ['P(A and B) = P(A | B) × P(B)'], 1080, 320, m('mult', .3), COL.chalk, 40);
+    mline(p, ['= 0.75 × 0.4 = 0.3'], 1080, 385, m('mult', 1.3), COL.task, 44);
+    text(p, 'Addition rule', 780, 520, m('add'), { size: 34, fill: COL.good, weight: 700 });
+    mline(p, ['P(A or B) = P(A) + P(B) − P(A and B)'], 1080, 590, m('add', .3), COL.chalk, 38);
+    mline(p, ['= 0.5 + 0.4 − 0.3 = 0.6'], 1080, 655, m('add', 2.2), COL.good, 44);
+    g.paint((r, c) => inA(r, c) || inB(r, c), COL.good, m('add', 2.2), .6);
+    g.fade((r, c) => !(inA(r, c) || inB(r, c)), .25, m('add', 2.2));
+  }],
+
+  ['q2', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-add', prompt: ['P(A) = 0.5, P(B) = 0.3 and P(A and B) = 0.1. What is P(A or B)?'],
+    build: blanks([{ parts: ['P(A or B) = ', { box: '0.7' }], why: '0.5 + 0.3 − 0.1 = 0.7. The overlap is subtracted because it was counted twice.', hint: 'Add the two probabilities, then subtract P(A and B).' }]),
+  }], done) }],
+
+  ['independent', 'Independent events', (m) => {
+    const p = panel(0), x0 = 150, y0 = 190, sz = 56, A = (r, c) => c < 5, B = (r, c) => r < 4;
+    const g = cells100(p, x0, y0, sz, m('grid', -.3));
+    g.paint(A, COL.whole, m('grid'));
+    g.paint(B, COL.nat, m('grid', .8));
+    g.paint((r, c) => A(r, c) && B(r, c), COL.task, m('ov'));
+    text(p, 'A: left half, P(A) = 0.5', 780, 250, m('grid'), { size: 32, fill: COL.whole, weight: 700 });
+    text(p, 'B: top four rows, P(B) = 0.4', 780, 320, m('grid', .8), { size: 32, fill: COL.nat, weight: 700 });
+    text(p, 'overlap: 20 cells, P(A and B) = 0.2', 780, 390, m('ov'), { size: 32, fill: COL.task, weight: 700 });
+    mline(p, ['0.2 = 0.5 × 0.4'], 1080, 490, m('test'), COL.good, 50);
+    mline(p, ['P(A | B) = ', F('0.2', '0.4'), ' = 0.5 = P(A)'], 1080, 600, m('test', 1.6), COL.good, 46);
+    text(p, 'Independent: P(A and B) = P(A) × P(B)', 1080, 720, m('note'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'The stocks earlier were not: 0.75 ≠ 0.5', 1080, 775, m('note', 3.2), { size: 28, fill: COL.bad, anchor: 'middle' });
+  }],
+
+  ['total', 'Total probability rule', (m) => {
+    const p = panel(0), rootX = 220, upY = 300, dnY = 620;
+    const node = (str, c, x, y, t0, size = 28) => show(pill(p, str, c, x, y, 0, size), t0);
+    text(p, 'Probability the stock rises?', 800, 130, m('a'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    node('Market', COL.chalk, rootX, 460, m('a'));
+    node('up  0.6', COL.good, 620, upY, m('a', 1.5)); node('down  0.4', COL.bad, 620, dnY, m('a', 2.3));
+    line(p, `M${rootX + 90} 440L${620 - 70} ${upY + 20}`, COL.good, m('a', 1.3), 3, .5);
+    line(p, `M${rootX + 90} 480L${620 - 70} ${dnY - 20}`, COL.bad, m('a', 2.1), 3, .5);
+    const leaf = (y, str, c, k, parentY, hi) => { node(str, c, 1020, y, m(k)); line(p, `M690 ${parentY}L${1020 - 90} ${y}`, c, m(k, -.1), 3, .4); };
+    leaf(upY - 60, 'rises  0.7', COL.good, 's1', upY); leaf(upY + 60, 'falls  0.3', COL.faint, 's1', upY);
+    leaf(dnY - 60, 'rises  0.2', COL.good, 's2', dnY); leaf(dnY + 60, 'falls  0.8', COL.faint, 's2', dnY);
+    text(p, '0.6 × 0.7 = 0.42', 1230, upY - 50, m('sum'), { size: 30, fill: COL.task, weight: 700 });
+    text(p, '0.4 × 0.2 = 0.08', 1230, dnY - 50, m('sum', 1.2), { size: 30, fill: COL.task, weight: 700 });
+    mline(p, ['P(rises) = 0.42 + 0.08 = 0.50'], 800, 840, m('sum', 2.4), COL.good, 52);
+  }],
+
+  ['counting', 'Counting', (m) => {
+    const p = panel(0), L = [[600, 260], [600, 400]], R = [[1000, 220], [1000, 330], [1000, 440]];
+    text(p, 'Task 1: 2 ways', 600, 170, m('mult'), { size: 30, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, 'Task 2: 3 ways', 1000, 150, m('mult'), { size: 30, fill: COL.nat, anchor: 'middle', weight: 700 });
+    L.forEach(([x, y]) => { const g = G(p, { x, y, s: 0, o: 0 }); mk('circle', { r: 26, fill: COL.whole }, g); tw(g, { s: 1, o: 1 }, m('mult', .2), .4, back); });
+    R.forEach(([x, y]) => { const g = G(p, { x, y, s: 0, o: 0 }); mk('circle', { r: 26, fill: COL.nat }, g); tw(g, { s: 1, o: 1 }, m('mult', .4), .4, back); });
+    L.forEach(([lx, ly], i) => R.forEach(([rx, ry], j) => line(p, `M${lx + 28} ${ly}L${rx - 28} ${ry}`, COL.chalk, m('mult', 1 + (i * 3 + j) * .25), 2.5, .3)));
+    text(p, '2 × 3 = 6 ways', 800, 540, m('mult', 2.8), { size: 44, fill: COL.task, anchor: 'middle', weight: 700 });
+    mline(p, ['3! = 3 × 2 × 1 = 6 orders'], 800, 650, m('fact'), COL.good, 48);
+    mline(p, ['5! = 5 × 4 × 3 × 2 × 1 = 120'], 800, 750, m('five'), COL.good, 48);
+  }],
+
+  ['combos', 'Combinations and permutations', (m) => {
+    const p = panel(0), combo = ['AB', 'AC', 'AD', 'BC', 'BD', 'CD'], perm = ['AB', 'BA', 'AC', 'CA', 'AD', 'DA', 'BC', 'CB', 'BD', 'DB', 'CD', 'DC'];
+    text(p, 'Choose 2 from A, B, C, D', 800, 130, m('a'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'Combinations (order ignored): 6', 800, 215, m('comb'), { size: 34, fill: COL.whole, anchor: 'middle', weight: 700 });
+    combo.forEach((s, i) => show(pill(p, s, COL.whole, 300 + i * 200, 295, 0, 26), m('comb', .4 + i * .25)));
+    text(p, 'Permutations (order matters): 12', 800, 410, m('perm'), { size: 34, fill: COL.nat, anchor: 'middle', weight: 700 });
+    perm.forEach((s, i) => show(pill(p, s, COL.nat, 300 + (i % 6) * 200, 490 + Math.floor(i / 6) * 80, 0, 26), m('perm', .4 + i * .15)));
+    mline(p, ['C(n, r) = ', F('n!', 'r!(n − r)!')], 480, 760, m('fc'), COL.whole, 46);
+    mline(p, ['P(n, r) = ', F('n!', '(n − r)!')], 1130, 760, m('fp'), COL.nat, 46);
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Probabilities lie in [0, 1] and sum to 1 over exclusive, exhaustive events. Odds = P ÷ (1 − P).', 'w1'],
+     ['Conditional, multiplication and addition rules link joint and single probabilities.', 'w2'],
+     ['Independent events multiply. Total probability weights the scenarios.', 'w3'],
+     ['Count with factorials, combinations (order ignored) and permutations (order matters).', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 120, o: 0 });
+      mk('circle', { cx: 100, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 100, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 160, size: 29, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+
+  ['final1', 'Chapter practice', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+    id: 'p-odds', prompt: ['The odds for an event are 2 to 3. What is the probability of the event?'],
+    build: choice([['40%'], ['60%'], ['66.7%']], 0, 'Odds of a to b give P = a ÷ (a + b) = 2 ÷ 5 = 40%.',
+      [null, 'That is 3 ÷ 5, the probability the event does not happen.', 'That is 2 ÷ 3, which divides by b instead of a + b.']),
+  }, {
+    id: 'p-total', prompt: ['The market is up with probability 0.5, otherwise down. A stock rises with probability 0.8 if the market is up and 0.2 if it is down. What is the probability the stock rises?'],
+    build: blanks([{ parts: ['P(rises) = ', { box: '0.5' }], why: '0.5 × 0.8 + 0.5 × 0.2 = 0.4 + 0.1 = 0.5.', hint: 'Weight each conditional probability by its scenario probability and add.' }]),
+  }, {
+    id: 'p-perm', prompt: ['An analyst ranks her top 3 funds from a list of 5. How many different ranked lists are possible?'],
+    build: blanks([{ parts: ['number of rankings = ', { box: '60' }], why: 'Order matters, so use permutations: 5 × 4 × 3 = 60 (that is 5! ÷ 2!).', hint: 'Choose a first, second and third place: 5 × 4 × 3.' }]),
+  }], done, 'Chapter practice') }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

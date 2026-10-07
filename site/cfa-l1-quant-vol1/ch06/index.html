@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Basics of Hypothesis Testing</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 6, title: 'Basics of Hypothesis Testing', minutes: 13, language: 'en' };
+
+/* ---------- chapter drawing helpers ---------- */
+const mline = (p, parts, x, y, t0, fill = COL.chalk, size = 48, anchor = 'middle') => { const e = M(p, [].concat(parts), { x, y, size, fill, anchor, o: 0 }); show(e, t0); return e; };
+const text = (p, str, x, y, t0, { size = 30, fill = COL.chalk, anchor = 'start', weight = 500 } = {}) => { const e = T(p, str, { x, y, size, fill, anchor, weight, o: 0 }); show(e, t0); return e; };
+const pill = (p, str, color, x, y, t0, size = 30) => {
+  const w = uiW(str, size) + 56, g = G(p, { x, y, o: 0 });
+  mk('rect', { x: -w / 2, y: -size - 1, width: w, height: size * 2 + 2, rx: size, fill: 'none', stroke: color, 'stroke-width': 3 }, g);
+  T(g, str, { y: size / 3, size, fill: color, weight: 600, anchor: 'middle' });
+  show(g, t0);
+  return g;
+};
+const line = (p, d, color, t0, w = 4, dur = .7) => { const e = path(p, d, { stroke: color, 'stroke-width': w }, { d: 0 }); draw(e, t0, dur); return e; };
+const axisLine = (p, x0, x1, y, t0) => draw(path(p, `M${x0} ${y}H${x1}`, { stroke: COL.chalk, 'stroke-width': 3 }, { d: 0 }), t0, .7);
+const NPDF = x => Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI);
+const curveD = (f, lo, hi, X, Y, n = 200) => { let d = ''; for (let i = 0; i <= n; i++) { const x = lo + (hi - lo) * i / n; d += (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(f(x)).toFixed(1); } return d; };
+const areaD = (f, a, b, X, Y, base, n = 100) => curveD(f, a, b, X, Y, n) + `L${X(b).toFixed(1)} ${base}L${X(a).toFixed(1)} ${base}Z`;
+const shade = (p, f, a, b, X, Y, base, color, t0, op = .8) => { const e = path(p, areaD(f, a, b, X, Y, base), { fill: color, 'fill-opacity': op, stroke: 'none' }, { o: 0 }); show(e, t0); return e; };
+
+/* ---------- beats ---------- */
+const BEATS = [
+  ['intro', 'Hypothesis testing', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Quantitative Methods, Chapter 6', { x: 800, y: 330, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Basics of Hypothesis Testing', { x: 800, y: 450, size: 80, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'from a claim to a decision', 800, 600, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['why', 'Why test?', (m) => {
+    const p = panel(0), base = 640, X = x => 800 + x * 330, f = x => NPDF(x / .5) / .5, Y = v => base - v * 360;
+    text(p, 'Claim: the mean monthly return is 0', 800, 150, m('a'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    text(p, 'Observed sample mean: 1.2%', 800, 205, m('a', 3.5), { size: 32, fill: COL.task, anchor: 'middle', weight: 600 });
+    axisLine(p, 120, 1480, base, .1);
+    [-1, 0, 1, 2].forEach(v => text(p, v + '%', X(v), base + 38, .3, { size: 26, fill: COL.dim, anchor: 'middle' }));
+    line(p, curveD(f, -2, 2, X, Y), COL.whole, m('curve'), 5, 1.4);
+    text(p, 'sample means if the true mean is 0', 800, 330, m('curve', 1), { size: 28, fill: COL.whole, anchor: 'middle' });
+    text(p, 'SE = 0.5', X(0) - 400, base - 60, m('curve', 1.6), { size: 30, fill: COL.dim, weight: 700 });
+    shade(p, f, 1.2, 2, X, Y, base, COL.task, m('far'), .9);
+    const mk_ = G(p, { x: X(1.2), o: 0 });
+    path(mk_, `M0 ${base + 5}V${base - 150}`, { stroke: COL.task, 'stroke-width': 4 });
+    mk('circle', { cy: base - 150, r: 10, fill: COL.task }, mk_);
+    show(mk_, m('obs'));
+    text(p, 'far in the tail: luck is a poor explanation', 800, 780, m('far', .6), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['steps', 'The seven steps', (m) => {
+    const p = panel(0), S7 = ['State the hypotheses', 'Identify the test statistic and its distribution', 'Specify the significance level', 'State the decision rule',
+      'Collect the data and calculate the statistic', 'Make the statistical decision', 'Make the economic decision'];
+    text(p, 'Every test follows the same steps', 800, 130, m('a'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    S7.forEach((s, i) => {
+      const g = G(p, { x: -16, y: 230 + i * 85, o: 0 }), c = i === 6 ? COL.good : COL.task;
+      mk('circle', { cx: 280, cy: -10, r: 27, fill: c }, g);
+      T(g, String(i + 1), { x: 280, y: 2, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, s, { x: 340, size: 34, weight: 600, fill: i === 6 ? COL.good : COL.chalk });
+      tw(g, { o: 1, x: 0 }, m('s' + (i + 1)), .6);
+    });
+  }],
+
+  ['hypotheses', 'Null and alternative', (m) => {
+    const p = panel(0), base = 560, Xl = z => 440 + z * 95, Xr = z => 1160 + z * 95, Y = v => base - v * 520;
+    text(p, 'H₀ is assumed true unless the evidence says otherwise', 800, 140, m('a'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['Two-sided', Xl, 440], ['One-sided', Xr, 1160]].forEach(([title, X, cx], i) => {
+      text(p, title, cx, 235, m(i ? 'one' : 'two'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 700 });
+      axisLine(p, cx - 330, cx + 330, base, m(i ? 'one' : 'two'));
+      line(p, curveD(NPDF, -3.4, 3.4, X, Y), COL.whole, m(i ? 'one' : 'two'), 5, 1);
+    });
+    shade(p, NPDF, -3.4, -1.96, Xl, Y, base, COL.bad, m('two', .8)); shade(p, NPDF, 1.96, 3.4, Xl, Y, base, COL.bad, m('two', 1));
+    shade(p, NPDF, 1.645, 3.4, Xr, Y, base, COL.bad, m('one', .8));
+    mline(p, ['H₀: μ = 0'], 440, 680, m('two', .6), COL.chalk, 44);
+    mline(p, ['Hₐ: μ ≠ 0'], 440, 750, m('two', 1.2), COL.bad, 44);
+    mline(p, ['H₀: μ ≤ 0'], 1160, 680, m('one', .6), COL.chalk, 44);
+    mline(p, ['Hₐ: μ > 0'], 1160, 750, m('one', 1.2), COL.bad, 44);
+    text(p, 'rejection regions in red', 800, 850, m('note'), { size: 28, fill: COL.bad, anchor: 'middle' });
+    text(p, 'The null always contains the equal sign.', 800, 805, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['errors', 'Type I and Type II errors', (m) => {
+    const p = panel(0), x0 = 520, y0 = 260, w = 420, h = 190;
+    text(p, 'Truth', 520 + w, 180, m('a'), { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    text(p, 'H₀ is true', x0 + w / 2, 235, m('a', .4), { size: 28, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'H₀ is false', x0 + w * 1.5, 235, m('a', .4), { size: 28, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'Reject H₀', x0 - 30, y0 + h / 2 + 8, m('a', .8), { size: 28, fill: COL.chalk, anchor: 'end', weight: 700 });
+    text(p, 'Do not reject H₀', x0 - 30, y0 + h * 1.5 + 8, m('a', .8), { size: 28, fill: COL.chalk, anchor: 'end', weight: 700 });
+    const cell = (r, c, title, sub, col, key, ok) => {
+      const g = G(p, { o: 0 });
+      mk('rect', { x: x0 + c * w + 5, y: y0 + r * h + 5, width: w - 10, height: h - 10, rx: 16, fill: col, 'fill-opacity': ok ? .22 : .5, stroke: col, 'stroke-width': 3 }, g);
+      T(g, title, { x: x0 + c * w + w / 2, y: y0 + r * h + h / 2 - 4, size: 34, fill: COL.chalk, weight: 700, anchor: 'middle' });
+      T(g, sub, { x: x0 + c * w + w / 2, y: y0 + r * h + h / 2 + 42, size: 28, fill: COL.chalk, anchor: 'middle' });
+      tw(g, { o: 1 }, m(key), .6);
+    };
+    cell(0, 0, 'Type I error', 'probability = α', COL.bad, 't1', false);
+    cell(1, 1, 'Type II error', 'probability = β', COL.task, 't2', false);
+    cell(0, 1, 'Correct', 'power = 1 − β', COL.good, 'pow', true);
+    cell(1, 0, 'Correct', 'probability = 1 − α', COL.good, 'pow', true);
+    text(p, 'for a fixed sample size, lowering α raises β', 800, 760, m('trade'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 700 });
+  }],
+
+  ['q1', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-err', prompt: ['You reject the null hypothesis, but the null is actually true. This is a:'],
+    build: choice([['Type I error'], ['Type II error'], ['Correct decision']], 0, 'Rejecting a true null is a Type I error. Its probability is the significance level, α.',
+      ['A Type II error means failing to reject a false null.', null, 'Rejecting a true null is never correct.']),
+  }], done) }],
+
+  ['critical', 'Critical values', (m) => {
+    const p = panel(0), base = 600, X = z => 800 + z * 140, Y = v => base - v * 760;
+    axisLine(p, 120, 1480, base, .1);
+    for (let z = -3; z <= 3; z++) text(p, String(z).replace('-', '−'), X(z), base + 38, .3, { size: 26, fill: COL.dim, anchor: 'middle' });
+    line(p, curveD(NPDF, -3.7, 3.7, X, Y), COL.whole, .2, 5, 1.2);
+    const two = [text(p, 'Two-sided test, α = 5%', 800, 160, m('alpha'), { size: 38, fill: COL.chalk, anchor: 'middle', weight: 700 })];
+    const t1 = shade(p, NPDF, -3.7, -1.96, X, Y, base, COL.bad, m('alpha')), t2 = shade(p, NPDF, 1.96, 3.7, X, Y, base, COL.bad, m('alpha', .2));
+    two.push(text(p, '2.5%', X(-2.6), base - 70, m('alpha', .8), { size: 30, fill: COL.bad, anchor: 'middle', weight: 700 }), text(p, '2.5%', X(2.6), base - 70, m('alpha', .8), { size: 30, fill: COL.bad, anchor: 'middle', weight: 700 }));
+    [-1.96, 1.96].forEach(z => { const ln = line(p, `M${X(z)} ${base + 5}V${base - 260}`, COL.task, m('crit'), 3, .5); two.push(ln, text(p, (z < 0 ? '−' : '+') + '1.96', X(z), base - 280, m('crit', .3), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 })); });
+    // one-sided replaces the two-sided picture
+    hide(t1, m('one'), .5); hide(t2, m('one'), .5); two.forEach(e => hide(e, m('one'), .5));
+    shade(p, NPDF, 1.645, 3.7, X, Y, base, COL.good, m('one'), .85);
+    line(p, `M${X(1.645)} ${base + 5}V${base - 330}`, COL.good, m('one'), 3, .5);
+    text(p, 'One-sided: 5% in one tail, critical value 1.645', 800, 160, m('one'), { size: 38, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'beyond a critical value → reject H₀', 800, 780, m('rule'), { size: 36, fill: COL.chalk, anchor: 'middle', weight: 700 });
+  }],
+
+  ['mean', 'Testing a mean', (m) => {
+    const p = panel(0), base = 600, X = t => 1170 + t * 95, Y = v => base - v * 700, L = 70;
+    text(p, 'n = 36 months,  mean = 1.2%,  s = 3%', L, 160, m('a'), { size: 32, fill: COL.dim, weight: 600 });
+    text(p, 'H₀: μ = 0     Hₐ: μ ≠ 0', L, 225, m('a', 1.8), { size: 32, fill: COL.chalk, weight: 600 });
+    mline(p, ['SE = ', F('3', '√36'), ' = 0.5'], 380, 340, m('se'), COL.task, 44);
+    mline(p, ['t = ', F('1.2 − 0', '0.5'), ' = 2.4'], 380, 470, m('t'), COL.good, 48);
+    text(p, 'critical value (35 df, 5%): ±2.030', L, 580, m('crit'), { size: 32, fill: COL.task, weight: 700 });
+    text(p, '2.4 is beyond 2.030 → reject H₀', L, 650, m('dec'), { size: 34, fill: COL.good, weight: 700 });
+    text(p, 'Economic decision: is 1.2% a month', L, 740, m('eco'), { size: 30, fill: COL.dim, weight: 600 });
+    text(p, 'meaningful after costs and risk?', L, 780, m('eco', .3), { size: 30, fill: COL.dim, weight: 600 });
+    axisLine(p, 800, 1540, base, m('t', -.4));
+    for (let t = -3; t <= 3; t++) text(p, String(t).replace('-', '−'), X(t), base + 36, m('t', -.3), { size: 24, fill: COL.dim, anchor: 'middle' });
+    line(p, curveD(NPDF, -3.7, 3.7, X, Y), COL.whole, m('t', -.4), 5, 1);
+    shade(p, NPDF, -3.7, -2.03, X, Y, base, COL.bad, m('crit')); shade(p, NPDF, 2.03, 3.7, X, Y, base, COL.bad, m('crit', .1));
+    [-2.03, 2.03].forEach(z => line(p, `M${X(z)} ${base}V${base - 200}`, COL.task, m('crit'), 3, .5));
+    const mk_ = G(p, { x: X(2.4), o: 0 }); path(mk_, `M0 ${base}V${base - 130}`, { stroke: COL.good, 'stroke-width': 4 }); mk('circle', { cy: base - 130, r: 10, fill: COL.good }, mk_);
+    show(mk_, m('t', 1)); text(p, 't = 2.4', X(2.4) + 18, base - 150, m('t', 1), { size: 30, fill: COL.good, weight: 700 });
+  }],
+
+  ['q2', 'Quick check', () => { panel(0); }, { ask: done => quiz(BAND, [{
+    id: 'c-t', prompt: ['Test H₀: μ = 5. A sample of 64 observations has a mean of 5.5 and s = 4. What is the t statistic?'],
+    build: blanks([{ parts: ['t = ', { box: '1' }], why: 'SE = 4 ÷ √64 = 0.5, so t = (5.5 − 5) ÷ 0.5 = 1.', hint: 'First find SE = s ÷ √n, then divide the difference from 5 by SE.' }]),
+  }], done) }],
+
+  ['pvalue', 'The p-value', (m) => {
+    const p = panel(0), base = 560, X = z => 480 + z * 105, Y = v => base - v * 640;
+    axisLine(p, 130, 830, base, .1);
+    for (let z = -3; z <= 3; z++) text(p, String(z).replace('-', '−'), X(z), base + 36, .3, { size: 24, fill: COL.dim, anchor: 'middle' });
+    line(p, curveD(NPDF, -3.2, 3.2, X, Y), COL.whole, .2, 5, 1.1);
+    shade(p, NPDF, -3.2, -2.4, X, Y, base, COL.task, m('tail')); shade(p, NPDF, 2.4, 3.2, X, Y, base, COL.task, m('tail', .2));
+    text(p, 'statistic t = ±2.4', 480, 170, m('tail'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'p-value ≈ 0.022', 480, 700, m('tail', .8), { size: 40, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'α = 5%:   0.022 < 0.05  →  reject H₀', 1180, 260, m('rule'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'α = 1%:   0.022 > 0.01  →  do not reject', 1180, 340, m('one'), { size: 32, fill: COL.bad, anchor: 'middle', weight: 700 });
+    text(p, 'Many tests, one false alarm', 1180, 520, m('mult'), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, '20 tests at 5% → expect 1 false positive', 1180, 580, m('mult', .6), { size: 30, fill: COL.dim, anchor: 'middle' });
+  }],
+
+  ['other', 'Which test statistic?', (m) => {
+    const p = panel(0);
+    text(p, 'Match the question to the statistic', 800, 140, m('a'), { size: 36, fill: COL.dim, anchor: 'middle', weight: 600 });
+    [['One mean', 't = (mean − μ₀) ÷ (s ÷ √n)', 'Student’s t', COL.whole, 't', 270],
+     ['Two means', 'difference of means: independent or paired t test', 't, with the right degrees of freedom', COL.good, 'diff', 420],
+     ['One variance', 'χ² = (n − 1) s² ÷ σ₀²', 'chi-square', COL.task, 'chi', 570],
+     ['Two variances', 'F = s₁² ÷ s₂²', 'F', COL.nat, 'f', 720]].forEach(([q, f, d, c, k, y]) => {
+      show(pill(p, q, c, 330, y, 0, 30), m(k));
+      text(p, f, 620, y - 5, m(k, .3), { size: 34, fill: COL.chalk, weight: 600 });
+      text(p, d, 620, y + 38, m(k, .6), { size: 26, fill: c, weight: 600 });
+    });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Seven steps: from H₀ and Hₐ to the statistical and economic decisions.', 'w1'],
+     ['Type I: reject a true null (α). Type II: miss a false null (β). Power = 1 − β.', 'w2'],
+     ['Reject if the statistic passes a critical value, or if the p-value is below α.', 'w3'],
+     ['t for means, chi-square for one variance, F for two variances.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 120, o: 0 });
+      mk('circle', { cx: 100, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 100, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 160, size: 30, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+
+  ['final1', 'Chapter practice', () => { panel(0); }, { ask: done => quiz(SCREEN, [{
+    id: 'p-pdec', prompt: ['A test gives a p-value of 0.03. The significance level is 5%. What is the decision?'],
+    build: choice([['Reject the null hypothesis'], ['Do not reject the null hypothesis'], ['The test is inconclusive']], 0, 'The p-value 0.03 is below α = 0.05, so we reject the null.', [null, 'We would only fail to reject if the p-value were above α.', 'A p-value below α is a clear rejection.']),
+  }, {
+    id: 'p-tstat', prompt: ['Test H₀: μ = 2. A sample of 100 observations has a mean of 3 and s = 5. What is the t statistic?'],
+    build: blanks([{ parts: ['t = ', { box: '2' }], why: 'SE = 5 ÷ √100 = 0.5, so t = (3 − 2) ÷ 0.5 = 2.', hint: 'SE = s ÷ √n = 5 ÷ 10.' }]),
+  }, {
+    id: 'p-power', prompt: ['The power of a hypothesis test is the probability of:'],
+    build: choice([['Rejecting a false null hypothesis'], ['Rejecting a true null hypothesis'], ['Failing to reject a false null hypothesis']], 0, 'Power = 1 − β, the chance of correctly rejecting a false null.', [null, 'That is a Type I error, with probability α.', 'That is a Type II error, with probability β.']),
+  }], done, 'Chapter practice') }],
+
+  ['finish', 'Finished', () => { panel(0); }, { ask: finishCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
