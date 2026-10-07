@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Industry and Competitive Analysis</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 10, title: 'Industry and Competitive Analysis', minutes: 7, language: 'en', next: '../ch11/' };
+
+const IND = t => t <= 5 ? 100 * 1.12 ** t : 100 * 1.12 ** 5 * 1.03 ** (t - 5), GDP = t => 100 * 1.03 ** t;
+const SHARES = [40, 30, 20, 10];
+const PESTLE = [['Political', 'trade policy, subsidies, taxes', COL.bad, 'p'], ['Economic', 'growth, interest rates, inflation', COL.task, 'e'], ['Social', 'demographics and tastes', COL.nat, 's'],
+  ['Technological', 'automation, digital channels', COL.whole, 't'], ['Legal', 'regulation and competition law', COL.real, 'l'], ['Environmental', 'climate rules, packaging taxes', COL.good, 'env']];
+
+const BEATS = [
+  introBeat('Equity Investments, Chapter 10', 'Industry and', 'Competitive Analysis', 'where a company competes, and how well'),
+
+  ['classification', 'Defining the industry', (m) => {
+    const p = panel(0);
+    const tag = (x, y, w, h, c, head, d, t0) => { show(box(p, x, y, w, h, c, t0, .1), 0); text(p, head, x + 24, y + 42, t0, { size: 28, fill: c, weight: 700 }); text(p, d, x + 24, y + 80, t0, { size: 24, fill: COL.dim }); };
+    tag(100, 110, 680, 110, COL.dim, 'Legacy: SIC, NACE, ISIC', 'grouped by how products are made', m('old'));
+    tag(100, 235, 680, 110, COL.good, 'Commercial: GICS, ICB, TRBC', 'grouped by what is sold; global; updated yearly', m('new'));
+    ['Sector', 'Industry group', 'Industry', 'Sub-industry'].forEach((s, i) => {
+      const w = 640 - i * 90, x = 440 - w / 2, y = 380 + i * 76, t0 = m('tax', i * .5), g = G(p, { o: 0 });
+      mk('rect', { x, y, width: w, height: 66, rx: 12, fill: COL.whole, 'fill-opacity': .1 + i * .08, stroke: COL.whole, 'stroke-width': 3 }, g); T(g, s, { x: x + w / 2, y: y + 43, size: 28, fill: COL.whole, anchor: 'middle', weight: 600 }); show(g, t0);
+    });
+    text(p, 'one company → one lowest-level group', 440, 722, m('tax', 2.2), { size: 25, fill: COL.dim, anchor: 'middle' });
+    text(p, 'multi-product firms still get one label', 440, 770, m('limit'), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'Business-cycle sensitivity', 1170, 190, m('cyc'), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+    infoCard(p, 880, 240, 580, 230, COL.bad, 'Cyclical', [['financials, materials,'], ['discretionary, industrials']], m('cyc', .6), { hs: 36, bs: 27, n: 36, hy: 70 });
+    infoCard(p, 880, 520, 580, 230, COL.good, 'Defensive', [['staples, healthcare,'], ['utilities']], m('cyc', 2), { hs: 36, bs: 27, n: 36, hy: 70 });
+  }],
+
+  ['growth', 'Industry size and growth', (m) => {
+    const p = panel(0), X = t => 250 + t * 115, Y = v => 740 - (v - 95) * 4.9, ts = Array.from({ length: 41 }, (_, i) => i / 4);
+    axisLine(p, 200, 1450, 760); path(p, 'M200 760V130', { stroke: COL.chalk, 'stroke-width': 3 });
+    [0, 2, 4, 6, 8, 10].forEach(t => text(p, String(t), X(t), 805, .3, { size: 24, fill: COL.dim, anchor: 'middle' })); text(p, 'Year', 1450, 840, .3, { size: 24, fill: COL.dim, anchor: 'end' });
+    text(p, 'Index, year 0 = 100', 220, 130, m('size'), { size: 28, fill: COL.dim, weight: 600 });
+    draw(path(p, ts.map((t, i) => (i ? 'L' : 'M') + X(t) + ' ' + Y(GDP(t))).join(''), { stroke: COL.dim, 'stroke-width': 5 }, { d: 0 }), m('rate'), 1.5);
+    leg(p, 'GDP', COL.dim, 300, 200, m('rate'));
+    draw(path(p, ts.filter(t => t <= 5).map((t, i) => (i ? 'L' : 'M') + X(t) + ' ' + Y(IND(t))).join(''), { stroke: COL.good, 'stroke-width': 7 }, { d: 0 }), m('early'), 2);
+    leg(p, 'Industry sales', COL.good, 300, 245, m('size'));
+    text(p, 'growth stage: well above GDP', 270, 400, m('early', 1.2), { size: 26, fill: COL.good, weight: 700 });
+    draw(path(p, ts.filter(t => t >= 5).map((t, i) => (i ? 'L' : 'M') + X(t) + ' ' + Y(IND(t))).join(''), { stroke: COL.task, 'stroke-width': 7 }, { d: 0 }), m('mature'), 2);
+    text(p, 'mature: growth near GDP', X(8), Y(IND(8)) + 70, m('mature', 1.2), { size: 26, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'Also: profitability, and sensitivity to the business cycle', 800, 880, m('note'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['concentration', 'Market concentration (HHI)', (m) => {
+    const p = panel(0), x0 = 200, k = 12;
+    const row = (y, name, vals, mk_, t0) => { text(p, name, x0, y - 30, m(mk_, t0), { size: 32, weight: 700 }); let x = x0;
+      vals.forEach((v, i) => { const g = G(p, { o: 0 }); mk('rect', { x, y, width: v * k - 4, height: 90, rx: 6, fill: [COL.whole, COL.task, COL.good, COL.real, COL.nat][i % 5], 'fill-opacity': .88 }, g);
+        T(g, v + '%', { x: x + v * k / 2 - 2, y: y + 56, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); show(g, m(mk_, t0 + .3 + i * .3)); x += v * k; }); };
+    row(250, 'Four companies', SHARES, 'a', 0); row(560, 'Ten equal companies', Array(10).fill(10), 'frag', 0);
+    text(p, '40² + 30² + 20² + 10²  =  1,600 + 900 + 400 + 100  =  3,000', 800, 410, m('sq'), { size: 34, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, '10 × 10²  =  1,000', 800, 720, m('frag', 1.5), { size: 34, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'Higher index: more concentrated, usually less rivalry and higher profitability', 800, 850, m('note'), { size: 28, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['forces', 'Five forces: an illustration', (m) => {
+    const p = panel(0), W = 400, H = 120;
+    const nd = (cx, cy, s, rating, c, mk_, big) => { const w = big ? 440 : W; show(box(p, cx - w / 2, cy - H / 2, w, H, c, m(mk_), .12), 0);
+      text(p, s, cx, cy - 8, m(mk_), { size: 25, anchor: 'middle', weight: 700, fill: c }); text(p, rating, cx, cy + 34, m(mk_, .4), { size: 30, anchor: 'middle', weight: 700, fill: rating === 'High' ? COL.bad : COL.task }); };
+    nd(800, 440, 'Rivalry among competitors', 'High', COL.task, 'rival', true);
+    nd(800, 190, 'Threat of new entrants', 'Medium', COL.whole, 'entr'); nd(800, 690, 'Threat of substitutes', 'Medium', COL.irr, 'subs');
+    nd(270, 440, 'Buyer power', 'High', COL.real, 'buy'); nd(1330, 440, 'Supplier power', 'High', COL.nat, 'sup');
+    text(p, 'Illustration: airlines', 190, 120, .2, { size: 26, fill: COL.dim });
+    text(p, 'Structure points to low industry profitability', 800, 830, m('sum'), { size: 34, fill: COL.bad, anchor: 'middle', weight: 700 });
+  }],
+
+  ['pestle', 'PESTLE analysis', (m) => {
+    const p = panel(0);
+    PESTLE.forEach(([n, d, c, k], i) => infoCard(p, 100 + (i % 3) * 500, 150 + Math.floor(i / 3) * 300, 460, 250, c, n, [[d]], m(k), { hs: 38, bs: 28, n: 28, hy: 80 }));
+    text(p, 'External themes that change growth and market share', 800, 810, m('note'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['strategy', 'Competitive strategy', (m) => {
+    const p = panel(0);
+    infoCard(p, 130, 130, 640, 270, COL.task, 'Cost leadership', [['low price; suits price-sensitive customers with low switching costs'], ['needs scale and fixed-cost discipline', COL.dim]], m('cost'), { hs: 38, bs: 27, n: 42, hy: 70 });
+    infoCard(p, 830, 130, 640, 270, COL.real, 'Differentiation', [['something customers value: luxury, performance, brand'], ['supports higher prices', COL.dim]], m('diff'), { hs: 38, bs: 27, n: 42, hy: 70 });
+    text(p, 'Test the strategy', 800, 480, m('test'), { size: 34, fill: COL.dim, anchor: 'middle', weight: 600 });
+    ['Does it defend against the five forces?', 'Does it fit the external trends (PESTLE)?', 'Does the company have the resources and capabilities?'].forEach((s, i) => {
+      const y = 530 + i * 100, g = G(p, { x: -30, o: 0 }); mk('circle', { cx: 330, cy: y + 24, r: 28, fill: COL.good }, g);
+      T(g, String(i + 1), { x: 330, y: y + 36, size: 32, fill: COL.board, weight: 700, anchor: 'middle' }); T(g, s, { x: 390, y: y + 38, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m('test', .8 + i * 1.3), .6, out);
+    });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['Define the industry with a classification scheme, and know its limits.', 'w1'],
+    ['Measure size, growth, profitability and market share; HHI = sum of squared shares.', 'w2'],
+    ['Five forces assess structure; PESTLE assesses outside influences.', 'w3'],
+    ['A good strategy defends against the forces, fits the trends, and can be executed.', 'w4']], 29); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
