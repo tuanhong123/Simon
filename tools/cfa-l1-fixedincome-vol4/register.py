@@ -27,6 +27,6 @@ if n > 1:
 cm = R / f'books/{ID}/chapters.md'; L = cm.read_text().split('\n')
 for i, l in enumerate(L):
     if l.startswith(f'{n} | '):
-        c = l.split(' | '); c[3] = str(mins); c[4] = 'ready'; L[i] = ' | '.join(c)
+        c = [x.strip() for x in l.split('|')]; c[3] = str(mins); c[4] = 'ready'; L[i] = ' | '.join(c)
 cm.write_text('\n'.join(L))
 print('registered', n)
