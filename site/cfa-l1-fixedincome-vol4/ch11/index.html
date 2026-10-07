@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yield-Based Bond Duration Measures and Properties</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 11, title: 'Yield-Based Bond Duration Measures and Properties', minutes: 8, language: 'en' };
+
+const modDur = (y, c, n, d = .05) => (bondPrice(y - d, c, n) - bondPrice(y + d, c, n)) / (2 * (d / 100) * bondPrice(y, c, n));
+const MD = modDur(3.2, 3.2, 10);
+const barGroup = (p, items, x0, step, base, k, t0, colr, fmt = v => v.toFixed(2)) => items.forEach(([lbl, v], i) => {
+  const g = G(p, { y: 30, o: 0 }), x = x0 + i * step; mk('rect', { x: x - 60, y: base - v * k, width: 120, height: v * k, fill: colr, 'fill-opacity': .88, rx: 5 }, g);
+  T(g, fmt(v), { x, y: base - v * k - 14, size: 30, fill: COL.chalk, weight: 700, anchor: 'middle' }); T(g, lbl, { x, y: base + 40, size: 26, fill: COL.dim, anchor: 'middle' });
+  tw(g, { o: 1, y: 0 }, t0 + i * .6, .6, out);
+});
+
+const BEATS = [
+  ['intro', 'Duration', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 11', { x: 800, y: 270, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Yield-Based Bond Duration', 'Measures and Properties'].forEach((s, i) => T(g, s, { x: 800, y: 390 + i * 95, size: 74, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'how far does the price move when yield moves?', 800, 670, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['slope', 'Steeper line, more risk', (m) => {
+    const p = panel(0), X = y => 300 + (y - 1) * 150, Y = v => 780 - (v - 50) * 4.8;
+    axes2(p, 240, 780, 1400, 200, null, 'price');
+    [1, 2, 4, 6, 8].forEach(y => { path(p, `M${X(y)} 772V788`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, y + '%', X(y), 826, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    text(p, 'yield', 1400, 870, .3, { size: 24, fill: COL.dim, anchor: 'end' });
+    const curve = f => { const pts = []; for (let y = 1; y <= 8.001; y += .1) pts.push([X(y), Y(f(y))]); return polyline(pts); };
+    [['1-year zero-coupon', y => 100 / (1 + y / 200) ** 2, COL.good, 'c1', 330], ['5-year, 3.2% coupon', y => bondPrice(y, 3.2, 10), COL.whole, 'c2', 380], ['30-year, 4.0% coupon', y => bondPrice(y, 4.0, 60), COL.bad, 'c3', 330]].forEach(([n, f, c, k, ly], i) => {
+      draw(path(p, curve(f), { stroke: c, 'stroke-width': 6 }, { d: 0 }), m(k), 1.6);
+      const lp = [[X(6.3), Y(f(6.3)) - 24, 'start'], [X(6.3), Y(f(6.3)) + 46, 'start'], [X(7.95), Y(f(7.95)) - 20, 'end']][i]; text(p, n, lp[0], lp[1], m(k, .8), { size: 28, fill: c, weight: 700, anchor: lp[2] });
+    });
+    show(pill(p, 'interest rate risk = slope of the price–yield line = duration', COL.rat, 800, 130, 0, 34), m('sl'));
+  }],
+
+  ['moddur', 'Modified duration', (m) => {
+    const p = panel(0), X = y => 300 + (y - 1.6) * 330, P0 = 100, Y = v => 800 - (v - 92) * 40;
+    mline(p, ['ModDur  =  ', 'MacDur', ' ÷ (1 + r)'].slice(0, 1).concat(['MacDur ÷ (1 + yield per period)']), 800, 110, m('f'), COL.task, 40);
+    text(p, '%ΔPrice ≈ − ModDur × ΔYield', 800, 190, m('est'), { size: 46, fill: COL.good, anchor: 'middle', weight: 700 });
+    axes2(p, 240, 800, 1400, 240, null, 'price');
+    [2, 2.4, 3.2, 4, 4.8].forEach(y => { path(p, `M${X(y)} 792V808`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, y.toFixed(1) + '%', X(y), 846, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    const pts = []; for (let y = 1.8; y <= 4.9; y += .05) pts.push([X(y), Y(bondPrice(y, 3.2, 10))]);
+    draw(path(p, polyline(pts), { stroke: COL.whole, 'stroke-width': 6 }, { d: 0 }), m('ex', -3), 1.2);
+    const tg = y => P0 * (1 - MD * (y - 3.2) / 100);
+    draw(path(p, `M${X(1.9)} ${Y(tg(1.9))}L${X(4.8)} ${Y(tg(4.8))}`, { stroke: COL.task, 'stroke-width': 4, 'stroke-dasharray': '12 8' }, { d: 0 }), m('tan'), 1);
+    text(p, 'tangent: slope = −ModDur', X(1.9) + 20, Y(tg(1.9)) + 200, m('tan', .5), { size: 28, fill: COL.task, anchor: 'start', weight: 700 });
+    show((() => { const g = G(p, { x: X(3.2), y: Y(100), o: 0 }); mk('circle', { r: 11, fill: COL.chalk }, g); return g; })(), m('ex', -2));
+    text(p, '5-year, 3.2% bond: ModDur = 4.59', X(3.2) + 24, Y(100) - 26, m('ex'), { size: 28, fill: COL.chalk, weight: 700 });
+    [[4.0, 'estimate 96.33 · actual 96.41', COL.bad, 'ex', 3], [2.4, 'estimate 103.67 · actual 103.75', COL.good, 'err', 0]].forEach(([y, s, c, mk_, o]) => {
+      const dA = G(p, { x: X(y), y: Y(bondPrice(y, 3.2, 10)), o: 0 }), dE = G(p, { x: X(y), y: Y(tg(y)), o: 0 }); mk('circle', { r: 10, fill: c }, dA); mk('circle', { r: 10, fill: 'none', stroke: COL.task, 'stroke-width': 4 }, dE);
+      show(dA, m(mk_, o)); show(dE, m(mk_, o));
+      text(p, s, X(y) + (y > 3 ? -460 : 36), Y(tg(y)) + (y > 3 ? 100 : -34), m(mk_, o + .5), { size: 26, fill: c, anchor: 'start', weight: 700 });
+    });
+    text(p, '+80 bp  →  −3.67% (estimate)', 1400, 330, m('ex', 3.6), { size: 28, fill: COL.bad, anchor: 'end', weight: 700 });
+    text(p, 'the estimate is linear; the actual curve bends', 1400, 380, m('err', 1.5), { size: 26, fill: COL.dim, anchor: 'end' });
+  }],
+
+  ['money', 'Money duration and PVBP', (m) => {
+    const p = panel(0), MDur = MD * 1e7;
+    text(p, 'MoneyDur = ModDur × full price of the position', 800, 140, m('f'), { size: 44, fill: COL.task, anchor: 'middle', weight: 600 });
+    const a = card1(p, 800, 340, 1200, 170, COL.whole);
+    T(a, '$10 million par at a price of 100', { y: -20, size: 32, fill: COL.dim, anchor: 'middle' }); T(a, 'money duration = 4.587 × $10,000,000 ≈ $45.9 million', { y: 40, size: 38, fill: COL.whole, weight: 700, anchor: 'middle' });
+    show(a, m('ex'));
+    show(infoCard(p, 420, 620, 640, 200, COL.good, 'PVBP', ['money duration × 0.0001', '≈ $4,587 per basis point'], 40), m('pv'));
+    show(infoCard(p, 1180, 620, 640, 200, COL.bad, '+25 bp in yield', ['≈ 25 × 4,587', '≈ −$114,700 of value'], 40), m('chg'));
+  }],
+
+  ['drivers', 'What drives duration', (m) => {
+    const p = panel(0), base = 640, k = 26;
+    const grp = (title, x0, mk_, items, col, fmt) => { text(p, title, x0 + (items.length - 1) * 130 + 0, 170, m(mk_), { size: 32, fill: col, anchor: 'middle', weight: 700 }); barGroup(p, items, x0, 260, base, items.length > 4 ? 12 : k, m(mk_, .4), col, fmt); };
+    path(p, `M200 ${base}H1420`, { stroke: COL.chalk, 'stroke-width': 3 });
+    text(p, 'Longer maturity ↑', 300 + 260, 170, m('mat'), { size: 32, fill: COL.whole, anchor: 'middle', weight: 700 });
+    barGroup(p, [['5 years', modDur(3.2, 3.2, 10)], ['10 years', modDur(3.2, 3.2, 20)], ['30 years', modDur(3.2, 3.2, 60)]], 300, 260, base, 23, m('mat', .4), COL.whole);
+    text(p, 'Lower coupon ↑', 1220, 170, m('cpn'), { size: 32, fill: COL.task, anchor: 'middle', weight: 700 });
+    show(pill(p, '(10-year bonds, 3.2% yield)', COL.dim, 1220, 215, 0, 22), m('cpn'));
+    barGroup(p, [['6% coupon', modDur(3.2, 6, 20)], ['3.2%', modDur(3.2, 3.2, 20)], ['1%', modDur(3.2, 1, 20)]], 1000, 220, base, 23, m('cpn', .4), COL.task);
+    text(p, 'duration falls as yield rises: 1% yield 8.74 → 8% yield 7.94 (10-year, 3.2% coupon)', 800, 790, m('yld'), { size: 30, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'and falls as the bond ages: 4.59 → 0.49 years over its life (5-year bond)', 800, 850, m('time'), { size: 30, fill: COL.bad, anchor: 'middle', weight: 600 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Duration measures the slope of the price–yield line.', 'w1'], ['%ΔP ≈ − ModDur × Δyield: a linear estimate.', 'w2'],
+     ['Money duration and PVBP convert it to currency.', 'w3'], ['Longer maturity, lower coupon, lower yield: higher duration.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 34, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

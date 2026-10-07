@@ -13,7 +13,7 @@
 <script src="audio/en/timings.js"></script>
 <script>
 'use strict';
-const CHAPTER = { number: 10, title: 'Interest Rate Risk and Return', minutes: 9, language: 'en' };
+const CHAPTER = { number: 10, title: 'Interest Rate Risk and Return', minutes: 9, language: 'en', next: '../ch11/' };
 
 const fvC = (c, r, n) => n ? c * ((1 + r) ** n - 1) / r : 0;
 const pvB = (c, r, n) => c * (1 - (1 + r) ** -n) / r + 100 * (1 + r) ** -n;

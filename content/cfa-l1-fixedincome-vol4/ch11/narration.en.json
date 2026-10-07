@@ -1,0 +1,13 @@
+{
+ "voice": "am_michael",
+ "rate": "0.97",
+ "beats": {
+  "intro": "Module eleven. [[sub]]Measuring how much a bond's price moves when its yield changes. That measure is duration.",
+  "slope": "Price falls when yield rises. But by how much depends on the bond. [[c1]]A one year zero-coupon bond has a nearly flat price-yield line. [[c2]]A five year bond is steeper. [[c3]]A thirty year bond is much steeper. [[sl]]A natural measure of interest rate risk is the slope of this line. That is what duration measures.",
+  "moddur": "Modified duration is the percentage price change per unit change in yield. [[f]]It equals Macaulay duration divided by one plus the yield per period. [[est]]The estimate: the percentage price change is about minus modified duration, times the change in yield. A modified duration of five means a one percent rise in yield cuts the price by about five percent. [[ex]]For the five year, three point two percent bond, modified duration is four point five nine. An eighty basis point rise in yield gives an estimated fall of three point six seven percent. [[tan]]This estimate is the tangent line. [[err]]The real price curve is bent, so the estimate is slightly off. The actual price is a little higher than the estimate, whether yields rise or fall.",
+  "money": "Money duration measures the price change in currency. [[f]]It is modified duration times the full price of the position. [[ex]]Take ten million of par, at a price of one hundred. Money duration is four point five nine times ten million, about forty five point nine million. [[pv]]The price value of a basis point is money duration times one basis point. About four thousand, five hundred eighty seven dollars. [[chg]]So a twenty five basis point rise in yield cuts the position's value by roughly one hundred fourteen thousand, seven hundred dollars.",
+  "drivers": "Duration depends on the bond's features. [[mat]]Longer maturity means higher duration. [[cpn]]A lower coupon means higher duration, because more of the value comes late. [[yld]]A lower yield means higher duration, because late cash flows are discounted less. [[time]]And duration is not static. It falls as the bond approaches maturity.",
+  "wrap": "Let's recap. [[w1]]Duration measures the slope of the price-yield line. [[w2]]The price change is about minus modified duration, times the change in yield. It is a linear estimate. [[w3]]Money duration and the price value of a basis point convert it to currency. [[w4]]Longer maturity, lower coupon, and lower yield all mean higher duration.",
+  "end": "Module eleven is complete."
+ }
+}

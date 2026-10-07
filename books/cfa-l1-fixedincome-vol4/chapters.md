@@ -9,7 +9,7 @@
 8 | Yield and Yield Spread Measures for Floating-Rate Instruments | Valuation, Yields and Curves | 7 | ready
 9 | The Term Structure of Interest Rates: Spot, Par, and Forward Curves | Valuation, Yields and Curves | 9 | ready
 10 | Interest Rate Risk and Return | Interest Rate Risk | 9 | ready
-11 | Yield-Based Bond Duration Measures and Properties | Interest Rate Risk | | planned
+11 | Yield-Based Bond Duration Measures and Properties | Interest Rate Risk | 8 | ready
 12 | Yield-Based Bond Convexity and Portfolio Properties | Interest Rate Risk | | planned
 13 | Curve-Based and Empirical Fixed-Income Risk Measures | Interest Rate Risk | | planned
 14 | Credit Risk | Credit and Securitization | | planned
