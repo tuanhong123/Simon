@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mortgage-Backed Security (MBS) Instrument and Market Features</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 19, title: 'Mortgage-Backed Security (MBS) Instrument and Market Features', minutes: 10, language: 'en' };
+
+const party = (p, x, y, w, h, color, title, sub) => { const g = card1(p, x, y, w, h, color); T(g, title, { y: sub ? -8 : 12, size: 34, fill: color, weight: 600, anchor: 'middle' }); if (sub) T(g, sub, { y: 32, size: 23, fill: COL.dim, anchor: 'middle' }); return g; };
+/* balance remaining (per 100) of a 30-year, 4.55% mortgage pool with a constant prepayment rate (CPR), sampled yearly */
+const poolBalance = cpr => { const r = .0455 / 12, smm = 1 - (1 - cpr) ** (1 / 12), out = [100]; let b = 100, n = 360; for (let mth = 1; mth <= 360; mth++) { const pay = b * r / (1 - (1 + r) ** -n), sp = pay - b * r, pp = smm * (b - sp); b = Math.max(b - sp - pp, 0); n--; if (n === 0) b = 0; if (mth % 12 === 0) out.push(b); } return out; };
+const CURVES = [[0.02, 'slow prepayments', COL.good], [0.08, 'medium', COL.whole], [0.25, 'fast prepayments', COL.bad]].map(([c, n, col]) => [poolBalance(c), n, col]);
+
+const BEATS = [
+  ['intro', 'Mortgage-backed securities', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 19', { x: 800, y: 270, size: 28, fill: COL.dim, anchor: 'middle' });
+    ['Mortgage-Backed Security (MBS)', 'Instrument and', 'Market Features'].forEach((s, i) => T(g, s, { x: 800, y: 370 + i * 92, size: 72, weight: 600, anchor: 'middle' }));
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'mortgages, prepayment risk and CMOs', 800, 700, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['mortgage', 'Mortgage loan features', (m) => {
+    const p = panel(0), base = 640;
+    const prop = G(p, { y: 20, o: 0 }); mk('rect', { x: 260, y: base - 400, width: 260, height: 400, fill: COL.whole, 'fill-opacity': .88, rx: 5 }, prop); T(prop, 'property €400,000', { x: 390, y: base + 44, size: 26, fill: COL.whole, weight: 600, anchor: 'middle' });
+    const loan = G(p, { y: 20, o: 0 }); mk('rect', { x: 640, y: base - 360, width: 260, height: 360, fill: COL.task, 'fill-opacity': .88, rx: 5 }, loan); T(loan, 'loan €360,000', { x: 770, y: base + 44, size: 26, fill: COL.task, weight: 600, anchor: 'middle' });
+    const eq = G(p, { y: 20, o: 0 }); mk('rect', { x: 640, y: base - 400, width: 260, height: 40, fill: COL.good, 'fill-opacity': .88, rx: 5 }, eq); T(eq, 'equity 10%', { x: 770, y: base - 371, size: 24, fill: COL.board, weight: 700, anchor: 'middle' });
+    path(p, `M200 ${base}H980`, { stroke: COL.chalk, 'stroke-width': 3 });
+    tw(prop, { o: 1, y: 0 }, m('ltv'), .6, out); tw(loan, { o: 1, y: 0 }, m('ltv', 1), .6, out); tw(eq, { o: 1, y: 0 }, m('eq'), .6, out);
+    text(p, 'LTV = loan ÷ property value = 90%', 590, 150, m('ltv', 1.5), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'lower LTV → more equity → more protection', 590, 215, m('eq', 1), { size: 28, fill: COL.good, anchor: 'middle', weight: 600 });
+    [['Debt-to-income', 'capacity to pay', COL.whole, 'dti', 300], ['Rate and repayment', 'fixed or adjustable · amortizing · balloon', COL.task, 'rate', 440], ['Non-recourse', 'lender can seize only the property', COL.bad, 'rec', 580]].forEach(([n, s, c, k, y]) => { const g = card1(p, 1260, y, 560, 110, c); T(g, n, { x: -250, y: -6, size: 34, fill: c, weight: 700 }); T(g, s, { x: -250, y: 34, size: 24, fill: COL.dim }); show(g, m(k)); });
+  }],
+
+  ['pass', 'Mortgage pass-through securities', (m) => {
+    const p = panel(0), y = 330;
+    show(party(p, 240, y, 300, 140, COL.dim, 'Borrowers', 'thousands of mortgages'), m('cf', -1)); show(party(p, 800, y, 320, 140, COL.rat, 'Pool / trust', 'servicing + guarantee fees'), m('cf', -.5)); show(party(p, 1360, y, 300, 140, COL.good, 'Investors', 'pass-through holders'), m('cf'));
+    arw(p, 400, y - 20, 640, COL.whole, m('cf', .2)); arw(p, 960, y - 20, 1200, COL.whole, m('cf', 1));
+    text(p, 'interest + principal + prepayments', 520, y - 100, m('cf', .4), { size: 24, fill: COL.whole, anchor: 'middle', weight: 600 });
+    text(p, 'pass-through rate', 1080, y - 100, m('fees', .2), { size: 24, fill: COL.good, anchor: 'middle', weight: 600 });
+    const wac = G(p, { o: 0 }); T(wac, 'WAC 4.55%', { x: 520, y: 600, size: 44, fill: COL.task, weight: 700, anchor: 'middle' }); T(wac, 'weighted average mortgage rate', { x: 520, y: 640, size: 24, fill: COL.dim, anchor: 'middle' }); show(wac, m('ex'));
+    const pt = G(p, { o: 0 }); T(pt, 'pass-through 4.00%', { x: 1170, y: 600, size: 42, fill: COL.good, weight: 700, anchor: 'middle' }); T(pt, 'investors\' net coupon', { x: 1170, y: 640, size: 24, fill: COL.dim, anchor: 'middle' }); show(pt, m('ex', 1.5)); arw(p, 700, 590, 840, COL.dim, m('ex', 1)); text(p, 'fees', 770, 565, m('ex', 1.2), { size: 24, fill: COL.dim, anchor: 'middle' });
+    text(p, 'WAC and WAM weight each mortgage by its outstanding balance', 800, 480, m('wac'), { size: 28, fill: COL.dim, anchor: 'middle' });
+    show(infoCard(p, 420, 790, 640, 150, COL.good, 'Agency RMBS', ['agency or GSE guarantee: low credit risk'], 32), m('ag'));
+    show(infoCard(p, 1180, 790, 640, 150, COL.bad, 'Non-agency RMBS', ['no guarantee: credit enhancement'], 32), m('non'));
+  }],
+
+  ['prepay', 'Prepayment risk', (m) => {
+    const p = panel(0), X = t => 300 + t * 38, Y = v => 770 - v * 4.4;
+    axes2(p, 240, 770, 1500, 300, null, 'balance remaining');
+    [0, 5, 10, 15, 20, 25, 30].forEach(t => { path(p, `M${X(t)} 762V778`, { stroke: COL.chalk, 'stroke-width': 3 }); text(p, t + (t === 30 ? ' years' : ''), X(t), 816, .3, { size: 24, fill: COL.dim, anchor: 'middle' }); });
+    CURVES.forEach(([bal, n, c], i) => { draw(path(p, polyline(bal.map((v, t) => [X(t), Y(v)])), { stroke: c, 'stroke-width': 6 }, { d: 0 }), m('chart', .3 + i * 1.5), 1.6); text(p, n, X([22, 16, 8][i]), Y(bal[[22, 16, 8][i]]) - 18, m('chart', 1.2 + i * 1.5), { size: 26, fill: c, weight: 700 }); });
+    show(infoCard(p, 420, 160, 640, 150, COL.good, 'Contraction risk', ['rates fall → faster prepayment → reinvest lower'], 34), m('con'));
+    show(infoCard(p, 1180, 160, 640, 150, COL.bad, 'Extension risk', ['rates rise → slower prepayment → longer life'], 34), m('ext'));
+    show(pill(p, 'weighted average life depends on expected prepayments', COL.rat, 800, 868, 0, 28), m('wal'));
+    text(p, 'illustrative: 30-year pool, 4.55% mortgage rate', 1500, 400, m('chart'), { size: 22, fill: COL.faint, anchor: 'end' });
+  }],
+
+  ['cmo', 'Sequential-pay CMO', (m) => {
+    const p = panel(0), y = 520, X = t => 260 + t * 44;
+    axes2(p, 220, y + 20, 1440, 220, null, null);
+    [0, 5, 10, 15, 20, 25].forEach(t => text(p, t + (t === 25 ? ' years' : ''), X(t), y + 66, .3, { size: 24, fill: COL.dim, anchor: 'middle' }));
+    [['A', 0, 6, COL.good, 'seq', 0], ['B', 6, 14, COL.whole, 'seq', 1.2], ['C', 14, 25, COL.bad, 'seq', 2.4]].forEach(([n, a, b, c, k, o]) => {
+      const g = G(p, { o: 0 }); mk('rect', { x: X(a), y: y - 110, width: X(b) - X(a), height: 90, rx: 8, fill: c, 'fill-opacity': .88 }, g); T(g, 'Tranche ' + n, { x: (X(a) + X(b)) / 2, y: y - 55, size: 30, fill: COL.board, weight: 700, anchor: 'middle' }); show(g, m(k, o));
+    });
+    text(p, 'illustrative timing of principal payments', 1440, 250, m('seq'), { size: 22, fill: COL.faint, anchor: 'end' });
+    text(p, 'time tranching: A, then B, then C', 800, 150, m('seq'), { size: 40, fill: COL.chalk, anchor: 'middle', weight: 600 });
+    show(pill(p, 'A: protected against extension risk by B and C', COL.good, 520, 640, 0, 26), m('ext')); show(pill(p, 'B, C: protected against contraction risk by A', COL.bad, 1140, 700, 0, 26), m('con'));
+    [['Endowment needing cash soon', 'A', COL.good, 0], ['Pension fund: retirements in ~10 years', 'B', COL.whole, 1], ['Long-term fund seeking more return', 'C', COL.bad, 2]].forEach(([s, t, c, i]) => text(p, s + '  →  tranche ' + t, 120, 790 + i * 40, m('inv', i * 1.8), { size: 28, fill: c, weight: 600 }));
+    text(p, 'redistributes prepayment risk; does not remove it', 1560, 770, m('note'), { size: 26, fill: COL.rat, anchor: 'end', weight: 700 });
+  }],
+
+  ['cmotypes', 'Other CMO tranches', (m) => {
+    const p = panel(0);
+    [[430, 270, COL.rat, 'Z-tranche', ['no interest paid at first', 'balance accrues to a set date', 'average life often > 20 years'], 'z'], [1170, 270, COL.good, 'Principal-only (PO)', ['pays only principal', 'gains when prepayments speed up'], 'po'],
+     [430, 520, COL.bad, 'Interest-only (IO)', ['pays only interest, no par value', 'loses when prepayments speed up', 'can hedge interest rate risk'], 'io'], [1170, 520, COL.whole, 'Floating-rate / inverse', ['reference rate, caps and floors', 'inverse floater moves opposite'], 'fl']]
+      .forEach(([x, y, c, t, l, k]) => show(infoCard(p, x, y, 640, 220, c, t, l, 38), m(k)));
+    show(pill(p, 'residual tranche: collects what is left', COL.task, 800, 740, 0, 30), m('res'));
+  }],
+
+  ['cmbs', 'Commercial mortgage-backed securities', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 420, 250, 640, 230, COL.bad, 'Concentration risk', ['few loans: one default matters', 'analyze each loan, property, owner'], 38), m('conc'));
+    const g = card1(p, 1180, 250, 640, 230, COL.good); T(g, 'DSC = NOI ÷ debt service', { y: -35, size: 40, fill: COL.good, weight: 700, anchor: 'middle' }); T(g, 'above 1.0: the property covers its payments', { y: 25, size: 28, fill: COL.dim, anchor: 'middle' }); T(g, 'LTV matters too', { y: 70, size: 28, fill: COL.dim, anchor: 'middle' }); show(g, m('dsc'));
+    show(infoCard(p, 420, 560, 640, 220, COL.whole, 'Call protection', ['in the structure or at loan level', 'trade more like corporate bonds'], 38), m('cp'));
+    show(infoCard(p, 1180, 560, 640, 220, COL.task, 'Balloon risk', ['large payment at maturity', 'no refinancing → extension risk'], 38), m('bal'));
+    show(pill(p, 'unlike RMBS: little prepayment risk', COL.rat, 800, 780, 0, 28), m('cp', 3));
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['LTV and borrower capacity drive mortgage credit risk.', 'w1'], ['Pass-throughs pass interest, principal and prepayments.', 'w2'],
+     ['Prepayment: contraction when rates fall, extension when they rise.', 'w3'], ['CMOs redistribute prepayment risk; CMBS: concentration, DSC, balloon.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 32, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>

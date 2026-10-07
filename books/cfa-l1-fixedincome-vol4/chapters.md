@@ -17,4 +17,4 @@
 16 | Credit Analysis for Corporate Issuers | Credit and Securitization | 9 | ready
 17 | Fixed-Income Securitization | Credit and Securitization | 8 | ready
 18 | Asset-Backed Security (ABS) Instrument and Market Features | Credit and Securitization | 10 | ready
-19 | Mortgage-Backed Security (MBS) Instrument and Market Features | Credit and Securitization | | planned
+19 | Mortgage-Backed Security (MBS) Instrument and Market Features | Credit and Securitization | 10 | ready
