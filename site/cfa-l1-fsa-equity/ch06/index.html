@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security Market Indexes</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render">
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/common.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 6, title: 'Security Market Indexes', minutes: 7, language: 'en', next: '../ch07/' };
+
+const STOCKS = [['A', 10, 12, 100], ['B', 30, 27, 50], ['C', 60, 66, 20]];
+const pw = [(10 + 30 + 60) / 3, (12 + 27 + 66) / 3], ewr = STOCKS.reduce((a, [, p0, p1]) => a + (p1 / p0 - 1), 0) / 3 * 100;
+const mc = [STOCKS.reduce((a, [, p0, , n]) => a + p0 * n, 0), STOCKS.reduce((a, [, , p1, n]) => a + p1 * n, 0)];
+const PWR = (pw[1] / pw[0] - 1) * 100, MCR = (mc[1] / mc[0] - 1) * 100;      // 5.0, 6.67, 4.59
+
+const BEATS = [
+  introBeat('Equity Investments, Chapter 6', 'Security', 'Market Indexes', 'a yardstick for a market'),
+
+  ['returns', 'Price return and total return', (m) => {
+    const p = panel(0), base = 700, k = 3.2, o = 950;
+    axisLine(p, 200, 1400, base);
+    const b = (cx, v, c, label, top, mk_, off) => bar(p, cx, base, 1, [[(v - o) * k, c]], m(mk_, off), { w: 170, label, top, topColor: COL.chalk });
+    text(p, 'Index level (axis starts at 950)', 800, 130, .2, { size: 30, fill: COL.dim, anchor: 'middle', weight: 600 });
+    b(380, 1000, COL.dim, 'Start', '1,000', 'start', 0);
+    b(800, 1050, COL.whole, 'Price return index', '1,050', 'price', 0);
+    b(1220, 1070, COL.good, 'Total return index', '≈ 1,070', 'total', 0);
+    text(p, 'prices +5%', 800, base + 85, m('price', .6), { size: 26, fill: COL.whole, anchor: 'middle' });
+    text(p, 'prices +5% and dividends +2% reinvested', 1220, base + 85, m('total', .6), { size: 26, fill: COL.good, anchor: 'middle' });
+    text(p, 'Same securities, same weights, different numbers', 800, 840, m('note'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['weighting', 'Weighting methods', (m) => {
+    const p = panel(0), cols = [100, 235, 340, 460, 610];
+    ['Stock', 'Start', 'End', 'Return', 'Shares'].forEach((h, i) => text(p, h, cols[i], 190, m('table'), { size: 24, fill: COL.dim, weight: 600 }));
+    STOCKS.forEach(([n, p0, p1, sh], i) => {
+      const y = 260 + i * 62, r = (p1 / p0 - 1) * 100, c = r > 0 ? COL.good : COL.bad, t0 = m('table', .4 + i * .6);
+      text(p, n, cols[0], y, t0, { size: 34, weight: 700 }); text(p, '$' + p0, cols[1], y, t0, { size: 32 }); text(p, '$' + p1, cols[2], y, t0, { size: 32 });
+      text(p, (r > 0 ? '+' : '−') + Math.round(Math.abs(r)) + '%', cols[3], y, t0, { size: 32, fill: c, weight: 700 }); text(p, String(sh), cols[4], y, t0, { size: 32, fill: COL.dim });
+    });
+    const res = (y, name, sub, v, c, mk_) => {
+      text(p, name, 860, y, m(mk_), { size: 32, fill: c, weight: 700 }); text(p, sub, 860, y + 36, m(mk_, .4), { size: 24, fill: COL.dim });
+      const g = G(p, { x: -20, o: 0 }); mk('rect', { x: 860, y: y + 52, width: v * 40, height: 44, rx: 5, fill: c, 'fill-opacity': .88 }, g);
+      T(g, '+' + v.toFixed(1) + '%', { x: 860 + v * 40 + 14, y: y + 86, size: 32, weight: 700 }); tw(g, { o: 1, x: 0 }, m(mk_, .8), .6, out);
+    };
+    res(230, 'Price-weighted', `(12 + 27 + 66) ÷ 3 = 35.00 vs 33.33`, PWR, COL.whole, 'pw');
+    res(400, 'Equal-weighted', 'average of the three returns', ewr, COL.task, 'ew');
+    res(570, 'Market-cap weighted', `total value ${mc[0].toLocaleString('en-US')} → ${mc[1].toLocaleString('en-US')}`, MCR, COL.real, 'mc');
+    text(p, 'High price matters', 330, 540, m('pw'), { size: 26, fill: COL.whole, anchor: 'middle' });
+    text(p, 'every stock counts alike', 330, 600, m('ew'), { size: 26, fill: COL.task, anchor: 'middle' });
+    text(p, 'big companies matter', 330, 660, m('mc'), { size: 26, fill: COL.real, anchor: 'middle' });
+    text(p, 'Same stocks, three different answers', 800, 850, m('note'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['altweights', 'Float-adjusted and fundamental weights', (m) => {
+    const p = panel(0), base = 430, k = .3;
+    text(p, 'Float-adjusted', 330, 130, m('float'), { size: 32, fill: COL.whole, anchor: 'middle', weight: 700 });
+    axisLine(p, 130, 540, base);
+    bar(p, 330, base, k, [[600, COL.whole], [400, COL.faint]], m('float', .6), { w: 150, label: 'Company: $1,000', top: '' });
+    text(p, 'in the float: 600', 460, base - 300 * k + 8, m('float', 1.2), { size: 24, fill: COL.whole, weight: 600 });
+    text(p, 'held by insiders: 400', 460, base - 800 * k + 8, m('float', 1.8), { size: 24, fill: COL.dim });
+    text(p, 'Market-cap weights favour stocks', 330, 560, m('drawback'), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'whose prices have risen: like momentum', 330, 600, m('drawback', .5), { size: 26, fill: COL.bad, anchor: 'middle', weight: 600 });
+    text(p, 'Fundamental weighting', 1100, 130, m('fund'), { size: 32, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'A: value 200, earnings 20   B: value 800, earnings 20', 1100, 180, m('fund', .4), { size: 24, fill: COL.dim, anchor: 'middle' });
+    const tbase = 700, tk = 5;
+    [[900, 'Market cap', [[20, COL.whole], [80, COL.nat]]], [1300, 'Earnings', [[50, COL.whole], [50, COL.nat]]]].forEach(([cx, n, segs], j) => {
+      bar(p, cx, tbase, tk, segs, m('fund', 1.5 + j * 1.5), { w: 170, label: n });
+      let y = tbase; segs.forEach(([v, c], i) => { y -= v * tk; text(p, (i ? 'B ' : 'A ') + v + '%', cx, y + v * tk / 2 + 10, m('fund', 2 + j * 1.5), { size: 30, fill: COL.board, anchor: 'middle', weight: 700 }); });
+    });
+    text(p, 'cheaper stock A gets more weight', 1100, 820, m('fund', 4), { size: 28, fill: COL.good, anchor: 'middle', weight: 700 });
+  }],
+
+  ['management', 'Rebalancing and reconstitution', (m) => {
+    const p = panel(0), base = 600, k = 6;
+    text(p, 'Rebalancing', 400, 130, m('reb'), { size: 36, fill: COL.whole, anchor: 'middle', weight: 700 });
+    text(p, 'restore target weights', 400, 175, m('reb'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    axisLine(p, 130, 670, base);
+    [[40, 33, 27], [33.3, 33.3, 33.3]].forEach((ws, j) => ws.forEach((w, i) => bar(p, 190 + i * 105 + j * 300, base, k, [[w, [COL.whole, COL.nat, COL.real][i]]], j ? m('reb', 3.5) : m('reb', .5), { w: 80, top: Math.round(w * 10) / 10 + '%', label: ['A', 'B', 'C'][i] })));
+    text(p, 'before', 295, 760, m('reb', .5), { size: 26, fill: COL.dim, anchor: 'middle' }); text(p, 'after', 595, 760, m('reb', 3.5), { size: 26, fill: COL.dim, anchor: 'middle' });
+    text(p, 'weights drift, then reset to 33.3% each', 400, 700, m('reb', 3.5), { size: 26, fill: COL.good, anchor: 'middle', weight: 600 });
+    text(p, 'Reconstitution', 1150, 130, m('recon'), { size: 36, fill: COL.task, anchor: 'middle', weight: 700 });
+    text(p, 'change the constituents', 1150, 175, m('recon'), { size: 24, fill: COL.dim, anchor: 'middle' });
+    [['Old Co', 'out', COL.bad], ['Fading Inc', 'out', COL.bad], ['New Tech', 'in', COL.good], ['Rising Ltd', 'in', COL.good]].forEach(([n, d, c], i) => {
+      show(pill(p, (d === 'in' ? '+  ' : '−  ') + n, c, 1150, 290 + i * 100, 0, 28), m('recon', .5 + i * .6));
+    });
+    text(p, 'Both create turnover; index funds trade at the changes', 800, 840, m('turn'), { size: 30, fill: COL.task, anchor: 'middle', weight: 700 });
+  }],
+
+  ['uses', 'What indexes are for', (m) => {
+    const p = panel(0);
+    [['Gauge market sentiment', 'how the market feels', COL.whole, 'sent'], ['Benchmark for active managers', 'did they beat the market?', COL.task, 'bench'], ['Proxy for systematic risk', 'risk-adjusted performance', COL.nat, 'risk'],
+     ['Stand in for asset classes', 'asset allocation models', COL.good, 'alloc'], ['Blueprint for products', 'index funds and ETFs', COL.real, 'prod']].forEach(([n, d, c, k], i) => {
+      const y = 150 + i * 135, g = G(p, { x: -30, o: 0 });
+      mk('rect', { x: 250, y, width: 1100, height: 105, rx: 16, fill: c, 'fill-opacity': .12, stroke: c, 'stroke-width': 3 }, g);
+      T(g, n, { x: 290, y: y + 48, size: 34, fill: c, weight: 700 }); T(g, d, { x: 290, y: y + 88, size: 25, fill: COL.dim });
+      tw(g, { o: 1, x: 0 }, m(k), .6, out);
+    });
+  }],
+
+  ['types', 'Indexes across asset classes', (m) => {
+    const p = panel(0);
+    [['Equity', 'by region, size, sector and style; style indexes churn more', COL.whole, 'eq'], ['Fixed income', 'thousands of securities, dealer markets, often illiquid, constant maturities', COL.good, 'fi'],
+     ['Commodity', 'futures contracts: returns include the roll yield, not just spot prices', COL.task, 'com'], ['Real estate', 'appraisal, repeat-sales or REIT; only REIT indexes price continuously', COL.real, 're'],
+     ['Hedge funds', 'self-reported, so survivorship bias; constituents determine the index', COL.nat, 'hf']].forEach(([n, d, c, k], i) => {
+      const y = 140 + i * 145, g = G(p, { x: -30, o: 0 });
+      mk('rect', { x: 120, y, width: 1360, height: 115, rx: 16, fill: c, 'fill-opacity': .12, stroke: c, 'stroke-width': 3 }, g);
+      T(g, n, { x: 160, y: y + 68, size: 36, fill: c, weight: 700 });
+      lines(d, 52).forEach((l, j) => T(g, l, { x: 520, y: y + 52 + j * 36, size: 27 }));
+      tw(g, { o: 1, x: 0 }, m(k), .6, out);
+    });
+  }],
+
+  ['wrap', 'Summary', (m) => { wrapList(panel(0), m, [
+    ['Price return counts price changes; total return adds reinvested income.', 'w1'],
+    ['Weighting changes the answer: price, equal, market-cap, float-adjusted, fundamental.', 'w2'],
+    ['Rebalancing restores weights; reconstitution changes constituents; both create turnover.', 'w3'],
+    ['Understand how an index is built before you use it.', 'w4']], 29); }],
+
+  FINISH,
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
