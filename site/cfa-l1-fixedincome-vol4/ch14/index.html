@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Risk</title>
+<link rel="stylesheet" href="../lib/engine.css">
+<link rel="expect" href="#bar" blocking="render"><!-- hold the first frame until the player exists, so the page transition can run -->
+</head>
+<body>
+<script src="../lib/engine.js"></script>
+<script src="../lib/helpers.js"></script>
+<script src="audio/en/timings.js"></script>
+<script>
+'use strict';
+const CHAPTER = { number: 14, title: 'Credit Risk', minutes: 9, language: 'en' };
+
+const item = (p, x, y, name, sub, c, t) => { const g = card1(p, x, y, 700, 84, c); T(g, name, { x: -320, y: 11, size: 34, fill: c, weight: 700 }); T(g, sub, { x: 320, y: 9, size: 24, fill: COL.dim, anchor: 'end' }); show(g, t); return g; };
+const spreadAt = t => 150 + 300 * Math.exp(-(((t - 7) / 1.3) ** 2)) + 18 * Math.cos(t * 1.3);
+
+const BEATS = [
+  ['intro', 'Credit risk', (m, D) => {
+    const g = G(scene, { o: 0, y: 24 });
+    T(g, 'Fixed Income, Module 14', { x: 800, y: 300, size: 28, fill: COL.dim, anchor: 'middle' });
+    T(g, 'Credit Risk', { x: 800, y: 430, size: 100, weight: 600, anchor: 'middle' });
+    tw(g, { o: 1, y: 0 }, .2, 1.1, out);
+    const r = text(scene, 'expected loss, ratings and credit spreads', 800, 560, m('sub'), { size: 34, fill: COL.dim, anchor: 'middle' });
+    tw(g, { o: 0, y: -24 }, D - .9, .8); hide(r, D - .9, .8);
+  }],
+
+  ['cs', 'The Cs of credit analysis', (m) => {
+    const p = panel(0);
+    text(p, 'Bottom-up: the borrower', 420, 130, m('b'), { size: 38, fill: COL.good, anchor: 'middle', weight: 700 });
+    text(p, 'Top-down: all borrowers', 1180, 130, m('t'), { size: 38, fill: COL.whole, anchor: 'middle', weight: 700 });
+    [['Capacity', 'ability to make payments', 'c1'], ['Capital', 'resources that reduce reliance on debt', 'c2'], ['Collateral', 'assets supporting the debt', 'c3'], ['Covenants', 'legal terms', 'c4'], ['Character', 'management quality, willingness to pay', 'c5']].forEach(([n, s, k], i) => item(p, 420, 240 + i * 110, n, s, COL.good, m(k)));
+    [['Conditions', 'economic and business environment', 'c6'], ['Country', 'legal and political system', 'c7'], ['Currency', 'exchange-rate effects', 'c8']].forEach(([n, s, k], i) => item(p, 1180, 240 + i * 110, n, s, COL.whole, m(k)));
+  }],
+
+  ['sources', 'Sources of repayment', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 290, 380, 440, 330, COL.task, 'Corporate', ['operating cash flow', 'secured debt: plus', 'pledged collateral'], 40), m('corp'));
+    show(infoCard(p, 800, 380, 440, 330, COL.good, 'Sovereign', ['taxes and revenue', 'foreign-currency debt:', 'ability to earn the currency'], 40), m('sov'));
+    show(infoCard(p, 1310, 380, 440, 330, COL.bad, 'Illiquid vs insolvent', ['illiquid: cannot raise', 'cash to pay now', 'insolvent: assets < liabilities'], 36), m('ill'));
+    text(p, 'credit risk: loss when a borrower does not pay in full and on time', 800, 150, .3, { size: 36, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['el', 'Expected loss', (m) => {
+    const p = panel(0);
+    const mkbox = (x, t, v, c, k) => { const g = card1(p, x, 260, 380, 190, c); T(g, t, { y: -55, size: 28, fill: COL.dim, anchor: 'middle', weight: 600 }); T(g, v, { y: 32, size: 66, fill: c, weight: 700, anchor: 'middle' }); show(g, k); };
+    mkbox(280, 'probability of default', '5%', COL.bad, m('pod')); mkbox(800, 'loss given default', '€30,000', COL.task, m('lgd', .5)); mkbox(1320, 'expected loss', '€1,500', COL.good, m('res'));
+    text(p, '×', 540, 285, m('f'), { size: 80, fill: COL.chalk, anchor: 'middle', weight: 700 }); text(p, '=', 1060, 285, m('f', .6), { size: 80, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'EL = POD × LGD', 800, 100, m('f'), { size: 44, fill: COL.chalk, anchor: 'middle', weight: 700 });
+    text(p, 'LGD = exposure at default × (1 − recovery rate)', 800, 440, m('lgd', 1.5), { size: 32, fill: COL.task, anchor: 'middle', weight: 600 });
+    [['exposure: 400,000 − collateral 100,000 = 300,000 at risk', 540, 'ex'], ['loss severity: 1 − 90% recovery = 10%', 620, 'ex'], ['300,000 × 10% = 30,000 loss given default', 700, 'ex'], ['EL = 5% × 30,000 = €1,500', 790, 'res']].forEach(([s, y, k], i) => text(p, s, 800, y, m(k, i === 3 ? .5 : i * 3), { size: i === 3 ? 44 : 32, fill: i === 3 ? COL.good : COL.dim, anchor: 'middle', weight: i === 3 ? 700 : 500 }));
+  }],
+
+  ['spread', 'Is the spread enough?', (m) => {
+    const p = panel(0), x0 = 480, k = 1.1;
+    show(pill(p, 'fair compensation: credit spread ≥ POD × LGD', COL.rat, 800, 130, 0, 36), m('f'));
+    [['BRWA (investment grade)', 90, 80, 'b', 330, 'POD 1% × LGD 80%'], ['VIVU (high yield)', 420, 300, 'v', 600, 'POD 6% × LGD 50%']].forEach(([n, sp, el, mk_, y, calc]) => {
+      const g = G(p, { o: 0 }); T(g, n, { x: x0 - 20, y: y - 20, size: 32, fill: COL.chalk, weight: 700, anchor: 'end' }); T(g, calc, { x: x0 - 20, y: y + 24, size: 24, fill: COL.dim, anchor: 'end' });
+      const r1 = mk('rect', { x: x0, y: y - 60, width: 0, height: 50, rx: 6, fill: COL.good, 'fill-opacity': .88 }, g), r2 = mk('rect', { x: x0, y, width: 0, height: 50, rx: 6, fill: COL.bad, 'fill-opacity': .88 }, g);
+      T(g, 'spread ' + sp + ' bps', { x: x0 + sp * k + 20, y: y - 22, size: 28, fill: COL.good, weight: 700 }); T(g, 'expected loss ' + el + ' bps', { x: x0 + el * k + 20, y: y + 38, size: 28, fill: COL.bad, weight: 700 });
+      show(g, m(mk_)); tw(r1, { a_width: sp * k }, m(mk_, .5), .8); tw(r2, { a_width: el * k }, m(mk_, 1.5), .8);
+    });
+    text(p, 'spread covers expected loss in both cases: more risk, more reward', 800, 800, m('v', 4), { size: 34, fill: COL.chalk, anchor: 'middle', weight: 600 });
+  }],
+
+  ['drivers', 'Drivers of POD and LGD', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 420, 330, 640, 330, COL.bad, 'Probability of default', ['profitability: stable, predictable profits', 'coverage: earnings ÷ interest expense', 'leverage: debt ÷ earnings', 'margins ↑, debt ↓  →  lower POD'], 36), m('pod'));
+    show(infoCard(p, 1180, 330, 640, 330, COL.task, 'Loss given default', ['seniority of the claim', 'collateral and security', 'recovery in a default scenario'], 36), m('lgd'));
+    show(pill(p, 'investment grade: fear a rising POD', COL.good, 420, 640, 0, 30), m('ig')); show(pill(p, 'high yield: seek covenants and security to cut LGD', COL.whole, 1180, 640, 0, 28), m('hy'));
+  }],
+
+  ['ratings', 'Credit ratings', (m) => {
+    const p = panel(0);
+    show(infoCard(p, 290, 360, 440, 360, COL.whole, 'Who', ['Moody\'s · S&P · Fitch', 'symbol-based', 'forward-looking', 'issuer pays'], 40), m('ag'));
+    show(infoCard(p, 800, 360, 440, 360, COL.good, 'Uses', ['compare issuers', 'trigger covenants, step-ups', 'meet regulation', 'migration (downgrade) risk'], 40), m('uses'));
+    show(infoCard(p, 1310, 360, 440, 360, COL.bad, 'Pitfalls', ['lag market prices', 'can overlook risks', '(subprime, 2008)', 'do your own analysis'], 40), m('pit'));
+    text(p, 'spreads change daily; ratings change rarely', 800, 650, m('pit', 5), { size: 32, fill: COL.dim, anchor: 'middle', weight: 600 });
+  }],
+
+  ['cycle', 'Credit cycle and spread changes', (m) => {
+    const p = panel(0), X = t => 260 + t * 70, Y = v => 640 - (v - 100) * 1.0;
+    axes2(p, 240, 640, 980, 230, null, 'credit spread (bps)');
+    text(p, 'time', 980, 690, .3, { size: 24, fill: COL.dim, anchor: 'end' });
+    const pts = []; for (let t = 0; t <= 10; t += .1) pts.push([X(t), Y(spreadAt(t))]);
+    draw(path(p, polyline(pts), { stroke: COL.bad, 'stroke-width': 6 }, { d: 0 }), m('top', -3), 3);
+    const d1 = G(p, { x: X(2.4), y: Y(spreadAt(2.4)), o: 0 }), d2 = G(p, { x: X(7), y: Y(spreadAt(7)), o: 0 }); mk('circle', { r: 12, fill: COL.good }, d1); mk('circle', { r: 12, fill: COL.bad }, d2); show(d1, m('top')); show(d2, m('bot'));
+    text(p, 'top of the cycle: narrowest spreads', X(2.4) + 10, Y(spreadAt(2.4)) + 62, m('top', .3), { size: 26, fill: COL.good, weight: 700 }); text(p, 'bottom: widest spreads', X(7) - 30, Y(spreadAt(7)) - 22, m('bot', .3), { size: 26, fill: COL.bad, anchor: 'end', weight: 700 });
+    text(p, '%ΔP ≈ − ModDur × ΔSpread + ½ × Conv × ΔSpread²', 1560, 300, m('f'), { size: 28, fill: COL.task, anchor: 'end', weight: 600 });
+    text(p, 'HY bond: ModDur 4.5 · convexity 23', 1560, 400, m('ex'), { size: 30, fill: COL.dim, anchor: 'end' }); text(p, 'spread +100 bp in a recession', 1560, 450, m('ex', 1.5), { size: 30, fill: COL.dim, anchor: 'end' });
+    text(p, '−4.5 × 0.01 + ½ × 23 × 0.01² = −4.39%', 1560, 530, m('res'), { size: 36, fill: COL.bad, anchor: 'end', weight: 700 });
+  }],
+
+  ['wrap', 'Summary', (m) => {
+    const p = panel(0);
+    [['Expected loss = probability of default × loss given default.', 'w1'], ['The credit spread should compensate for expected loss.', 'w2'],
+     ['Ratings help, but they lag and can miss risks.', 'w3'], ['Spreads widen in downturns; price effect: duration and convexity.', 'w4']].forEach(([str, mark], i) => {
+      const g = G(p, { x: -16, y: 250 + i * 130, o: 0 });
+      mk('circle', { cx: 150, cy: -12, r: 26, fill: COL.task }, g);
+      T(g, String(i + 1), { x: 150, y: -1, size: 30, fill: COL.board, weight: 700, anchor: 'middle' });
+      T(g, str, { x: 210, size: 33, weight: 600 });
+      tw(g, { o: 1, x: 0 }, m(mark), .6);
+    });
+  }],
+  ['end', 'Complete', () => { panel(0); }, { ask: endCard }],
+].map(([id, title, run, extra]) => ({ id, title, run, ...extra }));
+
+boot();
+</script>
+</body>
+</html>
